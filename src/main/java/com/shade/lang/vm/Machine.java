@@ -5,8 +5,6 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.function.AbstractFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
-import java.io.PrintStream;
-import java.nio.ByteBuffer;
 import java.util.*;
 
 import static com.shade.lang.parser.gen.Opcode.*;
@@ -57,6 +55,10 @@ public class Machine {
 
         if (!(function instanceof NativeFunction)) {
             execute();
+        }
+
+        if (halted) {
+            return null;
         }
 
         return operandStack.pop();
@@ -156,10 +158,29 @@ public class Machine {
     }
 
     public void panic(String message) {
+        int lastFrameRepeated = 0;
+        Frame lastFrame = null;
+
         System.err.println("Panicking: " + message);
+
         for (int index = callStack.size(); index > 0; index--) {
-            System.err.println("    at " + callStack.get(index - 1));
+            Frame currentFrame = callStack.get(index - 1);
+
+            if (currentFrame.equals(lastFrame)) {
+                lastFrameRepeated++;
+            }
+
+            if (lastFrameRepeated < 3) {
+                System.err.println("    at " + currentFrame);
+            }
+
+            lastFrame = currentFrame;
         }
+
+        if (lastFrameRepeated > 0) {
+            System.err.println("    [repeated " + lastFrameRepeated + " more time(-s)]");
+        }
+
         halt();
     }
 
@@ -210,6 +231,20 @@ public class Machine {
 
         private byte nextImm8() {
             return chunk[pc++];
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Frame frame = (Frame) o;
+            return pc == frame.pc &&
+                function.equals(frame.function);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(function, pc);
         }
     }
 
