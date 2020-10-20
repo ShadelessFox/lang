@@ -19,6 +19,7 @@ public class Machine {
     private final Stack<Frame> callStack = new Stack<>();
 
     private boolean halted;
+    private int status;
 
     public void load(Module module) {
         Objects.requireNonNull(module);
@@ -245,8 +246,9 @@ public class Machine {
         halt(-1);
     }
 
-    public void halt() {
-        halted = true;
+    public void halt(int status) {
+        this.halted = true;
+        this.status = status;
     }
 
     public Stack<ScriptObject> getOperandStack() {
@@ -255,6 +257,14 @@ public class Machine {
 
     public Stack<Frame> getCallStack() {
         return callStack;
+    }
+
+    public boolean isHalted() {
+        return halted;
+    }
+
+    public int getStatus() {
+        return status;
     }
 
     public static class Frame {

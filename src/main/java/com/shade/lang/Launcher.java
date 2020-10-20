@@ -31,6 +31,8 @@ public class Launcher {
         Sandbox.INSTANCE.setAttribute("builtin", Builtin.INSTANCE);
 
         machine.call("sandbox", "main");
+
+        System.exit(machine.getStatus());
     }
 
     private static class Sandbox extends Module {
