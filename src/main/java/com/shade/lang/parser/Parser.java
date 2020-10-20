@@ -158,7 +158,7 @@ public class Parser {
     }
 
     private Expression primaryExpression() throws ParseException, IOException {
-        Token token = expect(TokenKind.ParenL, TokenKind.Symbol, TokenKind.Number);
+        Token token = expect(TokenKind.ParenL, TokenKind.Symbol, TokenKind.String, TokenKind.Number);
 
         if (token.getKind() == TokenKind.ParenL) {
             Expression expr = expression();
@@ -191,8 +191,16 @@ public class Parser {
             return expression;
         }
 
+        if (token.getKind() == TokenKind.String) {
+            return new ConstantExpression(token.getValue());
+        }
+
         if (token.getKind() == TokenKind.Number) {
-            return new NumberExpression(Integer.parseInt(token.getValue()));
+            try {
+                return new NumberExpression(Integer.parseInt(token.getValue()));
+            } catch (NumberFormatException e) {
+                throw new ParseException("Invalid number literal", token.getRegion());
+            }
         }
 
         throw new RuntimeException("Unreachable");

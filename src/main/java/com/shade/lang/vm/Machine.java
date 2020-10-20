@@ -79,6 +79,10 @@ public class Machine {
             final Frame frame = callStack.peek();
 
             switch (frame.nextImm8()) {
+                case PUSH_CONST: {
+                    operandStack.push(new Value(frame.nextConstant()));
+                    break;
+                }
                 case PUSH_INT: {
                     operandStack.push(new Value(frame.nextImm32()));
                     break;

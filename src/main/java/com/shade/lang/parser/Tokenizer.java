@@ -46,6 +46,18 @@ public class Tokenizer {
                 }
             }
 
+            if (ch == '\'') {
+                StringBuilder builder = new StringBuilder();
+                read();
+                while (ch != '\'' && ch != 65535) {
+                    builder.append(read());
+                }
+                if (read() == 65535) {
+                    throw new ParseException("String literal is not closed", new Region(start, span()));
+                }
+                return new Token(TokenKind.String, new Region(start, span()), builder.toString());
+            }
+
             if (ch >= '0' && ch <= '9') {
                 StringBuilder builder = new StringBuilder();
                 while (ch >= '0' && ch <= '9') {

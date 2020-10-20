@@ -30,7 +30,6 @@ public class Launcher {
          */
         Sandbox.INSTANCE.setAttribute("builtin", Builtin.INSTANCE);
 
-        machine.call("builtin", "print", "hi there");
         machine.call("sandbox", "main");
     }
 
@@ -41,7 +40,7 @@ public class Launcher {
             super("sandbox", "<sandbox>");
 
             try {
-                Tokenizer tokenizer = new Tokenizer(new StringReader("{ say = builtin.print; say(123); return 0; }"));
+                Tokenizer tokenizer = new Tokenizer(new StringReader("{ say = builtin.print; say('hello there'); return 0; }"));
                 Parser parser = new Parser(tokenizer);
 
                 Assembler assembler = new Assembler(Machine.MAX_CODE_SIZE);

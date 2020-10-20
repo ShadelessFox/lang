@@ -9,6 +9,8 @@ public interface Visitor {
             visit((BinaryExpression) expression);
         } else if (expression instanceof NumberExpression) {
             visit((NumberExpression) expression);
+        } else if (expression instanceof ConstantExpression) {
+            visit((ConstantExpression) expression);
         } else if (expression instanceof CallExpression) {
             visit((CallExpression) expression);
         } else if (expression instanceof LoadAttributeExpression) {
@@ -24,6 +26,9 @@ public interface Visitor {
     }
 
     default void visit(NumberExpression expression) {
+    }
+
+    default void visit(ConstantExpression expression) {
     }
 
     default void visit(CallExpression expression) {

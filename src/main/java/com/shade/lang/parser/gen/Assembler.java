@@ -74,7 +74,7 @@ public class Assembler {
         while (buffer.hasRemaining()){
             final int offset = buffer.position();
             switch (buffer.get()) {
-                case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    %x%n", offset, buffer.getInt()); break;
+                case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    '%s'%n", offset, constants.get(buffer.getInt())); break;
                 case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
                 case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    '%s'%n", offset, constants.get(buffer.getInt())); break;
                 case SET_GLOBAL:    stream.printf("%04x: SET_GLOBAL    '%s'%n", offset, constants.get(buffer.getInt())); break;

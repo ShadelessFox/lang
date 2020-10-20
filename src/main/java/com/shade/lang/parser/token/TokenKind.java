@@ -4,7 +4,8 @@ public enum TokenKind {
     /* Special */
     Symbol("symbol", false, true),
     Number("number", false, true),
-    End("end of file", false, true),
+    String("string", false, true),
+    End("end of file", false, false),
 
     /* Keywords */
     Let("let", true, false),
