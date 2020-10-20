@@ -40,7 +40,7 @@ public class Launcher {
             super("sandbox", "<sandbox>");
 
             try {
-                Tokenizer tokenizer = new Tokenizer(new StringReader("{ say = builtin.print; say('hello there'); return 0; }"));
+                Tokenizer tokenizer = new Tokenizer(new StringReader("{ say = 0; if say { say('hello there'); } else { builtin.print('you gay'); } return 0; }"));
                 Parser parser = new Parser(tokenizer);
 
                 Assembler assembler = new Assembler(Machine.MAX_CODE_SIZE);

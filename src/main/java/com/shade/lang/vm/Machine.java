@@ -144,6 +144,52 @@ public class Machine {
                     operandStack.push(new Value(a / b));
                     break;
                 }
+                case JUMP: {
+                    frame.pc += frame.nextImm32() - 4;
+                    break;
+                }
+                case IF_EQ: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() == 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case IF_NE: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() != 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case IF_LT: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() < 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case IF_LE: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() <= 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case IF_GT: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() > 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case IF_GE: {
+                    int offset = frame.nextImm32();
+                    if ((int) ((Value) operandStack.pop()).getValue() >= 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
                 case CALL: {
                     Object callable = operandStack.pop();
                     if (!(callable instanceof AbstractFunction)) {
@@ -167,7 +213,7 @@ public class Machine {
                     break;
                 }
                 default:
-                    panic("Not implemented opcode: " + frame.chunk[frame.pc - 1]);
+                    panic(String.format("Not implemented opcode: %#04x", frame.chunk[frame.pc - 1]));
             }
         }
     }
@@ -196,7 +242,7 @@ public class Machine {
             System.err.println("    [repeated " + lastFrameRepeated + " more time(-s)]");
         }
 
-        halt();
+        halt(-1);
     }
 
     public void halt() {
