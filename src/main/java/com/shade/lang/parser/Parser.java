@@ -54,6 +54,9 @@ public class Parser {
             if (expression instanceof LoadAttributeExpression) {
                 LoadAttributeExpression attribute = (LoadAttributeExpression) expression;
                 return new AssignAttributeStatement(attribute.getOwner(), attribute.getName(), value);
+            } else if (expression instanceof LoadGlobalExpression) {
+                LoadGlobalExpression attribute = (LoadGlobalExpression) expression;
+                return new AssignGlobalStatement(attribute.getName(), value);
             } else {
                 throw new RuntimeException("Not implemented");
             }

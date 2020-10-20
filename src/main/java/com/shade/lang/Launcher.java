@@ -7,6 +7,7 @@ import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.node.stmt.Statement;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
@@ -24,6 +25,11 @@ public class Launcher {
         machine.load(Builtin.INSTANCE);
         machine.load(Sandbox.INSTANCE);
 
+        /*
+         * TODO: Add module importing to avoid doing this in test environment
+         */
+        Sandbox.INSTANCE.setAttribute("builtin", Builtin.INSTANCE);
+
         machine.call("builtin", "print", "hi there");
         machine.call("sandbox", "main");
     }
@@ -35,7 +41,7 @@ public class Launcher {
             super("sandbox", "<sandbox>");
 
             try {
-                Tokenizer tokenizer = new Tokenizer(new StringReader("{ builtin.print = builtin.asdads; builtin.print(builtin.add(5, 7)); return 0; }"));
+                Tokenizer tokenizer = new Tokenizer(new StringReader("{ say = builtin.print; say(123); return 0; }"));
                 Parser parser = new Parser(tokenizer);
 
                 Assembler assembler = new Assembler(Machine.MAX_CODE_SIZE);
@@ -46,9 +52,10 @@ public class Launcher {
                 assembler.dump(System.out);
 
                 Map<Integer, Integer> lines = new HashMap<>();
-                lines.put(15, 1);
+                lines.put(0, 1);
+                lines.put(12, 2);
 
-                getAttributes().put("main", new Function(this, "main", assembler.getBuffer(), assembler.getConstants().toArray(new String[0]), lines));
+                setAttribute("main", new Function(this, "main", assembler.getBuffer(), assembler.getConstants().toArray(new String[0]), lines));
             } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }
@@ -61,12 +68,16 @@ public class Launcher {
         public Builtin() {
             super("builtin", "<builtin>");
 
-            getAttributes().put("print", new NativeFunction(this, "print", args -> {
+            setAttribute("print", new NativeFunction(this, "print", args -> {
                 System.out.println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
                 return null;
             }));
 
-            getAttributes().put("add", new NativeFunction(this, "add", args -> (int) args[0] + (int) args[1]));
+            setAttribute("add", new NativeFunction(this, "add", args -> {
+                int b = (int) ((Value) args[0]).getValue();
+                int a = (int) ((Value) args[1]).getValue();
+                return new Value(a + b);
+            }));
         }
     }
 }

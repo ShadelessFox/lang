@@ -4,10 +4,7 @@ import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
-import java.util.Collections;
-import java.util.Map;
-
-public abstract class AbstractFunction implements ScriptObject {
+public abstract class AbstractFunction extends ScriptObject {
     private final Module module;
     private final String name;
 
@@ -22,11 +19,6 @@ public abstract class AbstractFunction implements ScriptObject {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public Map<String, ScriptObject> getAttributes() {
-        return Collections.emptyMap();
     }
 
     public abstract void invoke(Machine machine, int argc);

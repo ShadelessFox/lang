@@ -2,6 +2,7 @@ package com.shade.lang.vm;
 
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.AbstractFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
@@ -14,7 +15,7 @@ public class Machine {
     public static final int MAX_CODE_SIZE = 16384;
 
     private final Map<String, Module> modules = new HashMap<>();
-    private final Stack<Object> operandStack = new Stack<>();
+    private final Stack<ScriptObject> operandStack = new Stack<>();
     private final Stack<Frame> callStack = new Stack<>();
 
     private boolean halted;
@@ -36,7 +37,7 @@ public class Machine {
             throw new RuntimeException("No such module: " + moduleName);
         }
 
-        ScriptObject attribute = module.getAttributes().get(attributeName);
+        ScriptObject attribute = module.getAttribute(attributeName);
 
         if (attribute == null) {
             throw new RuntimeException("No such attribute: " + attributeName);
@@ -47,7 +48,11 @@ public class Machine {
         }
 
         for (Object arg : args) {
-            operandStack.push(arg);
+            if (arg instanceof ScriptObject) {
+                operandStack.push((ScriptObject) arg);
+            } else {
+                operandStack.push(new Value(arg));
+            }
         }
 
         AbstractFunction function = (AbstractFunction) attribute;
@@ -75,23 +80,29 @@ public class Machine {
 
             switch (frame.nextImm8()) {
                 case PUSH_INT: {
-                    operandStack.push(frame.nextImm32());
+                    operandStack.push(new Value(frame.nextImm32()));
                     break;
                 }
                 case GET_GLOBAL: {
+                    Module module = frame.getFunction().getModule();
                     String name = frame.nextConstant();
-                    ScriptObject object = modules.get(name);
-                    if (object == null) {
+                    ScriptObject value = module.getAttribute(name);
+                    if (value == null) {
                         panic("No such global '" + name + "'");
                         break;
                     }
-                    operandStack.push(object);
+                    operandStack.push(value);
+                    break;
+                }
+                case SET_GLOBAL: {
+                    Module module = frame.getFunction().getModule();
+                    module.setAttribute(frame.nextConstant(), operandStack.pop());
                     break;
                 }
                 case GET_ATTRIBUTE: {
                     String name = frame.nextConstant();
-                    ScriptObject target = (ScriptObject) operandStack.pop();
-                    ScriptObject object = target.getAttributes().get(name);
+                    ScriptObject target = operandStack.pop();
+                    ScriptObject object = target.getAttribute(name);
                     if (object == null) {
                         panic("No such property '" + name + "' on target '" + target + "'");
                         break;
@@ -100,33 +111,33 @@ public class Machine {
                     break;
                 }
                 case SET_ATTRIBUTE: {
-                    ScriptObject value = (ScriptObject) operandStack.pop();
-                    ScriptObject target = (ScriptObject) operandStack.pop();
-                    target.getAttributes().put(frame.nextConstant(), value);
+                    ScriptObject value = operandStack.pop();
+                    ScriptObject target = operandStack.pop();
+                    target.setAttribute(frame.nextConstant(), value);
                     break;
                 }
                 case ADD: {
-                    int b = (int) operandStack.pop();
-                    int a = (int) operandStack.pop();
-                    operandStack.push(a + b);
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a + b));
                     break;
                 }
                 case SUB: {
-                    int b = (int) operandStack.pop();
-                    int a = (int) operandStack.pop();
-                    operandStack.push(a - b);
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a - b));
                     break;
                 }
                 case MUL: {
-                    int b = (int) operandStack.pop();
-                    int a = (int) operandStack.pop();
-                    operandStack.push(a * b);
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a * b));
                     break;
                 }
                 case DIV: {
-                    int b = (int) operandStack.pop();
-                    int a = (int) operandStack.pop();
-                    operandStack.push(a / b);
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a / b));
                     break;
                 }
                 case CALL: {
@@ -188,7 +199,7 @@ public class Machine {
         halted = true;
     }
 
-    public Stack<Object> getOperandStack() {
+    public Stack<ScriptObject> getOperandStack() {
         return operandStack;
     }
 
