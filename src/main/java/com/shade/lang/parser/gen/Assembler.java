@@ -3,6 +3,7 @@ package com.shade.lang.parser.gen;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static com.shade.lang.parser.gen.Opcode.*;
 
@@ -68,18 +69,23 @@ public class Assembler {
     }
 
     public void dump(PrintStream stream) {
-        ByteBuffer buffer = getBuffer();
+        final ByteBuffer buffer = getBuffer();
+
+        final Supplier<String> formatConstant = () -> {
+            int index = buffer.getInt();
+            return String.format("%d '%s'", index, constants.get(index));
+        };
 
         // @formatter:off
         while (buffer.hasRemaining()){
             final int offset = buffer.position();
             switch (buffer.get()) {
-                case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    '%s'%n", offset, constants.get(buffer.getInt())); break;
+                case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    %s%n", offset, formatConstant.get()); break;
                 case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
-                case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    '%s'%n", offset, constants.get(buffer.getInt())); break;
-                case SET_GLOBAL:    stream.printf("%04x: SET_GLOBAL    '%s'%n", offset, constants.get(buffer.getInt())); break;
-                case GET_ATTRIBUTE: stream.printf("%04x: GET_ATTRIBUTE '%s'%n", offset, constants.get(buffer.getInt())); break;
-                case SET_ATTRIBUTE: stream.printf("%04x: SET_ATTRIBUTE '%s'%n", offset, constants.get(buffer.getInt())); break;
+                case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    %s%n", offset, formatConstant.get()); break;
+                case SET_GLOBAL:    stream.printf("%04x: SET_GLOBAL    %s%n", offset, formatConstant.get()); break;
+                case GET_ATTRIBUTE: stream.printf("%04x: GET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
+                case SET_ATTRIBUTE: stream.printf("%04x: SET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
                 case ADD:           stream.printf("%04x: ADD%n", offset); break;
                 case SUB:           stream.printf("%04x: SUB%n", offset); break;
                 case MUL:           stream.printf("%04x: MUL%n", offset); break;
