@@ -70,15 +70,30 @@ public class Assembler {
 
     public void dump(PrintStream stream) {
         final ByteBuffer buffer = getBuffer();
+        final Map<Integer, Integer> labels = new HashMap<>();
 
         final Supplier<String> formatConstant = () -> {
             int index = buffer.getInt();
             return String.format("%d '%s'", index, constants.get(index));
         };
 
+        final Supplier<String> formatLabel = () -> {
+            int offset = buffer.position() + buffer.getInt();
+            if (!labels.containsKey(offset)) {
+                labels.put(offset, labels.size());
+            }
+            return String.format(".L%d", labels.get(offset));
+        };
+
         // @formatter:off
         while (buffer.hasRemaining()){
             final int offset = buffer.position();
+
+            Integer label = labels.get(offset);
+            if (label != null){
+                System.out.printf(".L%d%n", label);
+            }
+
             switch (buffer.get()) {
                 case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    %s%n", offset, formatConstant.get()); break;
                 case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
@@ -90,13 +105,13 @@ public class Assembler {
                 case SUB:           stream.printf("%04x: SUB%n", offset); break;
                 case MUL:           stream.printf("%04x: MUL%n", offset); break;
                 case DIV:           stream.printf("%04x: DIV%n", offset); break;
-                case JUMP:          stream.printf("%04x: JUMP          %d%n", offset, buffer.getInt()); break;
-                case IF_EQ:         stream.printf("%04x: IF_EQ         %d%n", offset, buffer.getInt()); break;
-                case IF_NE:         stream.printf("%04x: IF_NE         %d%n", offset, buffer.getInt()); break;
-                case IF_LT:         stream.printf("%04x: IF_LT         %d%n", offset, buffer.getInt()); break;
-                case IF_LE:         stream.printf("%04x: IF_LE         %d%n", offset, buffer.getInt()); break;
-                case IF_GT:         stream.printf("%04x: IF_GT         %d%n", offset, buffer.getInt()); break;
-                case IF_GE:         stream.printf("%04x: IF_GE         %d%n", offset, buffer.getInt()); break;
+                case JUMP:          stream.printf("%04x: JUMP          %s%n", offset, formatLabel.get()); break;
+                case IF_EQ:         stream.printf("%04x: IF_EQ         %s%n", offset, formatLabel.get()); break;
+                case IF_NE:         stream.printf("%04x: IF_NE         %s%n", offset, formatLabel.get()); break;
+                case IF_LT:         stream.printf("%04x: IF_LT         %s%n", offset, formatLabel.get()); break;
+                case IF_LE:         stream.printf("%04x: IF_LE         %s%n", offset, formatLabel.get()); break;
+                case IF_GT:         stream.printf("%04x: IF_GT         %s%n", offset, formatLabel.get()); break;
+                case IF_GE:         stream.printf("%04x: IF_GE         %s%n", offset, formatLabel.get()); break;
                 case CALL:          stream.printf("%04x: CALL          %d%n", offset, buffer.get()); break;
                 case RET:           stream.printf("%04x: RET%n", offset); break;
                 case POP:           stream.printf("%04x: POP%n", offset); break;
