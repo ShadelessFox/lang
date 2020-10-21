@@ -146,7 +146,7 @@ public class Machine {
                     break;
                 }
                 case JUMP: {
-                    frame.pc += frame.nextImm32() - 4;
+                    frame.pc += frame.nextImm32();
                     break;
                 }
                 case IF_EQ: {
@@ -211,6 +211,11 @@ public class Machine {
                 }
                 case POP: {
                     operandStack.pop();
+                    break;
+                }
+                case NOT: {
+                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(value == 0 ? 1 : 0));
                     break;
                 }
                 default:

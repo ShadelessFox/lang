@@ -149,12 +149,29 @@ public class Parser {
     }
 
     private Expression multiplicativeExpression() throws ParseException, IOException {
-        Expression left = primaryExpression();
+        Expression left = comparisonExpression();
         Token operator = consume(TokenKind.Mul, TokenKind.Div);
         if (operator != null) {
             return new BinaryExpression(left, multiplicativeExpression(), operator.getKind());
         }
         return left;
+    }
+
+    private Expression comparisonExpression() throws ParseException, IOException {
+        Expression left = unaryExpression();
+        Token operator = consume(TokenKind.And, TokenKind.Or);
+        if (operator != null) {
+            return new BinaryExpression(left, comparisonExpression(), operator.getKind());
+        }
+        return left;
+    }
+
+    private Expression unaryExpression() throws ParseException, IOException {
+        Token operator = consume(TokenKind.Not);
+        if (operator != null) {
+            return new UnaryExpression(primaryExpression(), operator.getKind());
+        }
+        return primaryExpression();
     }
 
     private Expression primaryExpression() throws ParseException, IOException {
@@ -192,12 +209,12 @@ public class Parser {
         }
 
         if (token.getKind() == TokenKind.String) {
-            return new ConstantExpression(token.getValue());
+            return new LoadConstantExpression<>(token.getValue());
         }
 
         if (token.getKind() == TokenKind.Number) {
             try {
-                return new NumberExpression(Integer.parseInt(token.getValue()));
+                return new LoadConstantExpression<>(Integer.parseInt(token.getValue()));
             } catch (NumberFormatException e) {
                 throw new ParseException("Invalid number literal", token.getRegion());
             }

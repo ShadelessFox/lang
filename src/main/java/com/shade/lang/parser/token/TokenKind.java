@@ -13,6 +13,9 @@ public enum TokenKind {
     If("if", true, false),
     Else("else", true, false),
     Return("return", true, false),
+    Not("not", true, false),
+    And("and", true, false),
+    Or("or", true, false),
 
     /* Operators */
     ParenL("(", true, false),
@@ -24,10 +27,22 @@ public enum TokenKind {
     Comma(",", true, false),
     Dot(".", true, false),
 
-    Add("+", true, false),
-    Sub("-", true, false),
-    Mul("*", true, false),
-    Div("/", true, false);
+    Eq("==", true, false),
+    NotEq("==", true, false),
+    Less("<", true, false),
+    LessEq("<=", true, false),
+    Greater(">", true, false),
+    GreaterEq(">=", true, false),
+
+    Add("+", true, false),    AddAssign("+=", true, false),
+    Sub("-", true, false),    SubAssign("-=", true, false),
+    Mul("*", true, false),    MulAssign("*=", true, false),
+    Div("/", true, false),    DivAssign("/=", true, false),
+    BitAnd("&", true, false), BitAndAssign("&=", true, false),
+    BitOr("|", true, false),  BitOrAssign("|=", true, false),
+    Xor("^", true, false),    XorAssign("^=", true, false),
+    Shl("<<", true, false),   ShlAssign("<<=", true, false),
+    Shr(">>", true, false),   ShrAssign(">>=", true, false);
 
     private final String name;
     private final boolean quoted;

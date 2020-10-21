@@ -82,19 +82,22 @@ public class Assembler {
             if (!labels.containsKey(offset)) {
                 labels.put(offset, labels.size());
             }
-            return String.format(".L%d", labels.get(offset));
+            return String.format(".L%d (%04x, +%d)", labels.get(offset), offset, offset - buffer.position() + 4);
         };
 
-        // @formatter:off
-        while (buffer.hasRemaining()){
+        while (buffer.remaining() >= 0) {
             final int offset = buffer.position();
 
             Integer label = labels.get(offset);
-            if (label != null){
+            if (label != null) {
                 System.out.printf(".L%d%n", label);
             }
 
+            if (!buffer.hasRemaining())
+                break;
+
             switch (buffer.get()) {
+                // @formatter:off
                 case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    %s%n", offset, formatConstant.get()); break;
                 case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
                 case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    %s%n", offset, formatConstant.get()); break;
@@ -115,9 +118,10 @@ public class Assembler {
                 case CALL:          stream.printf("%04x: CALL          %d%n", offset, buffer.get()); break;
                 case RET:           stream.printf("%04x: RET%n", offset); break;
                 case POP:           stream.printf("%04x: POP%n", offset); break;
+                case NOT:           stream.printf("%04x: NOT%n", offset); break;
+                // @formatter:on
             }
         }
-        // @formatter:on
     }
 
     public ByteBuffer getBuffer() {

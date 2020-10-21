@@ -7,10 +7,10 @@ public interface Visitor {
     default void visit(Expression expression) {
         if (expression instanceof BinaryExpression) {
             visit((BinaryExpression) expression);
-        } else if (expression instanceof NumberExpression) {
-            visit((NumberExpression) expression);
-        } else if (expression instanceof ConstantExpression) {
-            visit((ConstantExpression) expression);
+        } else if (expression instanceof UnaryExpression) {
+            visit((UnaryExpression) expression);
+        } else if (expression instanceof LoadConstantExpression) {
+            visit((LoadConstantExpression<?>) expression);
         } else if (expression instanceof CallExpression) {
             visit((CallExpression) expression);
         } else if (expression instanceof LoadAttributeExpression) {
@@ -25,10 +25,10 @@ public interface Visitor {
     default void visit(BinaryExpression expression) {
     }
 
-    default void visit(NumberExpression expression) {
+    default void visit(UnaryExpression expression) {
     }
 
-    default void visit(ConstantExpression expression) {
+    default void visit(LoadConstantExpression<?> expression) {
     }
 
     default void visit(CallExpression expression) {

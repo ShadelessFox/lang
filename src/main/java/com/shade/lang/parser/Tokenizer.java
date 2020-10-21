@@ -41,6 +41,12 @@ public class Tokenizer {
                         return new Token(TokenKind.Else, new Region(start, span()));
                     case "return":
                         return new Token(TokenKind.Return, new Region(start, span()));
+                    case "and":
+                        return new Token(TokenKind.And, new Region(start, span()));
+                    case "or":
+                        return new Token(TokenKind.Or, new Region(start, span()));
+                    case "not":
+                        return new Token(TokenKind.Not, new Region(start, span()));
                     default:
                         return new Token(TokenKind.Symbol, new Region(start, span()), builder.toString());
                 }
