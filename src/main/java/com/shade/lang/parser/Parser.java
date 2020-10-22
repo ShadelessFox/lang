@@ -20,14 +20,29 @@ public class Parser {
     }
 
     public Statement declarativeTopStatement() throws ParseException, IOException {
-        Token token = expect(TokenKind.Def);
+        Region start = token.getRegion();
+        Token token = expect(TokenKind.Import, TokenKind.Def);
 
         switch (token.getKind()) {
+            case Import:
+                return declareImportStatement(false, start);
             case Def:
                 return declareFunctionStatement();
         }
 
         throw new RuntimeException("Unreachable");
+    }
+
+    private ImportStatement declareImportStatement(boolean matchOpening, Region start) throws ParseException, IOException {
+        if (start == null) {
+            start = token.getRegion();
+        }
+        if (matchOpening) {
+            expect(TokenKind.Import);
+        }
+        Token name = expect(TokenKind.Symbol, TokenKind.String);
+        expect(TokenKind.Semicolon);
+        return new ImportStatement(name.getValue(), name.getKind() == TokenKind.String, start.until(token.getRegion()));
     }
 
     public Statement declarativeStatement() throws ParseException, IOException {

@@ -227,6 +227,21 @@ public class Machine {
                     operandStack.push(new Value(value == 0 ? 1 : 0));
                     break;
                 }
+                case IMPORT: {
+                    String name = frame.nextConstant();
+                    boolean path = frame.nextImm8() > 0;
+                    if (path) {
+                        panic("Loading modules from file is not supported yet");
+                        break;
+                    }
+                    Module module = modules.get(name);
+                    if (module == null) {
+                        panic("No such module '" + name + "'");
+                        break;
+                    }
+                    frame.getFunction().getModule().setAttribute(name, module);
+                    break;
+                }
                 default:
                     panic(String.format("Not implemented opcode: %#04x", frame.chunk[frame.pc - 1]));
             }

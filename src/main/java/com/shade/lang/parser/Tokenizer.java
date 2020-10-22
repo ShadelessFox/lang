@@ -47,6 +47,8 @@ public class Tokenizer {
                         return new Token(TokenKind.Or, new Region(start, span()));
                     case "not":
                         return new Token(TokenKind.Not, new Region(start, span()));
+                    case "import":
+                        return new Token(TokenKind.Import, new Region(start, span()));
                     default:
                         return new Token(TokenKind.Symbol, new Region(start, span()), builder.toString());
                 }

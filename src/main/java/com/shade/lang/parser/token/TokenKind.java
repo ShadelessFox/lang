@@ -16,6 +16,7 @@ public enum TokenKind {
     Not("not", true, false),
     And("and", true, false),
     Or("or", true, false),
+    Import("import", true, false),
 
     /* Operators */
     ParenL("(", true, false),

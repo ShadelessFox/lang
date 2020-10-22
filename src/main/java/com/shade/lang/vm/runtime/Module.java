@@ -16,4 +16,12 @@ public class Module extends ScriptObject {
     public String getSource() {
         return source;
     }
+
+    @Override
+    public String toString() {
+        return "Module{" +
+                "name='" + name + '\'' +
+                ", source='" + source + '\'' +
+                '}';
+    }
 }
