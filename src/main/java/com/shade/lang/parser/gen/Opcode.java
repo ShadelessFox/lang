@@ -43,9 +43,6 @@ public class Opcode {
     public static final byte RET           = 0x1B;
     public static final byte POP           = 0x1C;
 
-    /* Modules */
-    public static final byte IMPORT        = 0x1D;
-
     // @formatter:on
 
     private Opcode() {

@@ -21,7 +21,7 @@ public class Tokenizer {
         this.read();
     }
 
-    public Token next() throws ParseException, IOException {
+    public Token next() throws ScriptException, IOException {
         while (true) {
             Region.Span start = span();
 
@@ -61,7 +61,7 @@ public class Tokenizer {
                     builder.append(read());
                 }
                 if (read() == 65535) {
-                    throw new ParseException("String literal is not closed", new Region(start, span()));
+                    throw new ScriptException("String literal is not closed", new Region(start, span()));
                 }
                 return new Token(TokenKind.String, new Region(start, span()), builder.toString());
             }
@@ -86,10 +86,10 @@ public class Tokenizer {
                 continue;
             }
 
-            char ch = read();
+            char next = read();
             Region chRegion = new Region(start, span());
 
-            switch (ch) {
+            switch (next) {
                 case '(':
                     return new Token(TokenKind.ParenL, chRegion);
                 case ')':
@@ -115,7 +115,7 @@ public class Tokenizer {
                 case '/':
                     return new Token(TokenKind.Div, chRegion);
                 default:
-                    throw new ParseException("Unknown symbol: '" + ch + "' (" + (int) ch + ")", chRegion);
+                    throw new ScriptException("Unknown symbol: '" + next + "' (" + (int) next + ")", chRegion);
             }
         }
     }

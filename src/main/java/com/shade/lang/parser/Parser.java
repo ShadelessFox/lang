@@ -5,7 +5,9 @@ import com.shade.lang.parser.node.expr.*;
 import com.shade.lang.parser.node.stmt.*;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.parser.token.Token;
+import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
+import static com.shade.lang.parser.token.TokenKind.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,34 +17,37 @@ public class Parser {
     private final Tokenizer tokenizer;
     private Token token;
 
-    public Parser(Tokenizer tokenizer) throws ParseException, IOException {
+    public Parser(Tokenizer tokenizer) throws ScriptException, IOException {
         this.tokenizer = tokenizer;
         this.advance();
     }
 
-    public Node parse(String source, Parser.Mode mode) throws ParseException, IOException {
+    public Node parse(String source, Parser.Mode mode) throws ScriptException, IOException {
         switch (mode) {
             case Unit:
                 return parseUnit(source);
             case Statement:
-                return declarativeStatement();
+                return parseStatement();
             case Expression:
-                return expression();
+                return parseExpression();
         }
 
         return null;
     }
 
-    public UnitStatement parseUnit(String name) throws ParseException, IOException {
+    private UnitStatement parseUnit(String name) throws ScriptException, IOException {
         List<Statement> statements = new ArrayList<>();
 
         while (true) {
             Region start = token.getRegion();
-            Token token = expect(TokenKind.Import, TokenKind.Def, TokenKind.End);
+            Token token = expect(Import, Def, End);
 
             switch (token.getKind()) {
+                case Import:
+                    statements.add(parseImportStatement(start));
+                    break;
                 case Def:
-                    statements.add(declareFunctionStatement());
+                    statements.add(parseFunctionDeclareStatement());
                     break;
                 case End:
                     return new UnitStatement(name, statements, start.until(token.getRegion()));
@@ -50,45 +55,31 @@ public class Parser {
         }
     }
 
-    private ImportStatement declareImportStatement(boolean matchOpening, Region start) throws ParseException, IOException {
-        if (start == null) {
-            start = token.getRegion();
-        }
-        if (matchOpening) {
-            expect(TokenKind.Import);
-        }
-        Token name = expect(TokenKind.Symbol, TokenKind.String);
-        expect(TokenKind.Semicolon);
-        return new ImportStatement(name.getValue(), name.getKind() == TokenKind.String, start.until(token.getRegion()));
+    private ImportStatement parseImportStatement(Region start) throws ScriptException, IOException {
+        Token name = expect(Symbol, String);
+        expect(Semicolon);
+        return new ImportStatement(name.getValue(), name.getKind() == String, start.until(token.getRegion()));
     }
 
-    public Statement declarativeStatement() throws ParseException, IOException {
-        Region start = token.getRegion();
+    private Statement parseStatement() throws ScriptException, IOException {
         switch (token.getKind()) {
-            case Import:
-                advance();
-                return declareImportStatement(false, start);
             case Let:
-                advance();
-                return declareVariableStatement();
+                return parseVariableDeclareStatement();
             case If:
-                advance();
-                return branchStatement(false);
+                return parseBranchStatement();
             case Return:
-                advance();
-                return returnStatement(false);
+                return parseReturnStatement();
             case BraceL:
-                advance();
-                return blockStatement(false);
+                return parseBlockStatement();
         }
 
-        Expression expression = expression();
+        Expression expression = parseExpression();
 
-        start = token.getRegion();
+        Region start = token.getRegion();
 
-        if (consume(TokenKind.Assign) != null) {
-            Expression value = expression();
-            expect(TokenKind.Semicolon);
+        if (consume(Assign) != null) {
+            Expression value = parseExpression();
+            expect(Semicolon);
 
             if (expression instanceof LoadAttributeExpression) {
                 LoadAttributeExpression attribute = (LoadAttributeExpression) expression;
@@ -101,156 +92,152 @@ public class Parser {
             }
         }
 
-        expect(TokenKind.Semicolon);
+        expect(Semicolon);
 
         return new ExpressionStatement(expression, start.until(token.getRegion()));
     }
 
-    private AssignGlobalStatement assignGlobalStatement() throws ParseException, IOException {
+    private ReturnStatement parseReturnStatement() throws ScriptException, IOException {
         Region start = token.getRegion();
-        String name = expect(TokenKind.Symbol).getValue();
-        expect(TokenKind.Assign);
-        Expression expression = expression();
-        expect(TokenKind.Semicolon);
-        return new AssignGlobalStatement(name, expression, start.until(token.getRegion()));
-    }
-
-    private ReturnStatement returnStatement(boolean matchOpening) throws ParseException, IOException {
-        Region start = token.getRegion();
-        if (matchOpening) {
-            expect(TokenKind.Return);
-        }
-        Expression value = expression();
-        expect(TokenKind.Semicolon);
+        expect(Return);
+        Expression value = parseExpression();
+        expect(Semicolon);
         return new ReturnStatement(value, start.until(token.getRegion()));
     }
 
-    private BlockStatement blockStatement(boolean matchOpening) throws ParseException, IOException {
+    private BlockStatement parseBlockStatement() throws ScriptException, IOException {
         Region start = token.getRegion();
-        if (matchOpening) {
-            expect(TokenKind.BraceL);
-        }
+        expect(BraceL);
         List<Statement> statements = new ArrayList<>();
-        while (!matches(TokenKind.BraceR, TokenKind.End)) {
-            statements.add(declarativeStatement());
+        while (!matches(BraceR, End)) {
+            statements.add(parseStatement());
         }
-        expect(TokenKind.BraceR);
+        expect(BraceR);
         return new BlockStatement(statements, start.until(token.getRegion()));
     }
 
-    private BranchStatement branchStatement(boolean matchOpening) throws ParseException, IOException {
+    private BranchStatement parseBranchStatement() throws ScriptException, IOException {
         Region start = token.getRegion();
-        if (matchOpening) {
-            expect(TokenKind.If);
-        }
-        Expression condition = expression();
-        Statement pass = blockStatement(true);
+        expect(If);
+        Expression condition = parseExpression();
+        Statement pass = parseBlockStatement();
         Statement fail = null;
-        if (consume(TokenKind.Else) != null) {
-            if (matches(TokenKind.If)) {
-                fail = branchStatement(true);
+        if (consume(Else) != null) {
+            if (matches(If)) {
+                fail = parseBranchStatement();
             } else {
-                fail = blockStatement(true);
+                fail = parseBlockStatement();
             }
         }
         return new BranchStatement(condition, pass, fail, start.until(token.getRegion()));
     }
 
-    private DeclareVariableStatement declareVariableStatement() throws ParseException, IOException {
+    private DeclareVariableStatement parseVariableDeclareStatement() throws ScriptException, IOException {
+        expect(Let);
         Region start = token.getRegion();
-        Token name = expect(TokenKind.Symbol);
-        expect(TokenKind.Assign);
-        Expression value = expression();
-        expect(TokenKind.Semicolon);
+        Token name = expect(Symbol);
+        expect(Assign);
+        Expression value = parseExpression();
+        expect(Semicolon);
         return new DeclareVariableStatement(name.getValue(), value, start.until(token.getRegion()));
     }
 
-    private DeclareFunctionStatement declareFunctionStatement() throws ParseException, IOException {
+    private DeclareFunctionStatement parseFunctionDeclareStatement() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Token name = expect(TokenKind.Symbol);
+        Token name = expect(Symbol);
         List<String> args = new ArrayList<>();
-        expect(TokenKind.ParenL);
-        if (!matches(TokenKind.ParenR, TokenKind.End)) {
-            args.add(expect(TokenKind.Symbol).getValue());
-            while (consume(TokenKind.Comma) != null) {
-                args.add(expect(TokenKind.Symbol).getValue());
+        expect(ParenL);
+        if (!matches(ParenR, End)) {
+            args.add(expect(Symbol).getValue());
+            while (consume(Comma) != null) {
+                args.add(expect(Symbol).getValue());
             }
         }
-        expect(TokenKind.ParenR);
-        return new DeclareFunctionStatement(name.getValue(), args, blockStatement(true), start.until(token.getRegion()));
+        expect(ParenR);
+        return new DeclareFunctionStatement(name.getValue(), args, parseBlockStatement(), start.until(token.getRegion()));
     }
 
-    public Expression expression() throws ParseException, IOException {
-        return additiveExpression();
+    public Expression parseExpression() throws ScriptException, IOException {
+        return parseLogicalExpression();
     }
 
-    private Expression additiveExpression() throws ParseException, IOException {
+    private Expression parseLogicalExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Expression left = multiplicativeExpression();
-        Token operator = consume(TokenKind.Add, TokenKind.Sub);
+        Expression lhs = parseRelationalExpression();
+        Token operator = consume(And, Or);
         if (operator != null) {
-            return new BinaryExpression(left, additiveExpression(), operator.getKind(), start.until(token.getRegion()));
+            return new BinaryExpression(lhs, parseLogicalExpression(), operator.getKind(), start.until(token.getRegion()));
         }
-        return left;
+        return lhs;
     }
 
-    private Expression multiplicativeExpression() throws ParseException, IOException {
+    private Expression parseRelationalExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Expression left = comparisonExpression();
-        Token operator = consume(TokenKind.Mul, TokenKind.Div);
+        Expression lhs = parseAdditiveExpression();
+        Token operator = consume(Less, LessEq, Greater, GreaterEq, Eq, NotEq);
         if (operator != null) {
-            return new BinaryExpression(left, multiplicativeExpression(), operator.getKind(), start.until(token.getRegion()));
+            return new BinaryExpression(lhs, parseRelationalExpression(), operator.getKind(), start.until(token.getRegion()));
         }
-        return left;
+        return lhs;
     }
 
-    private Expression comparisonExpression() throws ParseException, IOException {
+    private Expression parseAdditiveExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Expression left = unaryExpression();
-        Token operator = consume(TokenKind.And, TokenKind.Or);
+        Expression lhs = parseMultiplicativeExpression();
+        Token operator = consume(Add, Sub);
         if (operator != null) {
-            return new BinaryExpression(left, comparisonExpression(), operator.getKind(), start.until(token.getRegion()));
+            return new BinaryExpression(lhs, parseAdditiveExpression(), operator.getKind(), start.until(token.getRegion()));
         }
-        return left;
+        return lhs;
     }
 
-    private Expression unaryExpression() throws ParseException, IOException {
+    private Expression parseMultiplicativeExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Token operator = consume(TokenKind.Not, TokenKind.Add, TokenKind.Sub);
+        Expression lhs = parseUnaryExpression();
+        Token operator = consume(Mul, Div);
         if (operator != null) {
-            return new UnaryExpression(primaryExpression(), operator.getKind(), start.until(token.getRegion()));
+            return new BinaryExpression(lhs, parseMultiplicativeExpression(), operator.getKind(), start.until(token.getRegion()));
         }
-        return primaryExpression();
+        return lhs;
     }
 
-    private Expression primaryExpression() throws ParseException, IOException {
+    private Expression parseUnaryExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Token token = expect(TokenKind.ParenL, TokenKind.Symbol, TokenKind.String, TokenKind.Number);
+        Token operator = consume(Not, Add, Sub);
+        if (operator != null) {
+            return new UnaryExpression(parsePrimaryExpression(), operator.getKind(), start.until(token.getRegion()));
+        }
+        return parsePrimaryExpression();
+    }
 
-        if (token.getKind() == TokenKind.ParenL) {
-            Expression expr = expression();
-            expect(TokenKind.ParenR);
+    private Expression parsePrimaryExpression() throws ScriptException, IOException {
+        Region start = token.getRegion();
+        Token token = expect(ParenL, Symbol, String, Number);
+
+        if (token.getKind() == ParenL) {
+            Expression expr = parseExpression();
+            expect(ParenR);
             return expr;
         }
 
-        if (token.getKind() == TokenKind.Symbol) {
+        if (token.getKind() == Symbol) {
             Expression expression = new LoadGlobalExpression(token.getValue(), start.until(token.getRegion()));
 
-            while (matches(TokenKind.Dot, TokenKind.ParenL)) {
-                while (consume(TokenKind.Dot) != null) {
-                    Token name = expect(TokenKind.Symbol);
+            while (matches(Dot, ParenL)) {
+                while (consume(Dot) != null) {
+                    Token name = expect(Symbol);
                     expression = new LoadAttributeExpression(expression, name.getValue(), start.until(token.getRegion()));
                 }
 
-                if (consume(TokenKind.ParenL) != null) {
+                if (consume(ParenL) != null) {
                     List<Expression> arguments = new ArrayList<>();
-                    if (!matches(TokenKind.ParenR, TokenKind.End)) {
-                        arguments.add(expression());
-                        while (consume(TokenKind.Comma) != null) {
-                            arguments.add(expression());
+                    if (!matches(ParenR, End)) {
+                        arguments.add(parseExpression());
+                        while (consume(Comma) != null) {
+                            arguments.add(parseExpression());
                         }
                     }
-                    expect(TokenKind.ParenR);
+                    expect(ParenR);
                     expression = new CallExpression(expression, arguments, start.until(token.getRegion()));
                 }
             }
@@ -258,15 +245,15 @@ public class Parser {
             return expression;
         }
 
-        if (token.getKind() == TokenKind.String) {
+        if (token.getKind() == String) {
             return new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
         }
 
-        if (token.getKind() == TokenKind.Number) {
+        if (token.getKind() == Number) {
             try {
                 return new LoadConstantExpression<>(Integer.parseInt(token.getValue()), start.until(token.getRegion()));
             } catch (NumberFormatException e) {
-                throw new ParseException("Invalid number literal", token.getRegion());
+                throw new ScriptException("Invalid number literal", token.getRegion());
             }
         }
 
@@ -283,7 +270,7 @@ public class Parser {
         return false;
     }
 
-    private Token consume(TokenKind... kinds) throws ParseException, IOException {
+    private Token consume(TokenKind... kinds) throws ScriptException, IOException {
         for (TokenKind kind : kinds) {
             if (token.getKind() == kind) {
                 return advance();
@@ -293,7 +280,7 @@ public class Parser {
         return null;
     }
 
-    private Token expect(TokenKind... kinds) throws ParseException, IOException {
+    private Token expect(TokenKind... kinds) throws ScriptException, IOException {
         Token consumed = consume(kinds);
 
         if (consumed != null) {
@@ -314,14 +301,14 @@ public class Parser {
         StringBuilder found = new StringBuilder();
         found.append(token.getKind().getQuotedName());
 
-        if (token.getKind().isDisplay()) {
+        if (token.getKind().hasFlag(TokenFlag.DISPLAY)) {
             found.append(" '").append(token.getValue()).append("'");
         }
 
-        throw new ParseException("Expected " + expected + " but found " + found, token.getRegion());
+        throw new ScriptException("Expected " + expected + " but found " + found, token.getRegion());
     }
 
-    private Token advance() throws ParseException, IOException {
+    private Token advance() throws ScriptException, IOException {
         Token token = this.token;
         this.token = tokenizer.next();
         return token;

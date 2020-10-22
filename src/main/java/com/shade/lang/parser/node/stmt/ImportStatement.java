@@ -37,10 +37,7 @@ public class ImportStatement implements Statement {
 
     @Override
     public void emit(Context context, Assembler assembler) {
-        assembler.span(region.getBegin());
-        assembler.imm8(Opcode.IMPORT);
-        assembler.imm32(assembler.constant(name));
-        assembler.imm8(path);
+        context.getModule().getImports().add(this);
     }
 
     @Override

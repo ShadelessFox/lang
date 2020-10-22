@@ -127,7 +127,6 @@ public class Assembler {
                 case RET:           stream.printf("%04x: RET%n", offset); break;
                 case POP:           stream.printf("%04x: POP%n", offset); break;
                 case NOT:           stream.printf("%04x: NOT%n", offset); break;
-                case IMPORT:        stream.printf("%04x: IMPORT        %s %s%n", offset, formatConstant.get(), buffer.get() > 0 ? "<path>" : ""); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                 // @formatter:on
             }

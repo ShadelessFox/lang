@@ -1,11 +1,11 @@
 package com.shade.lang.vm;
 
-import com.shade.lang.parser.ParseException;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.Tokenizer;
-import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
@@ -17,7 +17,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Stack;
 
 import static com.shade.lang.parser.gen.Opcode.*;
 
@@ -32,12 +35,28 @@ public class Machine {
     private boolean halted;
     private int status;
 
-    public void load(Module module) {
+    public void load(Module module) throws ScriptException {
         Objects.requireNonNull(module);
 
         if (modules.containsKey(module.getName())) {
             throw new RuntimeException("Module already loaded: " + module.getName());
         }
+
+        for (ImportStatement statement : module.getImports()) {
+            if (statement.isPath()) {
+                throw new ScriptException("Loading modules from file is not supported yet", statement.getRegion());
+            }
+
+            String name = statement.getName();
+
+            if (modules.containsKey(name)) {
+                module.setAttribute(name, modules.get(name));
+            } else {
+                throw new ScriptException("No such module named '" + statement.getName() + "'", statement.getRegion());
+            }
+        }
+
+        module.getImports().clear();
 
         modules.put(module.getName(), module);
     }
@@ -52,7 +71,7 @@ public class Machine {
             node.emit(context, null);
 
             load(module);
-        } catch (ParseException e) {
+        } catch (ScriptException e) {
             callStack.push(new ParserFrame(source, e));
             panic(e.getMessage());
             callStack.pop();
@@ -259,21 +278,6 @@ public class Machine {
                     operandStack.push(new Value(value == 0 ? 1 : 0));
                     break;
                 }
-                case IMPORT: {
-                    String name = frame.nextConstant();
-                    boolean path = frame.nextImm8() > 0;
-                    if (path) {
-                        panic("Loading modules from file is not supported yet");
-                        break;
-                    }
-                    Module module = modules.get(name);
-                    if (module == null) {
-                        panic("No such module '" + name + "'");
-                        break;
-                    }
-                    frame.getFunction().getModule().setAttribute(name, module);
-                    break;
-                }
                 default:
                     panic(String.format("Not implemented opcode: %#04x", frame.chunk[frame.pc - 1]));
             }
@@ -373,7 +377,7 @@ public class Machine {
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
             return pc == frame.pc &&
-                    function.equals(frame.function);
+                function.equals(frame.function);
         }
 
         @Override
@@ -395,9 +399,9 @@ public class Machine {
 
     public static class ParserFrame extends Frame {
         private final String source;
-        private final ParseException exception;
+        private final ScriptException exception;
 
-        public ParserFrame(String source, ParseException exception) {
+        public ParserFrame(String source, ScriptException exception) {
             super(null, null, null, null, null);
             this.source = source;
             this.exception = exception;
