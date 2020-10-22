@@ -59,6 +59,8 @@ public interface Visitor {
             visit((AssignAttributeStatement) statement);
         } else if (statement instanceof ImportStatement) {
             visit((ImportStatement) statement);
+        } else if (statement instanceof UnitStatement) {
+            visit((UnitStatement) statement);
         } else {
             throw new RuntimeException("Unknown statement: " + statement);
         }
@@ -89,5 +91,8 @@ public interface Visitor {
     }
 
     default void visit(ImportStatement statement) {
+    }
+
+    default void visit(UnitStatement statement) {
     }
 }

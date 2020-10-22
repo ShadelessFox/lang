@@ -1,5 +1,11 @@
 package com.shade.lang.vm;
 
+import com.shade.lang.parser.ParseException;
+import com.shade.lang.parser.Parser;
+import com.shade.lang.parser.Tokenizer;
+import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.parser.node.Node;
+import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
@@ -7,6 +13,10 @@ import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.AbstractFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 
 import static com.shade.lang.parser.gen.Opcode.*;
@@ -30,6 +40,30 @@ public class Machine {
         }
 
         modules.put(module.getName(), module);
+    }
+
+    public void load(String name, String source, Reader reader) throws IOException {
+        Assembler assembler = new Assembler(MAX_CODE_SIZE);
+        Module module = new Module(name, source);
+        Context context = new Context(module);
+
+        try {
+            Parser parser = new Parser(new Tokenizer(reader));
+            Node node = parser.parse(source, Parser.Mode.Unit);
+            node.emit(context, assembler);
+
+            load(module);
+        } catch (ParseException e) {
+            callStack.push(new ParserFrame(source, e));
+            panic(e.getMessage());
+            callStack.pop();
+        }
+    }
+
+    public void load(String name, File file) throws IOException {
+        try (FileReader reader = new FileReader(file)) {
+            load(name, file.getPath(), reader);
+        }
     }
 
     public Object call(String moduleName, String attributeName, Object... args) {
@@ -352,12 +386,28 @@ public class Machine {
 
     public static class NativeFrame extends Frame {
         public NativeFrame(NativeFunction function) {
-            super(function, null, null, null, Collections.emptyMap());
+            super(function, null, null, null, null);
         }
 
         @Override
         public String toString() {
             return getFunction().getModule().getName() + "/" + getFunction().getName() + "(Native Method)";
+        }
+    }
+
+    public static class ParserFrame extends Frame {
+        private final String source;
+        private final ParseException exception;
+
+        public ParserFrame(String source, ParseException exception) {
+            super(null, null, null, null, null);
+            this.source = source;
+            this.exception = exception;
+        }
+
+        @Override
+        public String toString() {
+            return source + "(" + exception.getRegion().getBegin() + ")";
         }
     }
 }

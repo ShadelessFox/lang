@@ -1,5 +1,6 @@
 package com.shade.lang.parser;
 
+import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.expr.*;
 import com.shade.lang.parser.node.stmt.*;
 import com.shade.lang.parser.token.Region;
@@ -19,18 +20,37 @@ public class Parser {
         this.advance();
     }
 
-    public Statement declarativeTopStatement() throws ParseException, IOException {
-        Region start = token.getRegion();
-        Token token = expect(TokenKind.Import, TokenKind.Def);
-
-        switch (token.getKind()) {
-            case Import:
-                return declareImportStatement(false, start);
-            case Def:
-                return declareFunctionStatement();
+    public Node parse(String source, Parser.Mode mode) throws ParseException, IOException {
+        switch (mode) {
+            case Unit:
+                return parseUnit(source);
+            case Statement:
+                return declarativeStatement();
+            case Expression:
+                return expression();
         }
 
-        throw new RuntimeException("Unreachable");
+        return null;
+    }
+
+    public UnitStatement parseUnit(String name) throws ParseException, IOException {
+        List<Statement> statements = new ArrayList<>();
+
+        while (true) {
+            Region start = token.getRegion();
+            Token token = expect(TokenKind.Import, TokenKind.Def, TokenKind.End);
+
+            switch (token.getKind()) {
+                case Import:
+                    statements.add(declareImportStatement(false, start));
+                    break;
+                case Def:
+                    statements.add(declareFunctionStatement());
+                    break;
+                case End:
+                    return new UnitStatement(name, statements, start.until(token.getRegion()));
+            }
+        }
     }
 
     private ImportStatement declareImportStatement(boolean matchOpening, Region start) throws ParseException, IOException {
@@ -249,7 +269,7 @@ public class Parser {
             }
         }
 
-        throw new RuntimeException("Unreachable");
+        return null;
     }
 
     private boolean matches(TokenKind... kinds) {
@@ -304,5 +324,11 @@ public class Parser {
         Token token = this.token;
         this.token = tokenizer.next();
         return token;
+    }
+
+    public enum Mode {
+        Unit,
+        Statement,
+        Expression
     }
 }
