@@ -46,8 +46,8 @@ public class CallExpression implements Expression {
 
         callee.emit(context, assembler);
 
-        assembler.span(region.getBegin());
         assembler.imm8(Opcode.CALL);
         assembler.imm8((byte) arguments.size());
+        assembler.span(region.getBegin());
     }
 }

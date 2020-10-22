@@ -20,7 +20,7 @@ public class Launcher {
         }
 
         machine.load("sandbox", new File(path.toURI()));
-        machine.call("sandbox", "main", 0);
+        machine.call("sandbox", "main");
 
         System.exit(machine.getStatus());
     }
