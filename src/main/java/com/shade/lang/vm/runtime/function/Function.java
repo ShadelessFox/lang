@@ -2,6 +2,7 @@ package com.shade.lang.vm.runtime.function;
 
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.ScriptObject;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -20,7 +21,11 @@ public class Function extends AbstractFunction {
 
     @Override
     public void invoke(Machine machine, int argc) {
-        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, lines);
+        ScriptObject[] locals = new ScriptObject[argc];
+        for (int index = argc; index > 0; index--) {
+            locals[index - 1] = machine.getOperandStack().pop();
+        }
+        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, locals, lines);
         machine.getCallStack().push(frame);
     }
 }

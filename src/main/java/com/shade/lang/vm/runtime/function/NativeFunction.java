@@ -4,7 +4,6 @@ import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
-import java.util.stream.IntStream;
 import java.util.function.Function;
 
 public class NativeFunction extends AbstractFunction {
@@ -23,10 +22,13 @@ public class NativeFunction extends AbstractFunction {
          * native function call.
          */
 
+        ScriptObject[] locals = new ScriptObject[argc];
+        for (int index = argc; index > 0; index--) {
+            locals[index - 1] = machine.getOperandStack().pop();
+        }
+
         machine.getCallStack().push(new Machine.NativeFrame(this));
-        final ScriptObject[] arguments = IntStream.range(0, argc).mapToObj(x -> machine.getOperandStack().pop()).toArray(ScriptObject[]::new);
-        final ScriptObject result = prototype.apply(arguments);
+        machine.getOperandStack().push(prototype.apply(locals));
         machine.getCallStack().pop();
-        machine.getOperandStack().push(result);
     }
 }

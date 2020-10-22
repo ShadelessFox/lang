@@ -276,13 +276,15 @@ public class Machine {
         private final AbstractFunction function;
         private final byte[] chunk;
         private final String[] constants;
+        private final ScriptObject[] locals;
         private final Map<Integer, Integer> lines;
         private int pc;
 
-        public Frame(AbstractFunction function, byte[] chunk, String[] constants, Map<Integer, Integer> lines) {
+        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Integer> lines) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
+            this.locals = locals;
             this.lines = lines;
             this.pc = 0;
         }
@@ -326,7 +328,7 @@ public class Machine {
 
     public static class NativeFrame extends Frame {
         public NativeFrame(NativeFunction function) {
-            super(function, null, null, Collections.emptyMap());
+            super(function, null, null, null, Collections.emptyMap());
         }
 
         @Override
