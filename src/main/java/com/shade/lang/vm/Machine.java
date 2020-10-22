@@ -105,6 +105,14 @@ public class Machine {
                     module.setAttribute(frame.nextConstant(), operandStack.pop());
                     break;
                 }
+                case GET_LOCAL: {
+                    operandStack.push(frame.locals[frame.nextImm8()]);
+                    break;
+                }
+                case SET_LOCAL: {
+                    frame.locals[frame.nextImm8()] = operandStack.pop();
+                    break;
+                }
                 case GET_ATTRIBUTE: {
                     String name = frame.nextConstant();
                     ScriptObject target = operandStack.pop();

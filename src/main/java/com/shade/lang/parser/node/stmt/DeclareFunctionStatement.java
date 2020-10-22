@@ -52,7 +52,18 @@ public class DeclareFunctionStatement implements Statement {
     }
 
     @Override
-    public void emit(Module module, Assembler assembler) {
-        throw new RuntimeException("Not implemented");
+    public void emit(Context context, Assembler assembler) {
+        LocalContext localContext = new LocalContext(context);
+        localContext.getLocals().addAll(arguments);
+        body.emit(localContext, assembler);
+
+        Function function = new Function(
+                context.getModule(),
+                name,
+                assembler.getBuffer(),
+                assembler.getConstants(),
+                assembler.getLines());
+
+        context.getModule().setAttribute(name, function);
     }
 }

@@ -104,6 +104,8 @@ public class Assembler {
                 case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
                 case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    %s%n", offset, formatConstant.get()); break;
                 case SET_GLOBAL:    stream.printf("%04x: SET_GLOBAL    %s%n", offset, formatConstant.get()); break;
+                case GET_LOCAL:     stream.printf("%04x: GET_LOCAL     %d%n", offset, buffer.get()); break;
+                case SET_LOCAL:     stream.printf("%04x: SET_LOCAL     %d%n", offset, buffer.get()); break;
                 case GET_ATTRIBUTE: stream.printf("%04x: GET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
                 case SET_ATTRIBUTE: stream.printf("%04x: SET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
                 case ADD:           stream.printf("%04x: ADD%n", offset); break;
@@ -121,6 +123,7 @@ public class Assembler {
                 case RET:           stream.printf("%04x: RET%n", offset); break;
                 case POP:           stream.printf("%04x: POP%n", offset); break;
                 case NOT:           stream.printf("%04x: NOT%n", offset); break;
+                default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                 // @formatter:on
             }
         }
