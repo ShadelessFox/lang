@@ -52,7 +52,9 @@ public class BranchStatement implements Statement {
         pass.emit(module, assembler);
         Assembler.Label end = pass.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
         failLabels.forEach(assembler::bind);
-        fail.emit(module, assembler);
+        if (fail != null) {
+            fail.emit(module, assembler);
+        }
         assembler.bind(end);
     }
 
