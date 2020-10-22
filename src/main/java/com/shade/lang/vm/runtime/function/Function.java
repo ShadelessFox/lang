@@ -1,5 +1,6 @@
 package com.shade.lang.vm.runtime.function;
 
+import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
@@ -10,9 +11,9 @@ import java.util.Map;
 public class Function extends AbstractFunction {
     private final ByteBuffer chunk;
     private final String[] constants;
-    private final Map<Integer, Integer> lines;
+    private final Map<Integer, Region.Span> lines;
 
-    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Integer> lines) {
+    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines) {
         super(module, name);
         this.chunk = chunk;
         this.constants = constants;

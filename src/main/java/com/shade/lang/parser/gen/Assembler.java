@@ -1,5 +1,7 @@
 package com.shade.lang.parser.gen;
 
+import com.shade.lang.parser.token.Region;
+
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -11,7 +13,7 @@ public class Assembler {
     private final ByteBuffer buffer;
     private final Set<Label> labels;
     private final List<String> constants;
-    private final Map<Integer, Integer> lines;
+    private final Map<Integer, Region.Span> lines;
 
     public Assembler(int capacity) {
         this.buffer = ByteBuffer.allocate(capacity);
@@ -36,8 +38,8 @@ public class Assembler {
         buffer.putLong(imm);
     }
 
-    public void line(int line) {
-        lines.put(buffer.position(), line);
+    public void span(Region.Span span) {
+        lines.put(buffer.position(), span);
     }
 
     public int constant(String value) {
@@ -131,11 +133,11 @@ public class Assembler {
             .position(0);
     }
 
-    public List<String> getConstants() {
-        return constants;
+    public String[] getConstants() {
+        return constants.toArray(new String[0]);
     }
 
-    public Map<Integer, Integer> getLines() {
+    public Map<Integer, Region.Span> getLines() {
         return lines;
     }
 

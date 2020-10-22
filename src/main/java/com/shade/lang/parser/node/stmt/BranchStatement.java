@@ -3,8 +3,10 @@ package com.shade.lang.parser.node.stmt;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Visitor;
+import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.expr.BinaryExpression;
 import com.shade.lang.parser.node.expr.Expression;
+import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
 
 import java.util.ArrayList;
@@ -14,11 +16,13 @@ public class BranchStatement implements Statement {
     private final Expression cond;
     private final Statement pass;
     private final Statement fail;
+    private final Region region;
 
-    public BranchStatement(Expression condition, Statement pass, Statement fail) {
+    public BranchStatement(Expression condition, Statement pass, Statement fail, Region region) {
         this.cond = condition;
         this.pass = pass;
         this.fail = fail;
+        this.region = region;
     }
 
     public Expression getCondition() {
@@ -34,45 +38,50 @@ public class BranchStatement implements Statement {
     }
 
     @Override
+    public boolean isControlFlowReturned() {
+        return pass.isControlFlowReturned() && fail.isControlFlowReturned();
+    }
+
+    @Override
+    public Region getRegion() {
+        return region;
+    }
+
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
     @Override
-    public void emit(Module module, Assembler assembler) {
+    public void emit(Context context, Assembler assembler) {
         List<Assembler.Label> passLabels = new ArrayList<>();
         List<Assembler.Label> failLabels = new ArrayList<>();
-        emitCondition(module, assembler, cond, passLabels, failLabels, true);
+        emitCondition(context, assembler, cond, passLabels, failLabels, true);
 
         if (failLabels.isEmpty()) {
             failLabels.add(assembler.jump(Opcode.IF_EQ));
         }
 
         passLabels.forEach(assembler::bind);
-        pass.emit(module, assembler);
+        pass.emit(context, assembler);
         Assembler.Label end = pass.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
         failLabels.forEach(assembler::bind);
         if (fail != null) {
-            fail.emit(module, assembler);
+            fail.emit(context, assembler);
         }
         assembler.bind(end);
     }
 
-    @Override
-    public boolean isControlFlowReturned() {
-        return pass.isControlFlowReturned() && fail.isControlFlowReturned();
-    }
-
-    private void emitCondition(Module module, Assembler assembler, Expression expression, List<Assembler.Label> pass, List<Assembler.Label> fail, boolean top) {
+    private void emitCondition(Context context, Assembler assembler, Expression expression, List<Assembler.Label> pass, List<Assembler.Label> fail, boolean top) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binary = (BinaryExpression) expression;
-            emitCondition(module, assembler, binary.getLhs(), pass, fail, false);
+            emitCondition(context, assembler, binary.getLhs(), pass, fail, false);
             switch (binary.getOperator()) {
                 case And: fail.add(assembler.jump(Opcode.IF_EQ)); break;
                 case Or:  pass.add(assembler.jump(Opcode.IF_NE)); break;
                 default:  throw new RuntimeException("Unsupported operator: " + binary.getOperator());
             }
-            emitCondition(module, assembler, binary.getRhs(), pass, fail, false);
+            emitCondition(context, assembler, binary.getRhs(), pass, fail, false);
             if (top) {
                 switch (binary.getOperator()) {
                     case And: pass.add(assembler.jump(Opcode.IF_NE)); break;
@@ -81,7 +90,7 @@ public class BranchStatement implements Statement {
                 }
             }
         } else {
-            expression.emit(module, assembler);
+            expression.emit(context, assembler);
         }
     }
 }

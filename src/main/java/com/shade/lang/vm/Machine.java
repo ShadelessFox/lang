@@ -1,5 +1,6 @@
 package com.shade.lang.vm;
 
+import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.Value;
@@ -277,10 +278,10 @@ public class Machine {
         private final byte[] chunk;
         private final String[] constants;
         private final ScriptObject[] locals;
-        private final Map<Integer, Integer> lines;
+        private final Map<Integer, Region.Span> lines;
         private int pc;
 
-        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Integer> lines) {
+        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Region.Span> lines) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
@@ -317,7 +318,7 @@ public class Machine {
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
             return pc == frame.pc &&
-                function.equals(frame.function);
+                    function.equals(frame.function);
         }
 
         @Override

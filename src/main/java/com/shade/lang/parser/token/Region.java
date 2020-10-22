@@ -20,8 +20,16 @@ public class Region {
         return new Region(begin, end);
     }
 
+    public Region from(Region begin) {
+        return new Region(begin.begin, end);
+    }
+
     public Region until(Span end) {
         return new Region(begin, end);
+    }
+
+    public Region until(Region end) {
+        return new Region(begin, end.end);
     }
 
     public String of(String contents) {
