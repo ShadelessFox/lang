@@ -39,7 +39,7 @@ public class BranchStatement implements Statement {
 
     @Override
     public boolean isControlFlowReturned() {
-        return pass.isControlFlowReturned() && fail.isControlFlowReturned();
+        return pass.isControlFlowReturned() && (fail == null || fail.isControlFlowReturned());
     }
 
     @Override

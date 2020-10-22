@@ -32,6 +32,8 @@ public class LoadGlobalExpression implements Expression {
 
     @Override
     public void emit(Context context, Assembler assembler) {
+        assembler.span(region.getBegin());
+
         if (context instanceof LocalContext && ((LocalContext) context).hasSlot(name)) {
             LocalContext localContext = (LocalContext) context;
             assembler.imm8(Opcode.GET_LOCAL);
