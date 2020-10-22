@@ -28,6 +28,14 @@ public class UnaryExpression implements Expression {
         rhs.emit(module, assembler);
 
         switch (operator) {
+            case Add:
+                // TODO: Maybe add an implicit conversion to positive number?
+                break;
+            case Sub:
+                assembler.imm8(Opcode.PUSH_INT);
+                assembler.imm32(-1);
+                assembler.imm8(Opcode.MUL);
+                break;
             case Not:
                 assembler.imm8(Opcode.NOT);
                 break;

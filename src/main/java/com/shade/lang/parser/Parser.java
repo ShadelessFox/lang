@@ -167,7 +167,7 @@ public class Parser {
     }
 
     private Expression unaryExpression() throws ParseException, IOException {
-        Token operator = consume(TokenKind.Not);
+        Token operator = consume(TokenKind.Not, TokenKind.Add, TokenKind.Sub);
         if (operator != null) {
             return new UnaryExpression(primaryExpression(), operator.getKind());
         }
