@@ -5,7 +5,7 @@ import com.shade.lang.parser.node.Visitor;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.Function;
 
 import java.util.Collections;
@@ -53,6 +53,8 @@ public class DeclareFunctionStatement implements Statement {
 
     @Override
     public void emit(Context context, Assembler assembler) {
+        assembler = new Assembler(Machine.MAX_CODE_SIZE);
+
         LocalContext localContext = new LocalContext(context);
         localContext.getLocals().addAll(arguments);
         body.emit(localContext, assembler);

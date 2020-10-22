@@ -41,9 +41,6 @@ public class Parser {
             Token token = expect(TokenKind.Import, TokenKind.Def, TokenKind.End);
 
             switch (token.getKind()) {
-                case Import:
-                    statements.add(declareImportStatement(false, start));
-                    break;
                 case Def:
                     statements.add(declareFunctionStatement());
                     break;
@@ -66,7 +63,11 @@ public class Parser {
     }
 
     public Statement declarativeStatement() throws ParseException, IOException {
+        Region start = token.getRegion();
         switch (token.getKind()) {
+            case Import:
+                advance();
+                return declareImportStatement(false, start);
             case Let:
                 advance();
                 return declareVariableStatement();
@@ -83,7 +84,7 @@ public class Parser {
 
         Expression expression = expression();
 
-        Region start = token.getRegion();
+        start = token.getRegion();
 
         if (consume(TokenKind.Assign) != null) {
             Expression value = expression();

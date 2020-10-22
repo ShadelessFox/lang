@@ -43,14 +43,13 @@ public class Machine {
     }
 
     public void load(String name, String source, Reader reader) throws IOException {
-        Assembler assembler = new Assembler(MAX_CODE_SIZE);
         Module module = new Module(name, source);
         Context context = new Context(module);
 
         try {
             Parser parser = new Parser(new Tokenizer(reader));
             Node node = parser.parse(source, Parser.Mode.Unit);
-            node.emit(context, assembler);
+            node.emit(context, null);
 
             load(module);
         } catch (ParseException e) {
@@ -249,7 +248,6 @@ public class Machine {
                     if (callStack.empty()) {
                         return;
                     }
-                    callStack.peek().pc -= 1;
                     break;
                 }
                 case POP: {
