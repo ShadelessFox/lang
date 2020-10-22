@@ -7,26 +7,26 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.expr.BinaryExpression;
 import com.shade.lang.parser.node.expr.Expression;
 import com.shade.lang.parser.token.Region;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.parser.token.TokenFlag;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BranchStatement implements Statement {
-    private final Expression cond;
+    private final Expression condition;
     private final Statement pass;
     private final Statement fail;
     private final Region region;
 
     public BranchStatement(Expression condition, Statement pass, Statement fail, Region region) {
-        this.cond = condition;
+        this.condition = condition;
         this.pass = pass;
         this.fail = fail;
         this.region = region;
     }
 
     public Expression getCondition() {
-        return cond;
+        return condition;
     }
 
     public Statement getPass() {
@@ -56,7 +56,7 @@ public class BranchStatement implements Statement {
     public void emit(Context context, Assembler assembler) {
         List<Assembler.Label> passLabels = new ArrayList<>();
         List<Assembler.Label> failLabels = new ArrayList<>();
-        emitCondition(context, assembler, cond, passLabels, failLabels, true);
+        emitCondition(context, assembler, condition, passLabels, failLabels, true);
 
         if (failLabels.isEmpty()) {
             failLabels.add(assembler.jump(Opcode.IF_EQ));
@@ -75,19 +75,60 @@ public class BranchStatement implements Statement {
     private void emitCondition(Context context, Assembler assembler, Expression expression, List<Assembler.Label> pass, List<Assembler.Label> fail, boolean top) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binary = (BinaryExpression) expression;
-            emitCondition(context, assembler, binary.getLhs(), pass, fail, false);
-            switch (binary.getOperator()) {
-                case And: fail.add(assembler.jump(Opcode.IF_EQ)); break;
-                case Or:  pass.add(assembler.jump(Opcode.IF_NE)); break;
-                default:  throw new RuntimeException("Unsupported operator: " + binary.getOperator());
+
+            if (!binary.getOperator().hasFlag(TokenFlag.BRANCHING)) {
+                binary.emit(context, assembler);
+                return;
             }
+
+            emitCondition(context, assembler, binary.getLhs(), pass, fail, false);
+
+            switch (binary.getOperator()) {
+                case And:
+                    fail.add(assembler.jump(Opcode.IF_EQ));
+                    break;
+                case Or:
+                    pass.add(assembler.jump(Opcode.IF_NE));
+                    break;
+            }
+
             emitCondition(context, assembler, binary.getRhs(), pass, fail, false);
-            if (top) {
-                switch (binary.getOperator()) {
-                    case And: pass.add(assembler.jump(Opcode.IF_NE)); break;
-                    case Or:  fail.add(assembler.jump(Opcode.IF_EQ)); break;
-                    default:  throw new RuntimeException("Unsupported operator: " + binary.getOperator());
-                }
+
+            switch (binary.getOperator()) {
+                case And:
+                    if (top) {
+                        pass.add(assembler.jump(Opcode.IF_NE));
+                    }
+                    break;
+                case Or:
+                    if (top) {
+                        fail.add(assembler.jump(Opcode.IF_EQ));
+                    }
+                    break;
+                case Eq:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_NE));
+                    break;
+                case NotEq:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_EQ));
+                    break;
+                case Less:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_GE));
+                    break;
+                case LessEq:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_GT));
+                    break;
+                case Greater:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_LE));
+                    break;
+                case GreaterEq:
+                    assembler.imm8(Opcode.TEST);
+                    fail.add(assembler.jump(Opcode.IF_LT));
+                    break;
             }
         } else {
             expression.emit(context, assembler);

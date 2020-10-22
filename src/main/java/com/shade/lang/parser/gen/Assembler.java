@@ -116,6 +116,7 @@ public class Assembler {
                 case SUB:           stream.printf("%04x: SUB%n", offset); break;
                 case MUL:           stream.printf("%04x: MUL%n", offset); break;
                 case DIV:           stream.printf("%04x: DIV%n", offset); break;
+                case TEST:          stream.printf("%04x: TEST%n", offset); break;
                 case JUMP:          stream.printf("%04x: JUMP          %s%n", offset, formatLabel.get()); break;
                 case IF_EQ:         stream.printf("%04x: IF_EQ         %s%n", offset, formatLabel.get()); break;
                 case IF_NE:         stream.printf("%04x: IF_NE         %s%n", offset, formatLabel.get()); break;

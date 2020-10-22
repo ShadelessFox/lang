@@ -206,6 +206,12 @@ public class Machine {
                     operandStack.push(new Value(a / b));
                     break;
                 }
+                case TEST: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(Integer.compare(a, b)));
+                    break;
+                }
                 case JUMP: {
                     frame.pc += frame.nextImm32();
                     break;

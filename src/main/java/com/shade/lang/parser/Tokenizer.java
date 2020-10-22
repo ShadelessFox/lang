@@ -98,8 +98,6 @@ public class Tokenizer {
                     return new Token(TokenKind.BraceL, chRegion);
                 case '}':
                     return new Token(TokenKind.BraceR, chRegion);
-                case '=':
-                    return new Token(TokenKind.Assign, chRegion);
                 case ';':
                     return new Token(TokenKind.Semicolon, chRegion);
                 case ',':
@@ -114,6 +112,29 @@ public class Tokenizer {
                     return new Token(TokenKind.Mul, chRegion);
                 case '/':
                     return new Token(TokenKind.Div, chRegion);
+                case '<':
+                    if (ch == '=') {
+                        read();
+                        return new Token(TokenKind.LessEq, chRegion);
+                    }
+                    return new Token(TokenKind.Less, chRegion);
+                case '>':
+                    if (ch == '=') {
+                        read();
+                        return new Token(TokenKind.GreaterEq, chRegion);
+                    }
+                    return new Token(TokenKind.Greater, chRegion);
+                case '=':
+                    if (ch == '=') {
+                        read();
+                        return new Token(TokenKind.Eq, chRegion);
+                    }
+                    return new Token(TokenKind.Assign, chRegion);
+                case '!':
+                    if (ch == '=') {
+                        read();
+                        return new Token(TokenKind.NotEq, chRegion);
+                    }
                 default:
                     throw new ScriptException("Unknown symbol: '" + next + "' (" + (int) next + ")", chRegion);
             }
