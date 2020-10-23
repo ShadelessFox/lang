@@ -42,6 +42,8 @@ public class Machine {
             throw new RuntimeException("Module already loaded: " + module.getName());
         }
 
+        modules.put(module.getName(), module);
+
         for (ImportStatement statement : module.getImports()) {
             if (statement.isPath()) {
                 throw new ScriptException("Loading modules from file is not supported yet", statement.getRegion());
@@ -50,7 +52,8 @@ public class Machine {
             String name = statement.getName();
 
             if (modules.containsKey(name)) {
-                module.setAttribute(name, modules.get(name));
+                String alias = statement.getAlias() == null ? name : statement.getAlias();
+                module.setAttribute(alias, modules.get(name));
             } else {
                 throw new ScriptException("No such module named '" + statement.getName() + "'", statement.getRegion());
             }

@@ -11,14 +11,13 @@ import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
 
 import java.io.IOException;
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.shade.lang.parser.token.TokenKind.Number;
 import static com.shade.lang.parser.token.TokenKind.String;
 import static com.shade.lang.parser.token.TokenKind.*;
-
-import java.lang.String;
 
 public class Parser {
     private final Tokenizer tokenizer;
@@ -65,8 +64,12 @@ public class Parser {
 
     private ImportStatement parseImportStatement(Region start) throws ScriptException, IOException {
         Token name = expect(Symbol, String);
+        String alias = null;
+        if (consume(Assign) != null) {
+            alias = expect(Symbol).getValue();
+        }
         Token end = expect(Semicolon);
-        return new ImportStatement(name.getValue(), name.getKind() == String, start.until(end.getRegion()));
+        return new ImportStatement(name.getValue(), alias, name.getKind() == String, start.until(end.getRegion()));
     }
 
     private Statement parseStatement() throws ScriptException, IOException {

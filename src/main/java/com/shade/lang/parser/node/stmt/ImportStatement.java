@@ -7,11 +7,13 @@ import com.shade.lang.parser.token.Region;
 
 public class ImportStatement extends Statement {
     private final String name;
+    private final String alias;
     private final boolean path;
 
-    public ImportStatement(String name, boolean path, Region region) {
+    public ImportStatement(String name, String alias, boolean path, Region region) {
         super(region);
         this.name = name;
+        this.alias = alias;
         this.path = path;
     }
 
@@ -27,6 +29,10 @@ public class ImportStatement extends Statement {
 
     public String getName() {
         return name;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public boolean isPath() {
