@@ -1,7 +1,7 @@
 package com.shade.lang.vm;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Parser;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
@@ -13,10 +13,7 @@ import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.AbstractFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +28,9 @@ public class Machine {
     private final Map<String, Module> modules = new HashMap<>();
     private final Stack<ScriptObject> operandStack = new Stack<>();
     private final Stack<Frame> callStack = new Stack<>();
+
+    private PrintStream out = System.out;
+    private PrintStream err = System.err;
 
     private boolean halted;
     private int status;
@@ -68,8 +68,7 @@ public class Machine {
         try {
             Parser parser = new Parser(new Tokenizer(reader));
             Node node = parser.parse(source, Parser.Mode.Unit);
-            node.emit(context, null);
-
+            node.compile(context, null);
             load(module);
         } catch (ScriptException e) {
             callStack.push(new ParserFrame(source, e));
@@ -206,56 +205,60 @@ public class Machine {
                     operandStack.push(new Value(a / b));
                     break;
                 }
-                case TEST: {
+                case JUMP: {
+                    frame.pc += frame.nextImm32() - 4;
+                    break;
+                }
+                case JUMP_IF_TRUE: {
+                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int offset = frame.nextImm32();
+                    if (value > 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case JUMP_IF_FALSE: {
+                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int offset = frame.nextImm32();
+                    if (value == 0) {
+                        frame.pc += offset - 4;
+                    }
+                    break;
+                }
+                case CMP_EQ: {
                     int b = (int) ((Value) operandStack.pop()).getValue();
                     int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(Integer.compare(a, b)));
+                    operandStack.push(new Value(a == b ? 1 : 0));
                     break;
                 }
-                case JUMP: {
-                    frame.pc += frame.nextImm32();
+                case CMP_NE: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a != b ? 1 : 0));
                     break;
                 }
-                case IF_EQ: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() == 0) {
-                        frame.pc += offset - 4;
-                    }
+                case CMP_LT: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a < b ? 1 : 0));
                     break;
                 }
-                case IF_NE: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() != 0) {
-                        frame.pc += offset - 4;
-                    }
+                case CMP_LE: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a <= b ? 1 : 0));
                     break;
                 }
-                case IF_LT: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() < 0) {
-                        frame.pc += offset - 4;
-                    }
+                case CMP_GT: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a > b ? 1 : 0));
                     break;
                 }
-                case IF_LE: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() <= 0) {
-                        frame.pc += offset - 4;
-                    }
-                    break;
-                }
-                case IF_GT: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() > 0) {
-                        frame.pc += offset - 4;
-                    }
-                    break;
-                }
-                case IF_GE: {
-                    int offset = frame.nextImm32();
-                    if ((int) ((Value) operandStack.pop()).getValue() >= 0) {
-                        frame.pc += offset - 4;
-                    }
+                case CMP_GE: {
+                    int b = (int) ((Value) operandStack.pop()).getValue();
+                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a >= b ? 1 : 0));
                     break;
                 }
                 case CALL: {
@@ -284,6 +287,19 @@ public class Machine {
                     operandStack.push(new Value(value == 0 ? 1 : 0));
                     break;
                 }
+                case ASSERT: {
+                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    String source = frame.nextConstant();
+                    String message = frame.nextConstant();
+                    if (value == 0) {
+                        if (message != null) {
+                            panic("Assertion failed '" + source + "': " + message);
+                        } else {
+                            panic("Assertion failed '" + source + "'");
+                        }
+                    }
+                    break;
+                }
                 default:
                     panic(String.format("Not implemented opcode: %#04x", frame.chunk[frame.pc - 1]));
             }
@@ -294,7 +310,7 @@ public class Machine {
         int lastFrameRepeated = 0;
         Frame lastFrame = null;
 
-        System.err.println("Panicking: " + message);
+        err.println("Panicking: " + message);
 
         for (int index = callStack.size(); index > 0; index--) {
             Frame currentFrame = callStack.get(index - 1);
@@ -304,14 +320,14 @@ public class Machine {
             }
 
             if (lastFrameRepeated < 3) {
-                System.err.println("    at " + currentFrame);
+                err.println("    at " + currentFrame);
             }
 
             lastFrame = currentFrame;
         }
 
         if (lastFrameRepeated > 0) {
-            System.err.println("    [repeated " + lastFrameRepeated + " more time(-s)]");
+            err.println("    [repeated " + lastFrameRepeated + " more time(-s)]");
         }
 
         halt(-1);
@@ -328,6 +344,22 @@ public class Machine {
 
     public Stack<Frame> getCallStack() {
         return callStack;
+    }
+
+    public PrintStream getOut() {
+        return out;
+    }
+
+    public void setOut(PrintStream out) {
+        this.out = out;
+    }
+
+    public PrintStream getErr() {
+        return err;
+    }
+
+    public void setErr(PrintStream err) {
+        this.err = err;
     }
 
     public boolean isHalted() {
@@ -370,7 +402,7 @@ public class Machine {
         }
 
         private int nextImm32() {
-            return chunk[pc++] << 24 | chunk[pc++] << 16 | chunk[pc++] << 8 | chunk[pc++];
+            return (chunk[pc++] & 0xff) << 24 | (chunk[pc++] & 0xff) << 16 | (chunk[pc++] & 0xff) << 8 | (chunk[pc++] & 0xff);
         }
 
         private byte nextImm8() {

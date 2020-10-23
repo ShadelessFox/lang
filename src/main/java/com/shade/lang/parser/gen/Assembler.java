@@ -88,46 +88,50 @@ public class Assembler {
             if (!labels.containsKey(offset)) {
                 labels.put(offset, labels.size());
             }
-            return String.format(".L%d (%04x, +%d)", labels.get(offset), offset, offset - buffer.position() + 4);
+            return String.format("%04x    (#L%d)", offset, labels.get(offset));
+        };
+
+        final Supplier<String> line = () -> {
+            int offset = buffer.position() - 1;
+            Integer label = labels.get(offset);
+            if (label != null) {
+                return String.format("#L%-2d %04x", label, offset);
+            } else {
+                return String.format("     %04x", offset);
+            }
         };
 
         while (buffer.remaining() >= 0) {
-            final int offset = buffer.position();
-
-            Integer label = labels.get(offset);
-            if (label != null) {
-                System.out.printf(".L%d%n", label);
-            }
-
             if (!buffer.hasRemaining())
                 break;
 
             switch (buffer.get()) {
                 // @formatter:off
-                case PUSH_CONST:    stream.printf("%04x: PUSH_CONST    %s%n", offset, formatConstant.get()); break;
-                case PUSH_INT:      stream.printf("%04x: PUSH_INT      %#x%n", offset, buffer.getInt()); break;
-                case GET_GLOBAL:    stream.printf("%04x: GET_GLOBAL    %s%n", offset, formatConstant.get()); break;
-                case SET_GLOBAL:    stream.printf("%04x: SET_GLOBAL    %s%n", offset, formatConstant.get()); break;
-                case GET_LOCAL:     stream.printf("%04x: GET_LOCAL     %d%n", offset, buffer.get()); break;
-                case SET_LOCAL:     stream.printf("%04x: SET_LOCAL     %d%n", offset, buffer.get()); break;
-                case GET_ATTRIBUTE: stream.printf("%04x: GET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
-                case SET_ATTRIBUTE: stream.printf("%04x: SET_ATTRIBUTE %s%n", offset, formatConstant.get()); break;
-                case ADD:           stream.printf("%04x: ADD%n", offset); break;
-                case SUB:           stream.printf("%04x: SUB%n", offset); break;
-                case MUL:           stream.printf("%04x: MUL%n", offset); break;
-                case DIV:           stream.printf("%04x: DIV%n", offset); break;
-                case TEST:          stream.printf("%04x: TEST%n", offset); break;
-                case JUMP:          stream.printf("%04x: JUMP          %s%n", offset, formatLabel.get()); break;
-                case IF_EQ:         stream.printf("%04x: IF_EQ         %s%n", offset, formatLabel.get()); break;
-                case IF_NE:         stream.printf("%04x: IF_NE         %s%n", offset, formatLabel.get()); break;
-                case IF_LT:         stream.printf("%04x: IF_LT         %s%n", offset, formatLabel.get()); break;
-                case IF_LE:         stream.printf("%04x: IF_LE         %s%n", offset, formatLabel.get()); break;
-                case IF_GT:         stream.printf("%04x: IF_GT         %s%n", offset, formatLabel.get()); break;
-                case IF_GE:         stream.printf("%04x: IF_GE         %s%n", offset, formatLabel.get()); break;
-                case CALL:          stream.printf("%04x: CALL          %d%n", offset, buffer.get()); break;
-                case RET:           stream.printf("%04x: RET%n", offset); break;
-                case POP:           stream.printf("%04x: POP%n", offset); break;
-                case NOT:           stream.printf("%04x: NOT%n", offset); break;
+                case PUSH_CONST:    stream.printf("%s: PUSH_CONST    %s%n", line.get(), formatConstant.get()); break;
+                case PUSH_INT:      stream.printf("%s: PUSH_INT      %#x%n", line.get(), buffer.getInt()); break;
+                case GET_GLOBAL:    stream.printf("%s: GET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
+                case SET_GLOBAL:    stream.printf("%s: SET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
+                case GET_LOCAL:     stream.printf("%s: GET_LOCAL     %d%n", line.get(), buffer.get()); break;
+                case SET_LOCAL:     stream.printf("%s: SET_LOCAL     %d%n", line.get(), buffer.get()); break;
+                case GET_ATTRIBUTE: stream.printf("%s: GET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
+                case SET_ATTRIBUTE: stream.printf("%s: SET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
+                case ADD:           stream.printf("%s: ADD%n", line.get()); break;
+                case SUB:           stream.printf("%s: SUB%n", line.get()); break;
+                case MUL:           stream.printf("%s: MUL%n", line.get()); break;
+                case DIV:           stream.printf("%s: DIV%n", line.get()); break;
+                case JUMP:          stream.printf("%s: JUMP          %s%n", line.get(), formatLabel.get()); break;
+                case JUMP_IF_TRUE:  stream.printf("%s: JUMP_IF_TRUE  %s%n", line.get(), formatLabel.get()); break;
+                case JUMP_IF_FALSE: stream.printf("%s: JUMP_IF_FALSE %s%n", line.get(), formatLabel.get()); break;
+                case CMP_EQ:        stream.printf("%s: CMP_EQ%n", line.get()); break;
+                case CMP_NE:        stream.printf("%s: CMP_NE%n", line.get()); break;
+                case CMP_LT:        stream.printf("%s: CMP_LT%n", line.get()); break;
+                case CMP_LE:        stream.printf("%s: CMP_LE%n", line.get()); break;
+                case CMP_GT:        stream.printf("%s: CMP_GT%n", line.get()); break;
+                case CMP_GE:        stream.printf("%s: CMP_GE%n", line.get()); break;
+                case CALL:          stream.printf("%s: CALL          %d%n", line.get(), buffer.get()); break;
+                case RET:           stream.printf("%s: RET%n", line.get()); break;
+                case POP:           stream.printf("%s: POP%n", line.get()); break;
+                case NOT:           stream.printf("%s: NOT%n", line.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                 // @formatter:on
             }
@@ -135,7 +139,7 @@ public class Assembler {
     }
 
     public ByteBuffer getBuffer() {
-        return (ByteBuffer) ByteBuffer
+        return ByteBuffer
             .allocate(buffer.position())
             .put(buffer.array(), 0, buffer.position())
             .position(0);

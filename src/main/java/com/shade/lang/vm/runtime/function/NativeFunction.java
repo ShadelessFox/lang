@@ -4,12 +4,12 @@ import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public class NativeFunction extends AbstractFunction {
-    private final Function<ScriptObject[], ScriptObject> prototype;
+    private final BiFunction<Machine, ScriptObject[], ScriptObject> prototype;
 
-    public NativeFunction(Module module, String name, Function<ScriptObject[], ScriptObject> prototype) {
+    public NativeFunction(Module module, String name, BiFunction<Machine, ScriptObject[], ScriptObject> prototype) {
         super(module, name);
         this.prototype = prototype;
     }
@@ -28,7 +28,7 @@ public class NativeFunction extends AbstractFunction {
         }
 
         machine.getCallStack().push(new Machine.NativeFrame(this));
-        machine.getOperandStack().push(prototype.apply(locals));
+        machine.getOperandStack().push(prototype.apply(machine, locals));
         machine.getCallStack().pop();
     }
 }

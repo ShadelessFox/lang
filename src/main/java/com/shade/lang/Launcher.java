@@ -2,6 +2,7 @@ package com.shade.lang;
 
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
 import java.io.File;
@@ -20,9 +21,11 @@ public class Launcher {
         }
 
         machine.load("sandbox", new File(path.toURI()));
-        machine.call("sandbox", "main");
 
-        System.exit(machine.getStatus());
+        if (!machine.isHalted()) {
+            machine.call("sandbox", "main");
+            System.exit(machine.getStatus());
+        }
     }
 
     private static class Builtin extends Module {
@@ -31,8 +34,15 @@ public class Launcher {
         public Builtin() {
             super("builtin", "<builtin>");
 
-            setAttribute("print", new NativeFunction(this, "print", args -> {
-                System.out.println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+            setAttribute("print", new NativeFunction(this, "print", (machine, args) -> {
+                machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+                return null;
+            }));
+
+            setAttribute("assert", new NativeFunction(this, "assert", (machine, args) -> {
+                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || (int) x.getValue() == 0)) {
+                    machine.panic("Assertion failed");
+                }
                 return null;
             }));
         }

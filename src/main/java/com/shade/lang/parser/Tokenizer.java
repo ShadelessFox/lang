@@ -9,6 +9,7 @@ import java.io.Reader;
 
 public class Tokenizer {
     private final Reader reader;
+    private final StringBuilder buffer;
     private int line;
     private int column;
     private int offset;
@@ -16,6 +17,7 @@ public class Tokenizer {
 
     public Tokenizer(Reader reader) throws IOException {
         this.reader = reader;
+        this.buffer = new StringBuilder();
         this.line = 1;
         this.column = 1;
         this.read();
@@ -49,6 +51,8 @@ public class Tokenizer {
                         return new Token(TokenKind.Not, new Region(start, span()));
                     case "import":
                         return new Token(TokenKind.Import, new Region(start, span()));
+                    case "assert":
+                        return new Token(TokenKind.Assert, new Region(start, span()));
                     default:
                         return new Token(TokenKind.Symbol, new Region(start, span()), builder.toString());
                 }
@@ -141,6 +145,10 @@ public class Tokenizer {
         }
     }
 
+    public String getBuffer() {
+        return buffer.toString();
+    }
+
     private Region.Span span() {
         return new Region.Span(line, column, offset);
     }
@@ -153,12 +161,15 @@ public class Tokenizer {
             } else {
                 column += 1;
             }
+
+            offset += 1;
         }
 
         char last = ch;
 
         ch = (char) reader.read();
-        offset += 1;
+
+        buffer.append(ch);
 
         return last;
     }

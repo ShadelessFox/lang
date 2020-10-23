@@ -1,28 +1,18 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.parser.gen.Assembler;
-import com.shade.lang.parser.gen.Opcode;
-import com.shade.lang.parser.node.Visitor;
+import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 
-public class ImportStatement implements Statement {
+public class ImportStatement extends Statement {
     private final String name;
     private final boolean path;
-    private final Region region;
 
     public ImportStatement(String name, boolean path, Region region) {
+        super(region);
         this.name = name;
         this.path = path;
-        this.region = region;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public boolean isPath() {
-        return path;
     }
 
     @Override
@@ -31,17 +21,15 @@ public class ImportStatement implements Statement {
     }
 
     @Override
-    public Region getRegion() {
-        return region;
-    }
-
-    @Override
-    public void emit(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) {
         context.getModule().getImports().add(this);
     }
 
-    @Override
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
+    public String getName() {
+        return name;
+    }
+
+    public boolean isPath() {
+        return path;
     }
 }

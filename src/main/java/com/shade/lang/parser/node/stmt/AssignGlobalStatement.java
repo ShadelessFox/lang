@@ -2,29 +2,20 @@ package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
-import com.shade.lang.parser.node.Visitor;
+import com.shade.lang.parser.node.Expression;
+import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.context.LocalContext;
-import com.shade.lang.parser.node.expr.Expression;
 import com.shade.lang.parser.token.Region;
 
-public class AssignGlobalStatement implements Statement {
+public class AssignGlobalStatement extends Statement {
     private final String name;
     private final Expression value;
-    private final Region region;
 
     public AssignGlobalStatement(String name, Expression value, Region region) {
+        super(region);
         this.name = name;
         this.value = value;
-        this.region = region;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Expression getValue() {
-        return value;
     }
 
     @Override
@@ -33,13 +24,8 @@ public class AssignGlobalStatement implements Statement {
     }
 
     @Override
-    public Region getRegion() {
-        return region;
-    }
-
-    @Override
-    public void emit(Context context, Assembler assembler) {
-        value.emit(context, assembler);
+    public void compile(Context context, Assembler assembler) {
+        value.compile(context, assembler);
 
         if (context instanceof LocalContext && ((LocalContext) context).hasSlot(name)) {
             LocalContext localContext = (LocalContext) context;
@@ -51,8 +37,11 @@ public class AssignGlobalStatement implements Statement {
         }
     }
 
-    @Override
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
+    public String getName() {
+        return name;
+    }
+
+    public Expression getValue() {
+        return value;
     }
 }

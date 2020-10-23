@@ -14,9 +14,10 @@ public enum TokenKind {
     Else("else", 0, TokenFlag.QUOTED),
     Return("return", 0, TokenFlag.QUOTED),
     Not("not", 0, TokenFlag.QUOTED),
-    And("and", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    Or("or", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
     Import("import", 0, TokenFlag.QUOTED),
+    Assert("import", 0, TokenFlag.QUOTED),
+    And("and", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
+    Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
@@ -28,22 +29,18 @@ public enum TokenKind {
     Comma(",", 0, TokenFlag.QUOTED),
     Dot(".", 0, TokenFlag.QUOTED),
 
-    Eq("==", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    NotEq("!=", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    Less("<", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    LessEq("<=", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    Greater(">", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
-    GreaterEq(">=", 0, TokenFlag.QUOTED | TokenFlag.BRANCHING),
+    Eq("==", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    NotEq("!=", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    Less("<", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    LessEq("<=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    Greater(">", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    GreaterEq(">=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
 
-    Add("+", 0, TokenFlag.QUOTED), AddAssign("+=", 0, TokenFlag.QUOTED),
-    Sub("-", 0, TokenFlag.QUOTED), SubAssign("-=", 0, TokenFlag.QUOTED),
-    Mul("*", 0, TokenFlag.QUOTED), MulAssign("*=", 0, TokenFlag.QUOTED),
-    Div("/", 0, TokenFlag.QUOTED), DivAssign("/=", 0, TokenFlag.QUOTED),
-    BitAnd("&", 0, TokenFlag.QUOTED), BitAndAssign("&=", 0, TokenFlag.QUOTED),
-    BitOr("|", 0, TokenFlag.QUOTED), BitOrAssign("|=", 0, TokenFlag.QUOTED),
-    Xor("^", 0, TokenFlag.QUOTED), XorAssign("^=", 0, TokenFlag.QUOTED),
-    Shl("<<", 0, TokenFlag.QUOTED), ShlAssign("<<=", 0, TokenFlag.QUOTED),
-    Shr(">>", 0, TokenFlag.QUOTED), ShrAssign(">>=", 0, TokenFlag.QUOTED);
+    Add("+", 4, TokenFlag.QUOTED | TokenFlag.BINARY),
+    Sub("-", 4, TokenFlag.QUOTED | TokenFlag.BINARY),
+
+    Mul("*", 5, TokenFlag.QUOTED | TokenFlag.BINARY),
+    Div("/", 5, TokenFlag.QUOTED | TokenFlag.BINARY);
 
     private final String name;
     private final int precedence;
