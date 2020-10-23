@@ -208,7 +208,8 @@ public class Parser {
         Region start = token.getRegion();
         Token operator = consume(Not, Add, Sub);
         if (operator != null) {
-            return new UnaryExpression(parsePrimaryExpression(), operator.getKind(), start.until(token.getRegion()));
+            Expression rhs = parsePrimaryExpression();
+            return new UnaryExpression(rhs, operator.getKind(), start.until(rhs.getRegion()));
         }
         return parsePrimaryExpression();
     }
@@ -219,8 +220,8 @@ public class Parser {
 
         if (token.getKind() == ParenL) {
             Expression expr = parseExpression();
-            expect(ParenR);
-            return expr;
+            Token end = expect(ParenR);
+            return new CompoundExpression(expr, start.until(end.getRegion()));
         }
 
         if (token.getKind() == Symbol) {
@@ -256,7 +257,7 @@ public class Parser {
             return new LoadConstantExpression<>(Integer.parseInt(token.getValue()), start.until(token.getRegion()));
         }
 
-        return null;
+        throw new AssertionError("Unreachable");
     }
 
     private boolean matches(TokenKind... kinds) {

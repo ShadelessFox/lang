@@ -132,6 +132,7 @@ public class Assembler {
                 case RET:           stream.printf("%s: RET%n", line.get()); break;
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
                 case NOT:           stream.printf("%s: NOT%n", line.get()); break;
+                case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                 // @formatter:on
             }
@@ -139,7 +140,7 @@ public class Assembler {
     }
 
     public ByteBuffer getBuffer() {
-        return ByteBuffer
+        return (ByteBuffer) ByteBuffer
             .allocate(buffer.position())
             .put(buffer.array(), 0, buffer.position())
             .position(0);

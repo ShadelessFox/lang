@@ -1,0 +1,25 @@
+package com.shade.lang.parser.node.expr;
+
+import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.parser.node.Expression;
+import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.token.Region;
+
+public class CompoundExpression extends Expression {
+    private final Expression expression;
+
+    public CompoundExpression(Expression expression, Region region) {
+        super(region);
+        this.expression = expression;
+    }
+
+    @Override
+    public void compile(Context context, Assembler assembler) {
+        expression.compile(context, assembler);
+        assembler.span(getRegion().getBegin());
+    }
+
+    public Expression getExpression() {
+        return expression;
+    }
+}

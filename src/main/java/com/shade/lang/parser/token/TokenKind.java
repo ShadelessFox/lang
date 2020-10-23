@@ -15,7 +15,7 @@ public enum TokenKind {
     Return("return", 0, TokenFlag.QUOTED),
     Not("not", 0, TokenFlag.QUOTED),
     Import("import", 0, TokenFlag.QUOTED),
-    Assert("import", 0, TokenFlag.QUOTED),
+    Assert("assert", 0, TokenFlag.QUOTED),
     And("and", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
     Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
 

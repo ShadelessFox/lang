@@ -60,8 +60,6 @@ public class Machine {
         }
 
         module.getImports().clear();
-
-        modules.put(module.getName(), module);
     }
 
     public void load(String name, String source, Reader reader) throws IOException {
@@ -209,7 +207,7 @@ public class Machine {
                     break;
                 }
                 case JUMP: {
-                    frame.pc += frame.nextImm32() - 4;
+                    frame.pc += frame.nextImm32();
                     break;
                 }
                 case JUMP_IF_TRUE: {
