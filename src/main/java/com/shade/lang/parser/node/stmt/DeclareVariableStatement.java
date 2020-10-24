@@ -6,7 +6,6 @@ import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
-import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
 
 public class DeclareVariableStatement extends Statement {
@@ -26,12 +25,11 @@ public class DeclareVariableStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        LocalContext localContext = (LocalContext) context;
-
-        if (!localContext.hasSlot(name)) {
+        if (!context.hasSlot(name)) {
+            int slot = context.makeSlot(name);
             value.compile(context, assembler);
             assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(localContext.getSlot(name));
+            assembler.imm8(slot);
         } else {
             throw new ScriptException("Local variable '" + name + "' already declared", getRegion());
         }

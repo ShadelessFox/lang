@@ -12,23 +12,30 @@ public class Function extends AbstractFunction {
     private final ByteBuffer chunk;
     private final String[] constants;
     private final Map<Integer, Region.Span> lines;
+    private final int arguments;
     private final int locals;
 
-    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, int locals) {
+    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, int arguments, int locals) {
         super(module, name);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;
+        this.arguments = arguments;
         this.locals = locals;
     }
 
     @Override
     public void invoke(Machine machine, int argc) {
-        ScriptObject[] locals = new ScriptObject[this.locals + argc];
-        for (int index = argc; index > 0; index--) {
-            locals[index - 1] = machine.getOperandStack().pop();
+        if (arguments != argc) {
+            machine.panic("Function '" + getName() + "' accepts " + arguments + " argument(-s) but " + argc + " provided");
         }
-        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, locals, lines);
+
+        ScriptObject[] objects = new ScriptObject[locals + argc];
+        for (int index = argc; index > 0; index--) {
+            objects[index - 1] = machine.getOperandStack().pop();
+        }
+
+        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, objects, lines);
         machine.getCallStack().push(frame);
     }
 }

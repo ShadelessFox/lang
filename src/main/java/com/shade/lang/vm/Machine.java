@@ -64,7 +64,7 @@ public class Machine {
 
     public void load(String name, String source, Reader reader) throws IOException {
         Module module = new Module(name, source);
-        Context context = new Context(module);
+        Context context = new Context(module, 0);
 
         try {
             Parser parser = new Parser(new Tokenizer(reader));
@@ -213,7 +213,7 @@ public class Machine {
                 case JUMP_IF_TRUE: {
                     int value = (int) ((Value) operandStack.pop()).getValue();
                     int offset = frame.nextImm32();
-                    if (value > 0) {
+                    if (value != 0) {
                         frame.pc += offset - 4;
                     }
                     break;

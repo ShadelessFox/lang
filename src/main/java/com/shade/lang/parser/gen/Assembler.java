@@ -30,6 +30,10 @@ public class Assembler {
         buffer.put(imm ? (byte) 1 : (byte) 0);
     }
 
+    public void imm8(int imm) {
+        buffer.put((byte) (imm & 0xff));
+    }
+
     public void imm16(short imm) {
         buffer.putShort(imm);
     }

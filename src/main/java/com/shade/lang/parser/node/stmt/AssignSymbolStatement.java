@@ -6,7 +6,6 @@ import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
-import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
 
 public class AssignSymbolStatement extends Statement {
@@ -28,10 +27,9 @@ public class AssignSymbolStatement extends Statement {
     public void compile(Context context, Assembler assembler) throws ScriptException {
         value.compile(context, assembler);
 
-        if (context instanceof LocalContext && ((LocalContext) context).hasSlot(name)) {
-            LocalContext localContext = (LocalContext) context;
+        if (context.hasSlot(name)) {
             assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(localContext.getSlot(name));
+            assembler.imm8(context.makeSlot(name));
         } else {
             assembler.imm8(Opcode.SET_GLOBAL);
             assembler.imm32(assembler.constant(name));
