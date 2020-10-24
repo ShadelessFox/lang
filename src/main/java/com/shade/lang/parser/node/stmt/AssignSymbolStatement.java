@@ -8,11 +8,11 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
 
-public class AssignGlobalStatement extends Statement {
+public class AssignSymbolStatement extends Statement {
     private final String name;
     private final Expression value;
 
-    public AssignGlobalStatement(String name, Expression value, Region region) {
+    public AssignSymbolStatement(String name, Expression value, Region region) {
         super(region);
         this.name = name;
         this.value = value;

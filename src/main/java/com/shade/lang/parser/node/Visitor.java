@@ -53,8 +53,8 @@ public interface Visitor {
             visit((DeclareVariableStatement) statement);
         } else if (statement instanceof ExpressionStatement) {
             visit((ExpressionStatement) statement);
-        } else if (statement instanceof AssignGlobalStatement) {
-            visit((AssignGlobalStatement) statement);
+        } else if (statement instanceof AssignSymbolStatement) {
+            visit((AssignSymbolStatement) statement);
         } else if (statement instanceof AssignAttributeStatement) {
             visit((AssignAttributeStatement) statement);
         } else if (statement instanceof ImportStatement) {
@@ -84,7 +84,7 @@ public interface Visitor {
     default void visit(ExpressionStatement statement) {
     }
 
-    default void visit(AssignGlobalStatement statement) {
+    default void visit(AssignSymbolStatement statement) {
     }
 
     default void visit(AssignAttributeStatement statement) {

@@ -1,9 +1,11 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
 
 public class DeclareVariableStatement extends Statement {
@@ -23,7 +25,11 @@ public class DeclareVariableStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) {
-        throw new RuntimeException("Not implemented");
+        value.compile(context, assembler);
+
+        LocalContext localContext = (LocalContext) context;
+        assembler.imm8(Opcode.SET_LOCAL);
+        assembler.imm8(localContext.getSlot(name));
     }
 
     public String getName() {

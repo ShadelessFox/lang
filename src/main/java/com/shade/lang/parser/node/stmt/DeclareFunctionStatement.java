@@ -35,11 +35,11 @@ public class DeclareFunctionStatement extends Statement {
         assembler.span(getRegion().getBegin());
 
         LocalContext localContext = new LocalContext(context);
-        localContext.getLocals().addAll(arguments);
+        localContext.getSlots().addAll(arguments);
         body.compile(localContext, assembler);
 
         if (!body.isControlFlowReturned()) {
-            // TODO: Needs a better way to emit implicit return
+            // TODO: Need a better way to emit implicit return
             assembler.imm8(Opcode.PUSH_INT);
             assembler.imm32(0);
             assembler.imm8(Opcode.RET);
@@ -50,7 +50,8 @@ public class DeclareFunctionStatement extends Statement {
             name,
             assembler.getBuffer(),
             assembler.getConstants(),
-            assembler.getLines());
+            assembler.getLines(),
+            localContext.getSlots().size());
 
         context.getModule().setAttribute(name, function);
     }

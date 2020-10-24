@@ -97,7 +97,7 @@ public class Parser {
                 return new AssignAttributeStatement(attribute.getOwner(), attribute.getName(), value, expression.getRegion().until(end.getRegion()));
             } else if (expression instanceof LoadGlobalExpression) {
                 LoadGlobalExpression attribute = (LoadGlobalExpression) expression;
-                return new AssignGlobalStatement(attribute.getName(), value, expression.getRegion().until(end.getRegion()));
+                return new AssignSymbolStatement(attribute.getName(), value, expression.getRegion().until(end.getRegion()));
             } else {
                 throw new RuntimeException("Not implemented");
             }

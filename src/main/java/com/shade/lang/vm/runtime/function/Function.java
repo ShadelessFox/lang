@@ -12,17 +12,19 @@ public class Function extends AbstractFunction {
     private final ByteBuffer chunk;
     private final String[] constants;
     private final Map<Integer, Region.Span> lines;
+    private final int locals;
 
-    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines) {
+    public Function(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, int locals) {
         super(module, name);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;
+        this.locals = locals;
     }
 
     @Override
     public void invoke(Machine machine, int argc) {
-        ScriptObject[] locals = new ScriptObject[argc];
+        ScriptObject[] locals = new ScriptObject[this.locals + argc];
         for (int index = argc; index > 0; index--) {
             locals[index - 1] = machine.getOperandStack().pop();
         }

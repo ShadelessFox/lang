@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LocalContext extends Context {
-    private final List<String> locals = new ArrayList<>();
+    private final List<String> slots = new ArrayList<>();
 
     public LocalContext(Context parent) {
         super(parent);
@@ -17,20 +17,20 @@ public class LocalContext extends Context {
     }
 
     public boolean hasSlot(String name) {
-        return locals.contains(name);
+        return slots.contains(name);
     }
 
     public byte getSlot(String name) {
-        if (!locals.contains(name)) {
-            locals.add(name);
+        if (!slots.contains(name)) {
+            slots.add(name);
         }
-        if (locals.size() > 255) {
+        if (slots.size() > 255) {
             throw new RuntimeException("Too many locals (allowed 255 maximum)");
         }
-        return (byte) locals.indexOf(name);
+        return (byte) slots.indexOf(name);
     }
 
-    public List<String> getLocals() {
-        return locals;
+    public List<String> getSlots() {
+        return slots;
     }
 }
