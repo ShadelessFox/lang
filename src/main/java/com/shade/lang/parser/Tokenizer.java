@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.Reader;
 
 public class Tokenizer {
+    private static final char CHAR_EOF = '\uFFFF';
+    private static final char CHAR_NEWLINE = '\n';
+
     private final Reader reader;
     private final StringBuilder buffer;
     private int line;
@@ -25,13 +28,23 @@ public class Tokenizer {
 
     public Token next() throws ScriptException, IOException {
         while (true) {
+            if (Character.isWhitespace(ch)) {
+                while (Character.isWhitespace(ch)) {
+                    read();
+                }
+
+                continue;
+            }
+
             Region.Span start = span();
 
             if (Character.isJavaIdentifierStart(ch)) {
                 StringBuilder builder = new StringBuilder();
+
                 while (Character.isJavaIdentifierPart(ch)) {
                     builder.append(read());
                 }
+
                 switch (builder.toString()) {
                     case "let":
                         return new Token(TokenKind.Let, new Region(start, span()));
@@ -61,33 +74,61 @@ public class Tokenizer {
             if (ch == '\'') {
                 StringBuilder builder = new StringBuilder();
                 read();
-                while (ch != '\'' && ch != 65535) {
-                    builder.append(read());
+
+                while (true) {
+                    char next = read();
+
+                    if (next == CHAR_EOF || next == CHAR_NEWLINE) {
+                        throw new ScriptException("String literal is not closed", new Region(start, span()));
+                    }
+
+                    if (next == '\'') {
+                        return new Token(TokenKind.String, new Region(start, span()), builder.toString());
+                    }
+
+                    if (next == '\\') {
+                        char escape = read();
+
+                        switch (escape) {
+                            case 'b':
+                                next = '\b';
+                                break;
+                            case 't':
+                                next = '\t';
+                                break;
+                            case 'n':
+                                next = '\n';
+                                break;
+                            case 'r':
+                                next = '\r';
+                                break;
+                            case '\"':
+                                next = '\"';
+                                break;
+                            case '\'':
+                                next = '\'';
+                                break;
+                            default:
+                                throw new ScriptException("Unknown string literal escape sequence: \\" + next, new Region(start, span()));
+                        }
+                    }
+
+                    builder.append(next);
                 }
-                if (read() == 65535) {
-                    throw new ScriptException("String literal is not closed", new Region(start, span()));
-                }
-                return new Token(TokenKind.String, new Region(start, span()), builder.toString());
             }
 
             if (ch >= '0' && ch <= '9') {
                 StringBuilder builder = new StringBuilder();
+
                 while (ch >= '0' && ch <= '9') {
                     builder.append(read());
                 }
-                Region.Span end = span();
-                return new Token(TokenKind.Number, new Region(start, end), builder.toString());
+
+                return new Token(TokenKind.Number, new Region(start, span()), builder.toString());
             }
 
-            if (ch == 65535) {
+            if (ch == CHAR_EOF) {
                 return new Token(TokenKind.End, new Region(start, start));
-            }
-
-            if (Character.isWhitespace(ch)) {
-                while (Character.isWhitespace(ch)) {
-                    read();
-                }
-                continue;
             }
 
             char next = read();
