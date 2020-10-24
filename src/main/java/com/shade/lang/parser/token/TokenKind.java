@@ -5,6 +5,7 @@ public enum TokenKind {
     Symbol("symbol", 0, TokenFlag.DISPLAY),
     Number("number", 0, TokenFlag.DISPLAY),
     String("string", 0, TokenFlag.DISPLAY),
+    StringPart("string part", 0, TokenFlag.DISPLAY),
     End("end of file", 0, TokenFlag.DISPLAY),
 
     /* Keywords */

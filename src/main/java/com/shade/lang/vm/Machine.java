@@ -183,9 +183,15 @@ public class Machine {
                     break;
                 }
                 case ADD: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a + b));
+                    Object b = ((Value) operandStack.pop()).getValue();
+                    Object a = ((Value) operandStack.pop()).getValue();
+
+                    if (a instanceof Integer && b instanceof Integer) {
+                        operandStack.push(new Value((int) a + (int) b));
+                    } else {
+                        operandStack.push(new Value(a.toString() + b.toString()));
+                    }
+
                     break;
                 }
                 case SUB: {
@@ -227,15 +233,15 @@ public class Machine {
                     break;
                 }
                 case CMP_EQ: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a == b ? 1 : 0));
+                    Object b = ((Value) operandStack.pop()).getValue();
+                    Object a = ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a.equals(b) ? 1 : 0));
                     break;
                 }
                 case CMP_NE: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a != b ? 1 : 0));
+                    Object b = ((Value) operandStack.pop()).getValue();
+                    Object a = ((Value) operandStack.pop()).getValue();
+                    operandStack.push(new Value(a.equals(b) ? 0 : 1));
                     break;
                 }
                 case CMP_LT: {

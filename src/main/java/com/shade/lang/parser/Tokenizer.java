@@ -6,6 +6,7 @@ import com.shade.lang.parser.token.TokenKind;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Stack;
 
 public class Tokenizer {
     private static final char CHAR_EOF = '\uFFFF';
@@ -13,6 +14,8 @@ public class Tokenizer {
 
     private final Reader reader;
     private final StringBuilder buffer;
+    private final Stack<Mode> modeStack;
+    private Region.Span start;
     private int line;
     private int column;
     private int offset;
@@ -21,6 +24,7 @@ public class Tokenizer {
     public Tokenizer(Reader reader) throws IOException {
         this.reader = reader;
         this.buffer = new StringBuilder();
+        this.modeStack = new Stack<>();
         this.line = 1;
         this.column = 1;
         this.read();
@@ -32,11 +36,17 @@ public class Tokenizer {
                 while (Character.isWhitespace(ch)) {
                     read();
                 }
-
                 continue;
             }
 
-            Region.Span start = span();
+            if (ch == '#') {
+                while (ch != CHAR_EOF && ch != '\n') {
+                    read();
+                }
+                continue;
+            }
+
+            start = tell();
 
             if (Character.isJavaIdentifierStart(ch)) {
                 StringBuilder builder = new StringBuilder();
@@ -47,31 +57,40 @@ public class Tokenizer {
 
                 switch (builder.toString()) {
                     case "let":
-                        return new Token(TokenKind.Let, new Region(start, span()));
+                        return make(TokenKind.Let);
                     case "def":
-                        return new Token(TokenKind.Def, new Region(start, span()));
+                        return make(TokenKind.Def);
                     case "if":
-                        return new Token(TokenKind.If, new Region(start, span()));
+                        return make(TokenKind.If);
                     case "else":
-                        return new Token(TokenKind.Else, new Region(start, span()));
+                        return make(TokenKind.Else);
                     case "return":
-                        return new Token(TokenKind.Return, new Region(start, span()));
+                        return make(TokenKind.Return);
                     case "and":
-                        return new Token(TokenKind.And, new Region(start, span()));
+                        return make(TokenKind.And);
                     case "or":
-                        return new Token(TokenKind.Or, new Region(start, span()));
+                        return make(TokenKind.Or);
                     case "not":
-                        return new Token(TokenKind.Not, new Region(start, span()));
+                        return make(TokenKind.Not);
                     case "import":
-                        return new Token(TokenKind.Import, new Region(start, span()));
+                        return make(TokenKind.Import);
                     case "assert":
-                        return new Token(TokenKind.Assert, new Region(start, span()));
+                        return make(TokenKind.Assert);
                     default:
-                        return new Token(TokenKind.Symbol, new Region(start, span()), builder.toString());
+                        return make(TokenKind.Symbol, builder.toString());
                 }
             }
 
-            if (ch == '\'') {
+            if (ch == '\'' || ch == '}' && !modeStack.empty() && modeStack.peek() == Mode.Inside) {
+                if (ch == '\'') {
+                    modeStack.push(Mode.Normal);
+                }
+
+                if (ch == '}') {
+                    start = start.offsetBy(1);
+                    modeStack.pop();
+                }
+
                 StringBuilder builder = new StringBuilder();
                 read();
 
@@ -79,11 +98,12 @@ public class Tokenizer {
                     char next = read();
 
                     if (next == CHAR_EOF || next == CHAR_NEWLINE) {
-                        throw new ScriptException("String literal is not closed", new Region(start, span()));
+                        error("String literal is not closed");
                     }
 
                     if (next == '\'') {
-                        return new Token(TokenKind.String, new Region(start, span()), builder.toString());
+                        modeStack.pop();
+                        return make(TokenKind.String, builder.toString());
                     }
 
                     if (next == '\\') {
@@ -108,8 +128,14 @@ public class Tokenizer {
                             case '\'':
                                 next = '\'';
                                 break;
+                            case '\\':
+                                next = '\\';
+                                break;
+                            case '{':
+                                modeStack.push(Mode.Inside);
+                                return make(TokenKind.StringPart, start, tell().offsetBy(-2), builder.toString());
                             default:
-                                throw new ScriptException("Unknown string literal escape sequence: \\" + next, new Region(start, span()));
+                                error("Unknown string literal escape sequence: \\%c", escape);
                         }
                     }
 
@@ -124,64 +150,50 @@ public class Tokenizer {
                     builder.append(read());
                 }
 
-                return new Token(TokenKind.Number, new Region(start, span()), builder.toString());
+                return new Token(TokenKind.Number, start.until(tell()), builder.toString());
             }
 
             if (ch == CHAR_EOF) {
-                return new Token(TokenKind.End, new Region(start, start));
+                return new Token(TokenKind.End, start.until(start));
             }
 
             char next = read();
-            Region chRegion = new Region(start, span());
 
             switch (next) {
                 case '(':
-                    return new Token(TokenKind.ParenL, chRegion);
+                    return make(TokenKind.ParenL);
                 case ')':
-                    return new Token(TokenKind.ParenR, chRegion);
+                    return make(TokenKind.ParenR);
                 case '{':
-                    return new Token(TokenKind.BraceL, chRegion);
+                    return make(TokenKind.BraceL);
                 case '}':
-                    return new Token(TokenKind.BraceR, chRegion);
+                    return make(TokenKind.BraceR);
                 case ';':
-                    return new Token(TokenKind.Semicolon, chRegion);
+                    return make(TokenKind.Semicolon);
                 case ',':
-                    return new Token(TokenKind.Comma, chRegion);
+                    return make(TokenKind.Comma);
                 case '.':
-                    return new Token(TokenKind.Dot, chRegion);
+                    return make(TokenKind.Dot);
                 case '+':
-                    return new Token(TokenKind.Add, chRegion);
+                    return make(TokenKind.Add);
                 case '-':
-                    return new Token(TokenKind.Sub, chRegion);
+                    return make(TokenKind.Sub);
                 case '*':
-                    return new Token(TokenKind.Mul, chRegion);
+                    return make(TokenKind.Mul);
                 case '/':
-                    return new Token(TokenKind.Div, chRegion);
+                    return make(TokenKind.Div);
                 case '<':
-                    if (ch == '=') {
-                        read();
-                        return new Token(TokenKind.LessEq, chRegion);
-                    }
-                    return new Token(TokenKind.Less, chRegion);
+                    return consume('=') ? make(TokenKind.LessEq) : make(TokenKind.Less);
                 case '>':
-                    if (ch == '=') {
-                        read();
-                        return new Token(TokenKind.GreaterEq, chRegion);
-                    }
-                    return new Token(TokenKind.Greater, chRegion);
+                    return consume('=') ? make(TokenKind.GreaterEq) : make(TokenKind.Greater);
                 case '=':
-                    if (ch == '=') {
-                        read();
-                        return new Token(TokenKind.Eq, chRegion);
-                    }
-                    return new Token(TokenKind.Assign, chRegion);
+                    return consume('=') ? make(TokenKind.Eq) : make(TokenKind.Assign);
                 case '!':
-                    if (ch == '=') {
-                        read();
-                        return new Token(TokenKind.NotEq, chRegion);
+                    if (consume('=')) {
+                        return make(TokenKind.NotEq);
                     }
                 default:
-                    throw new ScriptException("Unknown symbol: '" + next + "' (" + (int) next + ")", chRegion);
+                    error("Unknown symbol: '%c' (%#06)", next, next);
             }
         }
     }
@@ -190,8 +202,37 @@ public class Tokenizer {
         return buffer.toString();
     }
 
-    private Region.Span span() {
+    private Token make(TokenKind kind) {
+        return new Token(kind, start.until(tell()));
+    }
+
+    private Token make(TokenKind kind, String value) {
+        return new Token(kind, start.until(tell()), value);
+    }
+
+    private Token make(TokenKind kind, Region.Span start, Region.Span end, String value) {
+        return new Token(kind, start.until(end), value);
+    }
+
+    private void error(String message, Object... args) throws ScriptException {
+        throw new ScriptException(String.format(message, args), start.until(tell()));
+    }
+
+    private void error(Region.Span start, Region.Span end, String message, Object... args) throws ScriptException {
+        throw new ScriptException(String.format(message, args), start.until(end));
+    }
+
+    private Region.Span tell() {
         return new Region.Span(line, column, offset);
+    }
+
+    private boolean consume(char expect) throws IOException {
+        if (ch == expect) {
+            read();
+            return true;
+        }
+
+        return false;
     }
 
     private char read() throws IOException {
@@ -213,5 +254,10 @@ public class Tokenizer {
         buffer.append(ch);
 
         return last;
+    }
+
+    private enum Mode {
+        Normal,
+        Inside
     }
 }

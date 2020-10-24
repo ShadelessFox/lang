@@ -16,16 +16,8 @@ public class Region {
         this.end = null;
     }
 
-    public Region from(Span begin) {
-        return new Region(begin, end);
-    }
-
     public Region from(Region begin) {
         return new Region(begin.begin, end);
-    }
-
-    public Region until(Span end) {
-        return new Region(begin, end);
     }
 
     public Region until(Region end) {
@@ -71,6 +63,18 @@ public class Region {
 
         public int getOffset() {
             return offset;
+        }
+
+        public Region from(Span start) {
+            return new Region(start, this);
+        }
+
+        public Region until(Span end) {
+            return new Region(this, end);
+        }
+
+        public Span offsetBy(int count) {
+            return new Span(line, column + count, offset + count);
         }
 
         @Override

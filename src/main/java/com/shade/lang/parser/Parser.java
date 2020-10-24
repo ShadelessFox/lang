@@ -216,7 +216,7 @@ public class Parser {
 
     private Expression parsePrimaryExpression() throws ScriptException, IOException {
         Region start = token.getRegion();
-        Token token = expect(ParenL, Symbol, String, Number);
+        Token token = expect(ParenL, Symbol, String, StringPart, Number);
 
         if (token.getKind() == ParenL) {
             Expression expr = parseExpression();
@@ -247,6 +247,30 @@ public class Parser {
             }
 
             return expression;
+        }
+
+        if (token.getKind() == StringPart) {
+            Expression lhs = new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
+            Expression rhs = parseExpression();
+            Expression string = new BinaryExpression(lhs, rhs, Add, lhs.getRegion().until(rhs.getRegion()));
+
+            while (true) {
+                token = expect(String, StringPart);
+
+                if (!token.getValue().isEmpty()) {
+                    rhs = new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
+                    string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
+                }
+
+                if (token.getKind() == String) {
+                    break;
+                }
+
+                rhs = parseExpression();
+                string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
+            }
+
+            return string;
         }
 
         if (token.getKind() == String) {
@@ -311,6 +335,7 @@ public class Parser {
     private Token advance() throws ScriptException, IOException {
         Token token = this.token;
         this.token = tokenizer.next();
+        System.out.println(this.token);
         return token;
     }
 
