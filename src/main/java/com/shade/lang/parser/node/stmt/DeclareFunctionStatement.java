@@ -10,9 +10,8 @@ import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.Function;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeclareFunctionStatement extends Statement {
     private final String name;
@@ -33,13 +32,17 @@ public class DeclareFunctionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        Set<String> locals = new HashSet<>();
+        AtomicInteger totalSlots = new AtomicInteger();
 
         assembler = new Assembler(Machine.MAX_CODE_SIZE);
         assembler.span(getRegion().getBegin());
 
         Context functionContext = context.wrap();
-        functionContext.setObserver(locals::add);
+        functionContext.setObserver((slot, name) -> {
+            if (totalSlots.get() < slot + 1) {
+                totalSlots.set(slot + 1);
+            }
+        });
         functionContext.makeSlots(arguments);
 
         body.compile(functionContext, assembler);
@@ -52,7 +55,6 @@ public class DeclareFunctionStatement extends Statement {
         }
 
         System.out.println("ASSEMBLY DEBUG FOR FUNCTION '" + name + "':");
-        System.out.println(locals);
         assembler.dump(System.out);
 
         Function function = new Function(
@@ -61,7 +63,7 @@ public class DeclareFunctionStatement extends Statement {
             assembler.getBuffer(),
             assembler.getConstants(),
             assembler.getLines(),
-            arguments.size(), locals.size() - arguments.size());
+            arguments.size(), totalSlots.get());
 
         context.getModule().setAttribute(name, function);
     }

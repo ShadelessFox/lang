@@ -3,13 +3,13 @@ package com.shade.lang.parser.node.context;
 import com.shade.lang.vm.runtime.Module;
 
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class Context implements Iterable<Context> {
     private final Module module;
     private final Context parent;
     private final List<String> slots;
-    private Consumer<String> observer;
+    private BiConsumer<Integer, String> observer;
     private int slotsCount;
 
     public Context(Context parent, int slotsNextId) {
@@ -80,7 +80,7 @@ public class Context implements Iterable<Context> {
 
         if (slotsCount < 255) {
             slots.add(name);
-            observer.accept(name);
+            observer.accept(slotsCount, name);
             return slotsCount++;
         }
 
@@ -95,11 +95,11 @@ public class Context implements Iterable<Context> {
         return slotsCount;
     }
 
-    public Consumer<String> getObserver() {
+    public BiConsumer<Integer, String> getObserver() {
         return observer;
     }
 
-    public void setObserver(Consumer<String> observer) {
+    public void setObserver(BiConsumer<Integer, String> observer) {
         this.observer = observer;
     }
 }
