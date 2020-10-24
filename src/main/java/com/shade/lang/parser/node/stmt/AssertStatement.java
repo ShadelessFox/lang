@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node.stmt;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
@@ -25,7 +26,7 @@ public class AssertStatement extends Statement {
     }
 
     @Override
-    public void compile(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) throws ScriptException {
         condition.compile(context, assembler);
         assembler.imm8(Opcode.ASSERT);
         assembler.imm32(assembler.constant(source));

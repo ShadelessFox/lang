@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node.stmt;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Statement;
@@ -30,7 +31,7 @@ public class DeclareFunctionStatement extends Statement {
     }
 
     @Override
-    public void compile(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) throws ScriptException {
         assembler = new Assembler(Machine.MAX_CODE_SIZE);
         assembler.span(getRegion().getBegin());
 

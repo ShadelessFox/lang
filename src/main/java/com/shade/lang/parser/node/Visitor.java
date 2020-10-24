@@ -15,8 +15,8 @@ public interface Visitor {
             visit((CallExpression) expression);
         } else if (expression instanceof LoadAttributeExpression) {
             visit((LoadAttributeExpression) expression);
-        } else if (expression instanceof LoadGlobalExpression) {
-            visit((LoadGlobalExpression) expression);
+        } else if (expression instanceof LoadSymbolExpression) {
+            visit((LoadSymbolExpression) expression);
         } else {
             throw new RuntimeException("Unknown expression: " + expression);
         }
@@ -37,7 +37,7 @@ public interface Visitor {
     default void visit(LoadAttributeExpression expression) {
     }
 
-    default void visit(LoadGlobalExpression expression) {
+    default void visit(LoadSymbolExpression expression) {
     }
 
     default void visit(Statement statement) {

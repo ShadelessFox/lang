@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
@@ -11,7 +12,7 @@ public abstract class Node {
         this.region = region;
     }
 
-    public abstract void compile(Context context, Assembler assembler);
+    public abstract void compile(Context context, Assembler assembler) throws ScriptException;
 
     public abstract void accept(Visitor visitor);
 

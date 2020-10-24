@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node.expr;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
@@ -18,7 +19,7 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    public void compile(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) throws ScriptException {
         rhs.compile(context, assembler);
 
         switch (operator) {

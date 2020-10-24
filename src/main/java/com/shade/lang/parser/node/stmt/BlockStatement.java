@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node.stmt;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -24,7 +25,7 @@ public class BlockStatement extends Statement {
     }
 
     @Override
-    public void compile(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) throws ScriptException {
         for (Statement statement : statements) {
             statement.compile(context, assembler);
         }

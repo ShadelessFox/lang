@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node.expr;
 
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.gen.Opcode;
 import com.shade.lang.parser.node.Expression;
@@ -38,7 +39,7 @@ public class LogicalExpression extends Expression {
     }
 
     @Override
-    public void compile(Context context, Assembler assembler) {
+    public void compile(Context context, Assembler assembler) throws ScriptException {
         final List<Assembler.Label> passLabels = new ArrayList<>();
         final List<Assembler.Label> failLabels = new ArrayList<>();
 
@@ -60,7 +61,7 @@ public class LogicalExpression extends Expression {
         assembler.bind(end);
     }
 
-    private void compile(Context context, Assembler assembler, Node node, Node pass, Node fail, List<Assembler.Label> passLabels, List<Assembler.Label> failLabels, boolean root) {
+    private void compile(Context context, Assembler assembler, Node node, Node pass, Node fail, List<Assembler.Label> passLabels, List<Assembler.Label> failLabels, boolean root) throws ScriptException {
         if (node instanceof LogicalExpression) {
             LogicalExpression logical = (LogicalExpression) node;
             logical.setPass(pass);

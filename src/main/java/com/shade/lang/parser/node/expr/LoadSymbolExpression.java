@@ -7,10 +7,10 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.context.LocalContext;
 import com.shade.lang.parser.token.Region;
 
-public class LoadGlobalExpression extends Expression {
+public class LoadSymbolExpression extends Expression {
     private final String name;
 
-    public LoadGlobalExpression(String name, Region region) {
+    public LoadSymbolExpression(String name, Region region) {
         super(region);
         this.name = name;
     }

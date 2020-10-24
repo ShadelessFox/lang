@@ -95,8 +95,8 @@ public class Parser {
             if (expression instanceof LoadAttributeExpression) {
                 LoadAttributeExpression attribute = (LoadAttributeExpression) expression;
                 return new AssignAttributeStatement(attribute.getOwner(), attribute.getName(), value, expression.getRegion().until(end.getRegion()));
-            } else if (expression instanceof LoadGlobalExpression) {
-                LoadGlobalExpression attribute = (LoadGlobalExpression) expression;
+            } else if (expression instanceof LoadSymbolExpression) {
+                LoadSymbolExpression attribute = (LoadSymbolExpression) expression;
                 return new AssignSymbolStatement(attribute.getName(), value, expression.getRegion().until(end.getRegion()));
             } else {
                 throw new RuntimeException("Not implemented");
@@ -225,7 +225,7 @@ public class Parser {
         }
 
         if (token.getKind() == Symbol) {
-            Expression expression = new LoadGlobalExpression(token.getValue(), start.until(token.getRegion()));
+            Expression expression = new LoadSymbolExpression(token.getValue(), start.until(token.getRegion()));
 
             while (matches(Dot, ParenL)) {
                 while (consume(Dot) != null) {
