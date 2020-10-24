@@ -335,7 +335,6 @@ public class Parser {
     private Token advance() throws ScriptException, IOException {
         Token token = this.token;
         this.token = tokenizer.next();
-        System.out.println(this.token);
         return token;
     }
 

@@ -22,6 +22,7 @@ public class LoadAttributeExpression extends Expression {
         owner.compile(context, assembler);
         assembler.imm8(Opcode.GET_ATTRIBUTE);
         assembler.imm32(assembler.constant(name));
+        assembler.span(getRegion().getBegin());
     }
 
     public Expression getOwner() {

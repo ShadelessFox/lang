@@ -269,13 +269,14 @@ public class Machine {
                     break;
                 }
                 case CALL: {
+                    byte argc = frame.nextImm8();
                     Object callable = operandStack.pop();
                     if (!(callable instanceof AbstractFunction)) {
                         panic("Not a callable object: " + callable);
                         break;
                     }
                     AbstractFunction function = (AbstractFunction) callable;
-                    function.invoke(this, frame.nextImm8());
+                    function.invoke(this, argc);
                     break;
                 }
                 case RET: {

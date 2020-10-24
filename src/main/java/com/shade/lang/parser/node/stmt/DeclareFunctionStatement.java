@@ -54,9 +54,6 @@ public class DeclareFunctionStatement extends Statement {
             assembler.imm8(Opcode.RET);
         }
 
-        System.out.println("ASSEMBLY DEBUG FOR FUNCTION '" + name + "':");
-        assembler.dump(System.out);
-
         Function function = new Function(
             context.getModule(),
             name,
