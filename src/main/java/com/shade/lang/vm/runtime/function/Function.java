@@ -30,7 +30,8 @@ public class Function extends AbstractFunction {
     @Override
     public void invoke(Machine machine, int argc) {
         if (arguments != argc) {
-            machine.panic("Function '" + getName() + "' accepts " + arguments + " argument(-s) but " + argc + " provided");
+            machine.panic("Function '" + getName() + "' accepts " + arguments + " argument(-s) but " + argc + " provided", true);
+            return;
         }
 
         ScriptObject[] objects = new ScriptObject[locals + argc];
