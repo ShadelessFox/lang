@@ -3,7 +3,7 @@ package com.shade.lang.vm;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
-import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
 
-import static com.shade.lang.parser.gen.Opcode.*;
+import static com.shade.lang.compiler.Opcode.*;
 
 public class Machine {
     public static final int MAX_STACK_DEPTH = 8192;

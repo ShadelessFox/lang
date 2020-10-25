@@ -1,6 +1,6 @@
 package com.shade.lang.parser.node.stmt;
 
-import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;

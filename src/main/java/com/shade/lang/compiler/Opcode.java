@@ -1,4 +1,4 @@
-package com.shade.lang.parser.gen;
+package com.shade.lang.compiler;
 
 public class Opcode {
     // @formatter:off

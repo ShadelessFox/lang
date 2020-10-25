@@ -1,5 +1,6 @@
 package com.shade.lang.parser.node;
 
+import com.shade.lang.parser.node.visitor.Visitor;
 import com.shade.lang.parser.token.Region;
 
 public abstract class Expression extends Node {

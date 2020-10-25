@@ -1,4 +1,4 @@
-package com.shade.lang.parser.gen;
+package com.shade.lang.compiler;
 
 import com.shade.lang.parser.token.Region;
 
@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.shade.lang.parser.gen.Opcode.*;
+import static com.shade.lang.compiler.Opcode.*;
 
 public class Assembler {
     private final ByteBuffer buffer;

@@ -1,6 +1,6 @@
 package com.shade.lang.vm.runtime.function;
 
-import com.shade.lang.parser.gen.Assembler;
+import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;

@@ -1,8 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.parser.ScriptException;
-import com.shade.lang.parser.gen.Assembler;
-import com.shade.lang.parser.gen.Opcode;
+import com.shade.lang.compiler.Assembler;
+import com.shade.lang.compiler.Opcode;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.Statement;
