@@ -3,6 +3,7 @@ package com.shade.lang.vm;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
+import com.shade.lang.parser.gen.Assembler;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
@@ -11,6 +12,7 @@ import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.AbstractFunction;
+import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
 import java.io.*;
@@ -158,11 +160,11 @@ public class Machine {
                     break;
                 }
                 case GET_LOCAL: {
-                    operandStack.push(frame.locals[frame.nextImm8()]);
+                    operandStack.push(frame.slots[frame.nextImm8()]);
                     break;
                 }
                 case SET_LOCAL: {
-                    frame.locals[frame.nextImm8()] = operandStack.pop();
+                    frame.slots[frame.nextImm8()] = operandStack.pop();
                     break;
                 }
                 case GET_ATTRIBUTE: {
@@ -301,9 +303,9 @@ public class Machine {
                     String message = frame.nextConstant();
                     if (value == 0) {
                         if (message != null) {
-                            panic("Assertion failed '" + source + "': " + message);
+                            panic("Assertion failed '" + source + "': " + message, true);
                         } else {
-                            panic("Assertion failed '" + source + "'");
+                            panic("Assertion failed '" + source + "'", true);
                         }
                     }
                     break;
@@ -314,31 +316,53 @@ public class Machine {
         }
     }
 
-    public void panic(String message) {
+    public void panic(String message, boolean recoverable) {
         int lastFrameRepeated = 0;
         Frame lastFrame = null;
 
-        err.println("Panicking: " + message);
+        StringBuilder builder = new StringBuilder();
+        builder.append("Panicking: ").append(message).append('\n');
 
-        for (int index = callStack.size(); index > 0; index--) {
-            Frame currentFrame = callStack.get(index - 1);
+        while (!callStack.empty()) {
+            Frame currentFrame = callStack.peek();
+
+            if (recoverable && currentFrame.getFunction() instanceof Function) {
+                Function function = (Function) currentFrame.getFunction();
+
+                for (Assembler.Guard guard : function.getGuards()) {
+                    if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
+                        if (guard.hasSlot()) {
+                            currentFrame.slots[guard.getSlot()] = new Value(message);
+                        }
+
+                        currentFrame.pc = guard.getOffset();
+                        return;
+                    }
+                }
+            }
 
             if (currentFrame.equals(lastFrame)) {
                 lastFrameRepeated++;
             }
 
             if (lastFrameRepeated < 3) {
-                err.println("    at " + currentFrame);
+                builder.append("    at ").append(currentFrame).append('\n');
             }
 
-            lastFrame = currentFrame;
+            lastFrame = callStack.pop();
         }
 
         if (lastFrameRepeated > 0) {
-            err.println("    [repeated " + lastFrameRepeated + " more time(-s)]");
+            builder.append("    [repeated ").append(lastFrameRepeated).append(" more time(-s)]").append('\n');
         }
 
+        err.print(builder);
+
         halt(-1);
+    }
+
+    public void panic(String message) {
+        panic(message, false);
     }
 
     public void halt(int status) {
@@ -382,15 +406,15 @@ public class Machine {
         private final AbstractFunction function;
         private final byte[] chunk;
         private final String[] constants;
-        private final ScriptObject[] locals;
+        private final ScriptObject[] slots;
         private final Map<Integer, Region.Span> lines;
         private int pc;
 
-        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Region.Span> lines) {
+        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] slots, Map<Integer, Region.Span> lines) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
-            this.locals = locals;
+            this.slots = slots;
             this.lines = lines;
             this.pc = 0;
         }

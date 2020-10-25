@@ -60,6 +60,7 @@ public class DeclareFunctionStatement extends Statement {
             assembler.getBuffer(),
             assembler.getConstants(),
             assembler.getLines(),
+            assembler.getGuards(),
             arguments.size(), totalSlots.get());
 
         context.getModule().setAttribute(name, function);

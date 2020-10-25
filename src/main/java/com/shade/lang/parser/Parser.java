@@ -82,6 +82,8 @@ public class Parser {
                 return parseBranchStatement();
             case Return:
                 return parseReturnStatement();
+            case Try:
+                return parseTryStatement();
             case BraceL:
                 return parseBlockStatement();
         }
@@ -118,6 +120,15 @@ public class Parser {
         Token end = expect(Semicolon);
         String source = condition.getRegion().of(tokenizer.getBuffer());
         return new AssertStatement(condition, source, message, start.until(end.getRegion()));
+    }
+
+    private TryStatement parseTryStatement() throws ScriptException, IOException {
+        Region start = expect(Try).getRegion();
+        BlockStatement body = parseBlockStatement();
+        expect(Recover);
+        Token name = consume(Symbol);
+        BlockStatement recover = parseBlockStatement();
+        return new TryStatement(body, recover, name == null ? null : name.getValue(), start.until(recover.getRegion()));
     }
 
     private ReturnStatement parseReturnStatement() throws ScriptException, IOException {

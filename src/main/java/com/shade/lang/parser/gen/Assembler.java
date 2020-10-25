@@ -14,12 +14,14 @@ public class Assembler {
     private final Set<Label> labels;
     private final List<String> constants;
     private final Map<Integer, Region.Span> lines;
+    private final List<Guard> guards;
 
     public Assembler(int capacity) {
         this.buffer = ByteBuffer.allocate(capacity);
         this.labels = new HashSet<>();
         this.constants = new ArrayList<>();
         this.lines = new HashMap<>();
+        this.guards = new ArrayList<>();
     }
 
     public void imm8(byte imm) {
@@ -158,11 +160,57 @@ public class Assembler {
         return lines;
     }
 
+    public int getPosition() {
+        return buffer.position();
+    }
+
+    public void addGuard(int start, int end, int offset, int slot) {
+        guards.add(new Guard(start, end, offset, slot));
+    }
+
+    public Guard[] getGuards() {
+        return guards.toArray(new Guard[0]);
+    }
+
     public static class Label {
         private final int position;
 
         private Label(int position) {
             this.position = position;
+        }
+    }
+
+    public static class Guard {
+        private final int start;
+        private final int end;
+        private final int offset;
+        private final int slot;
+
+        public Guard(int start, int end, int offset, int slot) {
+            this.start = start;
+            this.end = end;
+            this.offset = offset;
+            this.slot = slot;
+        }
+
+        public int getStart() {
+            return start;
+        }
+
+        public int getEnd() {
+            return end;
+        }
+
+        public int getOffset() {
+            return offset;
+        }
+
+        public int getSlot() {
+            return slot;
+        }
+
+        public boolean hasSlot() {
+            return slot >= 0;
         }
     }
 }

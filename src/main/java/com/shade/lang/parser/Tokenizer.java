@@ -76,6 +76,10 @@ public class Tokenizer {
                         return make(TokenKind.Import);
                     case "assert":
                         return make(TokenKind.Assert);
+                    case "try":
+                        return make(TokenKind.Try);
+                    case "recover":
+                        return make(TokenKind.Recover);
                     default:
                         return make(TokenKind.Symbol, builder.toString());
                 }
@@ -130,6 +134,9 @@ public class Tokenizer {
                                 break;
                             case '\\':
                                 next = '\\';
+                                break;
+                            case 'x':
+                                next = (char) (consumeHex() * 16 + consumeHex());
                                 break;
                             case '{':
                                 modeStack.push(Mode.Inside);
@@ -193,7 +200,7 @@ public class Tokenizer {
                         return make(TokenKind.NotEq);
                     }
                 default:
-                    error("Unknown symbol: '%c' (%#06)", next, next);
+                    error("Unknown symbol: '%c' (%#04x)", next, (int) next);
             }
         }
     }
@@ -233,6 +240,23 @@ public class Tokenizer {
         }
 
         return false;
+    }
+
+    private byte consumeHex() throws IOException, ScriptException {
+        if (ch >= '0' && ch <= '9') {
+            return (byte) (read() - '0');
+        }
+
+        if (ch >= 'a' && ch <= 'f') {
+            return (byte) (read() - 'a' + 10);
+        }
+
+        if (ch >= 'A' && ch <= 'F') {
+            return (byte) (read() - 'A' + 10);
+        }
+
+        error("Expected hexadecimal number");
+        return 0;
     }
 
     private char read() throws IOException {
