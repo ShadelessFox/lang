@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.shade.lang.parser.gen.Opcode.*;
 
@@ -85,8 +86,15 @@ public class Assembler {
         final Map<Integer, Integer> labels = new HashMap<>();
 
         final Supplier<String> formatConstant = () -> {
-            int index = buffer.getInt();
-            return String.format("%d '%s'", index, constants.get(index));
+            String constant = constants.get(buffer.getInt());
+
+            if (constant != null) {
+                return String.format("'%s'", constant.chars()
+                    .mapToObj(x -> x <= 27 ? String.format("\\x%02x", x) : String.valueOf((char) x))
+                    .collect(Collectors.joining()));
+            } else {
+                return "<null>";
+            }
         };
 
         final Supplier<String> formatLabel = () -> {
@@ -125,6 +133,7 @@ public class Assembler {
                 case SUB:           stream.printf("%s: SUB%n", line.get()); break;
                 case MUL:           stream.printf("%s: MUL%n", line.get()); break;
                 case DIV:           stream.printf("%s: DIV%n", line.get()); break;
+                case NOT:           stream.printf("%s: NOT%n", line.get()); break;
                 case JUMP:          stream.printf("%s: JUMP          %s%n", line.get(), formatLabel.get()); break;
                 case JUMP_IF_TRUE:  stream.printf("%s: JUMP_IF_TRUE  %s%n", line.get(), formatLabel.get()); break;
                 case JUMP_IF_FALSE: stream.printf("%s: JUMP_IF_FALSE %s%n", line.get(), formatLabel.get()); break;
@@ -137,7 +146,6 @@ public class Assembler {
                 case CALL:          stream.printf("%s: CALL          %d%n", line.get(), buffer.get()); break;
                 case RET:           stream.printf("%s: RET%n", line.get()); break;
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
-                case NOT:           stream.printf("%s: NOT%n", line.get()); break;
                 case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                 // @formatter:on
