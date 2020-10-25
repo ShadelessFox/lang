@@ -27,15 +27,19 @@ public class BinaryExpression extends Expression {
 
         switch (operator) {
             case Add:
+            case AddAssign:
                 assembler.imm8(Opcode.ADD);
                 break;
             case Sub:
+            case SubAssign:
                 assembler.imm8(Opcode.SUB);
                 break;
             case Mul:
+            case MulAssign:
                 assembler.imm8(Opcode.MUL);
                 break;
             case Div:
+            case DivAssign:
                 assembler.imm8(Opcode.DIV);
                 break;
             case Eq:

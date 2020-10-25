@@ -182,13 +182,13 @@ public class Tokenizer {
                 case '.':
                     return make(TokenKind.Dot);
                 case '+':
-                    return make(TokenKind.Add);
+                    return consume('=') ? make(TokenKind.AddAssign) : make(TokenKind.Add);
                 case '-':
-                    return make(TokenKind.Sub);
+                    return consume('=') ? make(TokenKind.SubAssign) : make(TokenKind.Sub);
                 case '*':
-                    return make(TokenKind.Mul);
+                    return consume('=') ? make(TokenKind.MulAssign) : make(TokenKind.Mul);
                 case '/':
-                    return make(TokenKind.Div);
+                    return consume('=') ? make(TokenKind.DivAssign) : make(TokenKind.Div);
                 case '<':
                     return consume('=') ? make(TokenKind.LessEq) : make(TokenKind.Less);
                 case '>':

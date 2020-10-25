@@ -27,10 +27,15 @@ public enum TokenKind {
     ParenR(")", 0, TokenFlag.QUOTED),
     BraceL("{", 0, TokenFlag.QUOTED),
     BraceR("}", 0, TokenFlag.QUOTED),
-    Assign("=", 0, TokenFlag.QUOTED),
     Semicolon(";", 0, TokenFlag.QUOTED),
     Comma(",", 0, TokenFlag.QUOTED),
     Dot(".", 0, TokenFlag.QUOTED),
+
+    Assign("=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
+    AddAssign("+=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
+    SubAssign("-=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
+    MulAssign("*=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
+    DivAssign("/=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
 
     Eq("==", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     NotEq("!=", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
@@ -41,7 +46,6 @@ public enum TokenKind {
 
     Add("+", 4, TokenFlag.QUOTED | TokenFlag.BINARY),
     Sub("-", 4, TokenFlag.QUOTED | TokenFlag.BINARY),
-
     Mul("*", 5, TokenFlag.QUOTED | TokenFlag.BINARY),
     Div("/", 5, TokenFlag.QUOTED | TokenFlag.BINARY);
 
@@ -63,12 +67,12 @@ public enum TokenKind {
         return precedence;
     }
 
-    public int getFlags() {
-        return flags;
-    }
-
     public String getQuotedName() {
         return hasFlag(TokenFlag.QUOTED) ? "'" + name + "'" : name;
+    }
+
+    public int getFlags() {
+        return flags;
     }
 
     public boolean hasFlag(int flag) {

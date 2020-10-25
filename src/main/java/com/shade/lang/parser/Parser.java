@@ -90,9 +90,14 @@ public class Parser {
 
         Expression expression = parseExpression();
 
-        if (consume(Assign) != null) {
+        if (token.getKind().hasFlag(TokenFlag.ASSIGNMENT)) {
+            TokenKind operator = advance().getKind();
             Expression value = parseExpression();
             Token end = expect(Semicolon);
+
+            if (operator != Assign) {
+                value = new BinaryExpression(expression, value, operator, expression.getRegion().until(value.getRegion()));
+            }
 
             if (expression instanceof LoadAttributeExpression) {
                 LoadAttributeExpression attribute = (LoadAttributeExpression) expression;
@@ -100,6 +105,8 @@ public class Parser {
             } else if (expression instanceof LoadSymbolExpression) {
                 LoadSymbolExpression attribute = (LoadSymbolExpression) expression;
                 return new AssignSymbolStatement(attribute.getName(), value, expression.getRegion().until(end.getRegion()));
+            } else if (expression instanceof LoadConstantExpression<?>) {
+                throw new ScriptException("Left hand side expression must not be a constant value", expression.getRegion());
             } else {
                 throw new RuntimeException("Not implemented");
             }
@@ -200,7 +207,8 @@ public class Parser {
             Expression rhs = parseUnaryExpression();
             lookahead = token.getKind();
 
-            while (lookahead.hasFlag(TokenFlag.BINARY) && lookahead.getPrecedence() > operator.getPrecedence()) {
+            while (lookahead.hasFlag(TokenFlag.BINARY) && lookahead.getPrecedence() > operator.getPrecedence()
+                || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence()) {
                 rhs = parseExpression(rhs, lookahead.getPrecedence());
                 lookahead = token.getKind();
             }

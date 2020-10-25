@@ -44,7 +44,11 @@ public class Opcode {
     public static final byte CALL          = 0x1C;
     public static final byte RET           = 0x1D;
     public static final byte POP           = 0x1E;
+
+    /* Debugging */
     public static final byte ASSERT        = 0x1F;
+    public static final byte BREAKPOINT    = 0x20;
+
 
     // @formatter:on
 
