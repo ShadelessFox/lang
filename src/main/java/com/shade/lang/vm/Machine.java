@@ -147,7 +147,7 @@ public class Machine {
                     String name = frame.nextConstant();
                     ScriptObject value = module.getAttribute(name);
                     if (value == null) {
-                        panic("No such global '" + name + "'");
+                        panic("No such global '" + name + "'", true);
                         break;
                     }
                     operandStack.push(value);
@@ -171,7 +171,7 @@ public class Machine {
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
-                        panic("No such property '" + name + "' on target '" + target + "'");
+                        panic("No such property '" + name + "' on target '" + target + "'", true);
                         break;
                     }
                     operandStack.push(object);
