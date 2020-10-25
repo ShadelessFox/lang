@@ -7,7 +7,7 @@ import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.function.Function;
+import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +54,7 @@ public class DeclareFunctionStatement extends Statement {
             assembler.imm8(Opcode.RET);
         }
 
-        Function function = new Function(
+        RuntimeFunction function = new RuntimeFunction(
             context.getModule(),
             name,
             assembler.getBuffer(),

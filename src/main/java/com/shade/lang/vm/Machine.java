@@ -11,8 +11,8 @@ import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.Value;
-import com.shade.lang.vm.runtime.function.AbstractFunction;
 import com.shade.lang.vm.runtime.function.Function;
+import com.shade.lang.vm.runtime.function.RuntimeFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 
 import java.io.*;
@@ -98,7 +98,7 @@ public class Machine {
             throw new RuntimeException("No such attribute: " + attributeName);
         }
 
-        if (!(attribute instanceof AbstractFunction)) {
+        if (!(attribute instanceof Function)) {
             throw new RuntimeException("Attribute is not callable: " + attributeName);
         }
 
@@ -110,7 +110,7 @@ public class Machine {
             }
         }
 
-        AbstractFunction function = (AbstractFunction) attribute;
+        Function function = (Function) attribute;
         function.invoke(this, args.length);
 
         if (!(function instanceof NativeFunction)) {
@@ -272,11 +272,11 @@ public class Machine {
                 case CALL: {
                     byte argc = frame.nextImm8();
                     Object callable = operandStack.pop();
-                    if (!(callable instanceof AbstractFunction)) {
+                    if (!(callable instanceof Function)) {
                         panic("Not a callable object: " + callable);
                         break;
                     }
-                    AbstractFunction function = (AbstractFunction) callable;
+                    Function function = (Function) callable;
                     function.invoke(this, argc);
                     break;
                 }
@@ -325,8 +325,8 @@ public class Machine {
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
 
-            if (recoverable && currentFrame.getFunction() instanceof Function) {
-                Function function = (Function) currentFrame.getFunction();
+            if (recoverable && currentFrame.getFunction() instanceof RuntimeFunction) {
+                RuntimeFunction function = (RuntimeFunction) currentFrame.getFunction();
 
                 for (Assembler.Guard guard : function.getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
@@ -402,14 +402,14 @@ public class Machine {
     }
 
     public static class Frame {
-        private final AbstractFunction function;
+        private final Function function;
         private final byte[] chunk;
         private final String[] constants;
         private final ScriptObject[] slots;
         private final Map<Integer, Region.Span> lines;
         private int pc;
 
-        public Frame(AbstractFunction function, byte[] chunk, String[] constants, ScriptObject[] slots, Map<Integer, Region.Span> lines) {
+        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] slots, Map<Integer, Region.Span> lines) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
@@ -418,7 +418,7 @@ public class Machine {
             this.pc = 0;
         }
 
-        public AbstractFunction getFunction() {
+        public Function getFunction() {
             return function;
         }
 
