@@ -64,7 +64,7 @@ public class Machine {
         module.getImports().clear();
     }
 
-    public void load(String name, String source, Reader reader) throws IOException {
+    public void load(String name, String source, Reader reader) {
         Module module = new Module(name, source);
         Context context = new Context(module, 0);
 

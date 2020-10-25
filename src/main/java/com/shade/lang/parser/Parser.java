@@ -10,7 +10,6 @@ import com.shade.lang.parser.token.Token;
 import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
 
-import java.io.IOException;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +22,12 @@ public class Parser {
     private final Tokenizer tokenizer;
     private Token token;
 
-    public Parser(Tokenizer tokenizer) throws ScriptException, IOException {
+    public Parser(Tokenizer tokenizer) throws ScriptException {
         this.tokenizer = tokenizer;
         this.advance();
     }
 
-    public Node parse(String source, Parser.Mode mode) throws ScriptException, IOException {
+    public Node parse(String source, Parser.Mode mode) throws ScriptException {
         switch (mode) {
             case Unit:
                 return parseUnit(source);
@@ -41,7 +40,7 @@ public class Parser {
         return null;
     }
 
-    private UnitStatement parseUnit(String name) throws ScriptException, IOException {
+    private UnitStatement parseUnit(String name) throws ScriptException {
         Region start = token.getRegion();
 
         List<Statement> statements = new ArrayList<>();
@@ -62,7 +61,7 @@ public class Parser {
         }
     }
 
-    private ImportStatement parseImportStatement(Region start) throws ScriptException, IOException {
+    private ImportStatement parseImportStatement(Region start) throws ScriptException {
         Token name = expect(Symbol, String);
         String alias = null;
         if (consume(Assign) != null) {
@@ -72,7 +71,7 @@ public class Parser {
         return new ImportStatement(name.getValue(), alias, name.getKind() == String, start.until(end.getRegion()));
     }
 
-    private Statement parseStatement() throws ScriptException, IOException {
+    private Statement parseStatement() throws ScriptException {
         switch (token.getKind()) {
             case Assert:
                 return parseAssertStatement();
@@ -117,7 +116,7 @@ public class Parser {
         return new ExpressionStatement(expression, expression.getRegion().until(end.getRegion()));
     }
 
-    private AssertStatement parseAssertStatement() throws ScriptException, IOException {
+    private AssertStatement parseAssertStatement() throws ScriptException {
         Region start = expect(Assert).getRegion();
         Expression condition = parseExpression();
         String message = null;
@@ -129,7 +128,7 @@ public class Parser {
         return new AssertStatement(condition, source, message, start.until(end.getRegion()));
     }
 
-    private TryStatement parseTryStatement() throws ScriptException, IOException {
+    private TryStatement parseTryStatement() throws ScriptException {
         Region start = expect(Try).getRegion();
         BlockStatement body = parseBlockStatement();
         expect(Recover);
@@ -138,14 +137,14 @@ public class Parser {
         return new TryStatement(body, recover, name == null ? null : name.getValue(), start.until(recover.getRegion()));
     }
 
-    private ReturnStatement parseReturnStatement() throws ScriptException, IOException {
+    private ReturnStatement parseReturnStatement() throws ScriptException {
         Region start = expect(Return).getRegion();
         Expression value = parseExpression();
         Token end = expect(Semicolon);
         return new ReturnStatement(value, start.until(end.getRegion()));
     }
 
-    private BlockStatement parseBlockStatement() throws ScriptException, IOException {
+    private BlockStatement parseBlockStatement() throws ScriptException {
         Region start = expect(BraceL).getRegion();
         List<Statement> statements = new ArrayList<>();
         while (!matches(BraceR, End)) {
@@ -155,7 +154,7 @@ public class Parser {
         return new BlockStatement(statements, start.until(end.getRegion()));
     }
 
-    private BranchStatement parseBranchStatement() throws ScriptException, IOException {
+    private BranchStatement parseBranchStatement() throws ScriptException {
         Region start = expect(If).getRegion();
         Expression condition = parseExpression();
         Statement pass = parseBlockStatement();
@@ -171,7 +170,7 @@ public class Parser {
         return new BranchStatement(condition, pass, fail, start.until(end));
     }
 
-    private DeclareVariableStatement parseVariableDeclareStatement() throws ScriptException, IOException {
+    private DeclareVariableStatement parseVariableDeclareStatement() throws ScriptException {
         Region start = expect(Let).getRegion();
         Token name = expect(Symbol);
         expect(Assign);
@@ -180,7 +179,7 @@ public class Parser {
         return new DeclareVariableStatement(name.getValue(), value, start.until(token.getRegion()));
     }
 
-    private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException, IOException {
+    private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
         Token name = expect(Symbol);
         List<String> args = new ArrayList<>();
         expect(ParenL);
@@ -195,11 +194,11 @@ public class Parser {
         return new DeclareFunctionStatement(name.getValue(), args, body, start.until(body.getRegion()));
     }
 
-    public Expression parseExpression() throws ScriptException, IOException {
+    public Expression parseExpression() throws ScriptException {
         return parseExpression(parseUnaryExpression(), 0);
     }
 
-    private Expression parseExpression(Expression lhs, int minimumPrecedence) throws ScriptException, IOException {
+    private Expression parseExpression(Expression lhs, int minimumPrecedence) throws ScriptException {
         TokenKind lookahead = token.getKind();
 
         while (lookahead.hasFlag(TokenFlag.BINARY) && lookahead.getPrecedence() >= minimumPrecedence) {
@@ -223,7 +222,7 @@ public class Parser {
         return lhs;
     }
 
-    private Expression parseUnaryExpression() throws ScriptException, IOException {
+    private Expression parseUnaryExpression() throws ScriptException {
         Region start = token.getRegion();
         Token operator = consume(Not, Add, Sub);
         if (operator != null) {
@@ -233,7 +232,7 @@ public class Parser {
         return parsePrimaryExpression();
     }
 
-    private Expression parsePrimaryExpression() throws ScriptException, IOException {
+    private Expression parsePrimaryExpression() throws ScriptException {
         Region start = token.getRegion();
         Token token = expect(ParenL, Symbol, String, StringPart, Number);
 
@@ -313,7 +312,7 @@ public class Parser {
         return false;
     }
 
-    private Token consume(TokenKind... kinds) throws ScriptException, IOException {
+    private Token consume(TokenKind... kinds) throws ScriptException {
         for (TokenKind kind : kinds) {
             if (token.getKind() == kind) {
                 return advance();
@@ -323,7 +322,7 @@ public class Parser {
         return null;
     }
 
-    private Token expect(TokenKind... kinds) throws ScriptException, IOException {
+    private Token expect(TokenKind... kinds) throws ScriptException {
         Token consumed = consume(kinds);
 
         if (consumed != null) {
@@ -351,7 +350,7 @@ public class Parser {
         throw new ScriptException("Expected " + expected + " but found " + found, token.getRegion());
     }
 
-    private Token advance() throws ScriptException, IOException {
+    private Token advance() throws ScriptException {
         Token token = this.token;
         this.token = tokenizer.next();
         return token;

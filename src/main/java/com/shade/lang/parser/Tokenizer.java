@@ -21,7 +21,7 @@ public class Tokenizer {
     private int offset;
     private char ch;
 
-    public Tokenizer(Reader reader) throws IOException {
+    public Tokenizer(Reader reader) throws ScriptException {
         this.reader = reader;
         this.buffer = new StringBuilder();
         this.modeStack = new Stack<>();
@@ -30,7 +30,7 @@ public class Tokenizer {
         this.read();
     }
 
-    public Token next() throws ScriptException, IOException {
+    public Token next() throws ScriptException {
         while (true) {
             if (Character.isWhitespace(ch)) {
                 while (Character.isWhitespace(ch)) {
@@ -233,7 +233,7 @@ public class Tokenizer {
         return new Region.Span(line, column, offset);
     }
 
-    private boolean consume(char expect) throws IOException {
+    private boolean consume(char expect) throws ScriptException {
         if (ch == expect) {
             read();
             return true;
@@ -242,7 +242,7 @@ public class Tokenizer {
         return false;
     }
 
-    private byte consumeHex() throws IOException, ScriptException {
+    private byte consumeHex() throws ScriptException {
         if (ch >= '0' && ch <= '9') {
             return (byte) (read() - '0');
         }
@@ -259,7 +259,7 @@ public class Tokenizer {
         return 0;
     }
 
-    private char read() throws IOException {
+    private char read() throws ScriptException {
         if (ch > 0) {
             if (ch == '\n') {
                 line += 1;
@@ -273,7 +273,11 @@ public class Tokenizer {
 
         char last = ch;
 
-        ch = (char) reader.read();
+        try {
+            ch = (char) reader.read();
+        } catch (IOException e) {
+            throw new ScriptException("Internal exception", e, tell().until(tell()));
+        }
 
         buffer.append(ch);
 
