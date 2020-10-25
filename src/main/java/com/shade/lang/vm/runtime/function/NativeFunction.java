@@ -28,7 +28,12 @@ public class NativeFunction extends AbstractFunction {
         }
 
         machine.getCallStack().push(new Machine.NativeFrame(this));
-        machine.getOperandStack().push(prototype.apply(machine, locals));
-        machine.getCallStack().pop();
+
+        ScriptObject result = prototype.apply(machine, locals);
+
+        if (result != null) {
+            machine.getOperandStack().push(result);
+            machine.getCallStack().pop();
+        }
     }
 }

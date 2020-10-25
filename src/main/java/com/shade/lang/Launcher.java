@@ -24,8 +24,9 @@ public class Launcher {
 
         if (!machine.isHalted()) {
             machine.call("sandbox", "main");
-            System.exit(machine.getStatus());
         }
+
+        System.exit(machine.getStatus());
     }
 
     private static class Builtin extends Module {
@@ -36,14 +37,15 @@ public class Launcher {
 
             setAttribute("print", new NativeFunction(this, "print", (machine, args) -> {
                 machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return null;
+                return new Value(0);
             }));
 
-            setAttribute("assert", new NativeFunction(this, "assert", (machine, args) -> {
+            setAttribute("assert0", new NativeFunction(this, "assert", (machine, args) -> {
                 if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || (int) x.getValue() == 0)) {
-                    machine.panic("Assertion failed");
+                    machine.panic("Assertion failed", true);
+                    return null;
                 }
-                return null;
+                return new Value(0);
             }));
         }
     }

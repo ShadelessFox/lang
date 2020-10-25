@@ -76,7 +76,6 @@ public class Machine {
         } catch (ScriptException e) {
             callStack.push(new ParserFrame(source, e));
             panic(e.getMessage());
-            callStack.pop();
         }
     }
 
