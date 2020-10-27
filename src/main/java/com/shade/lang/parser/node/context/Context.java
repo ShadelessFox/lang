@@ -67,7 +67,7 @@ public class Context implements Iterable<Context> {
         return parent != null && parent.hasSlot(name);
     }
 
-    public int makeSlot(String name) {
+    public int addSlot(String name) {
         for (Context current = this; current != null; current = current.parent) {
             if (current.slots.contains(name)) {
                 int slotsCount = current.slots.indexOf(name);
@@ -87,8 +87,8 @@ public class Context implements Iterable<Context> {
         throw new RuntimeException("Locals are limited to 255 per context");
     }
 
-    public int[] makeSlots(Collection<String> names) {
-        return names.stream().mapToInt(this::makeSlot).toArray();
+    public int[] addSlots(Collection<String> names) {
+        return names.stream().mapToInt(this::addSlot).toArray();
     }
 
     public int getSlotsCount() {

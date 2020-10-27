@@ -1,9 +1,9 @@
 package com.shade.lang.vm;
 
+import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
-import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
@@ -12,14 +12,11 @@ import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.Function;
-import com.shade.lang.vm.runtime.function.RuntimeFunction;
 import com.shade.lang.vm.runtime.function.NativeFunction;
+import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Stack;
+import java.util.*;
 
 import static com.shade.lang.compiler.Opcode.*;
 
@@ -159,11 +156,11 @@ public class Machine {
                     break;
                 }
                 case GET_LOCAL: {
-                    operandStack.push(frame.slots[frame.nextImm8()]);
+                    operandStack.push(frame.locals[frame.nextImm8()]);
                     break;
                 }
                 case SET_LOCAL: {
-                    frame.slots[frame.nextImm8()] = operandStack.pop();
+                    frame.locals[frame.nextImm8()] = operandStack.pop();
                     break;
                 }
                 case GET_ATTRIBUTE: {
@@ -331,7 +328,7 @@ public class Machine {
                 for (Assembler.Guard guard : function.getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
                         if (guard.hasSlot()) {
-                            currentFrame.slots[guard.getSlot()] = new Value(message);
+                            currentFrame.locals[guard.getSlot()] = new Value(message);
                         }
 
                         currentFrame.pc = guard.getOffset();
@@ -405,27 +402,17 @@ public class Machine {
         private final Function function;
         private final byte[] chunk;
         private final String[] constants;
-        private final ScriptObject[] slots;
+        private final ScriptObject[] locals;
         private final Map<Integer, Region.Span> lines;
         private int pc;
 
-        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] slots, Map<Integer, Region.Span> lines) {
+        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Region.Span> lines) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
-            this.slots = slots;
+            this.locals = locals;
             this.lines = lines;
             this.pc = 0;
-        }
-
-        public Function getFunction() {
-            return function;
-        }
-
-        @Override
-        public String toString() {
-            String position = lines.containsKey(pc) ? lines.get(pc).toString() : "+" + pc;
-            return function.getModule().getName() + "/" + function.getName() + "(" + function.getModule().getSource() + ":" + position + ")";
         }
 
         private String nextConstant() {
@@ -440,18 +427,47 @@ public class Machine {
             return chunk[pc++];
         }
 
+        public Function getFunction() {
+            return function;
+        }
+
+        public byte[] getChunk() {
+            return chunk;
+        }
+
+        public String[] getConstants() {
+            return constants;
+        }
+
+        public ScriptObject[] getLocals() {
+            return locals;
+        }
+
+        public Map<Integer, Region.Span> getLines() {
+            return lines;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
             return pc == frame.pc &&
-                function.equals(frame.function);
+                Objects.equals(function, frame.function) &&
+                Arrays.equals(chunk, frame.chunk);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(function, pc);
+            int result = Objects.hash(function, pc);
+            result = 31 * result + Arrays.hashCode(chunk);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            String position = lines.containsKey(pc) ? lines.get(pc).toString() : "+" + pc;
+            return function.getModule().getName() + "/" + function.getName() + "(" + function.getModule().getSource() + ":" + position + ")";
         }
     }
 

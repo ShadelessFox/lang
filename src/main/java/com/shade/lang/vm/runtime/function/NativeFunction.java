@@ -21,11 +21,6 @@ public class NativeFunction extends Function {
             locals[index - 1] = machine.getOperandStack().pop();
         }
 
-        /*
-         * Push fake frame so we can have a proper
-         * stack trace if interpreter will halt inside
-         * native function call.
-         */
         machine.getCallStack().push(new Machine.NativeFrame(this));
 
         ScriptObject result = prototype.apply(machine, locals);

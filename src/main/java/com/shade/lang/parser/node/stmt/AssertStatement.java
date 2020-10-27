@@ -29,9 +29,9 @@ public class AssertStatement extends Statement {
     public void compile(Context context, Assembler assembler) throws ScriptException {
         condition.compile(context, assembler);
         assembler.imm8(Opcode.ASSERT);
-        assembler.imm32(assembler.constant(source));
-        assembler.imm32(assembler.constant(message));
-        assembler.span(getRegion().getBegin());
+        assembler.imm32(assembler.addConstant(source));
+        assembler.imm32(assembler.addConstant(message));
+        assembler.addLine(getRegion().getBegin());
     }
 
     public Expression getCondition() {

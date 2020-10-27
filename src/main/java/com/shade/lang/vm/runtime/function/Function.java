@@ -13,6 +13,8 @@ public abstract class Function extends ScriptObject {
         this.name = name;
     }
 
+    public abstract void invoke(Machine machine, int argc);
+
     public Module getModule() {
         return module;
     }
@@ -20,6 +22,4 @@ public abstract class Function extends ScriptObject {
     public String getName() {
         return name;
     }
-
-    public abstract void invoke(Machine machine, int argc);
 }

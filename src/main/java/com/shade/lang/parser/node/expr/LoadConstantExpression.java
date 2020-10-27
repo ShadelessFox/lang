@@ -18,7 +18,7 @@ public class LoadConstantExpression<T> extends Expression {
     public void compile(Context context, Assembler assembler) {
         if (value instanceof String) {
             assembler.imm8(Opcode.PUSH_CONST);
-            assembler.imm32(assembler.constant((String) value));
+            assembler.imm32(assembler.addConstant((String) value));
             return;
         }
 

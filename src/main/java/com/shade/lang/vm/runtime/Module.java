@@ -27,12 +27,4 @@ public class Module extends ScriptObject {
     public List<ImportStatement> getImports() {
         return imports;
     }
-
-    @Override
-    public String toString() {
-        return "Module{" +
-                "name='" + name + '\'' +
-                ", source='" + source + '\'' +
-                '}';
-    }
 }

@@ -1,8 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.compiler.Opcode;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
@@ -32,7 +32,6 @@ public class CallExpression extends Expression {
 
         assembler.imm8(Opcode.CALL);
         assembler.imm8((byte) arguments.size());
-        assembler.span(region.getBegin());
     }
 
     public Expression getCallee() {

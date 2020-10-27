@@ -24,7 +24,6 @@ public class ReturnStatement extends Statement {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         value.compile(context, assembler);
-        assembler.span(getRegion().getBegin());
         assembler.imm8(Opcode.RET);
     }
 

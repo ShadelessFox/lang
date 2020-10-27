@@ -30,7 +30,7 @@ public class AssignAttributeStatement extends Statement {
         target.compile(context, assembler);
         value.compile(context, assembler);
         assembler.imm8(Opcode.SET_ATTRIBUTE);
-        assembler.imm32(assembler.constant(name));
+        assembler.imm32(assembler.addConstant(name));
     }
 
     public String getName() {

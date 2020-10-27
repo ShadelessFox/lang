@@ -18,13 +18,11 @@ public class LoadSymbolExpression extends Expression {
     public void compile(Context context, Assembler assembler) {
         if (context.hasSlot(name)) {
             assembler.imm8(Opcode.GET_LOCAL);
-            assembler.imm8(context.makeSlot(name));
+            assembler.imm8(context.addSlot(name));
         } else {
             assembler.imm8(Opcode.GET_GLOBAL);
-            assembler.imm32(assembler.constant(name));
+            assembler.imm32(assembler.addConstant(name));
         }
-
-        assembler.span(getRegion().getBegin());
     }
 
     public String getName() {

@@ -65,10 +65,10 @@ public class Parser {
         Token name = expect(Symbol, String);
         String alias = null;
         if (consume(Assign) != null) {
-            alias = expect(Symbol).getValue();
+            alias = expect(Symbol).getStringValue();
         }
         Token end = expect(Semicolon);
-        return new ImportStatement(name.getValue(), alias, name.getKind() == String, start.until(end.getRegion()));
+        return new ImportStatement(name.getStringValue(), alias, name.getKind() == String, start.until(end.getRegion()));
     }
 
     private Statement parseStatement() throws ScriptException {
@@ -121,7 +121,7 @@ public class Parser {
         Expression condition = parseExpression();
         String message = null;
         if (consume(Comma) != null) {
-            message = expect(String).getValue();
+            message = expect(String).getStringValue();
         }
         Token end = expect(Semicolon);
         String source = condition.getRegion().of(tokenizer.getBuffer());
@@ -134,7 +134,7 @@ public class Parser {
         expect(Recover);
         Token name = consume(Symbol);
         BlockStatement recover = parseBlockStatement();
-        return new TryStatement(body, recover, name == null ? null : name.getValue(), start.until(recover.getRegion()));
+        return new TryStatement(body, recover, name == null ? null : name.getStringValue(), start.until(recover.getRegion()));
     }
 
     private ReturnStatement parseReturnStatement() throws ScriptException {
@@ -176,7 +176,7 @@ public class Parser {
         expect(Assign);
         Expression value = parseExpression();
         expect(Semicolon);
-        return new DeclareVariableStatement(name.getValue(), value, start.until(token.getRegion()));
+        return new DeclareVariableStatement(name.getStringValue(), value, start.until(token.getRegion()));
     }
 
     private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
@@ -184,14 +184,14 @@ public class Parser {
         List<String> args = new ArrayList<>();
         expect(ParenL);
         if (!matches(ParenR, End)) {
-            args.add(expect(Symbol).getValue());
+            args.add(expect(Symbol).getStringValue());
             while (consume(Comma) != null) {
-                args.add(expect(Symbol).getValue());
+                args.add(expect(Symbol).getStringValue());
             }
         }
         expect(ParenR);
         BlockStatement body = parseBlockStatement();
-        return new DeclareFunctionStatement(name.getValue(), args, body, start.until(body.getRegion()));
+        return new DeclareFunctionStatement(name.getStringValue(), args, body, start.until(body.getRegion()));
     }
 
     public Expression parseExpression() throws ScriptException {
@@ -243,12 +243,12 @@ public class Parser {
         }
 
         if (token.getKind() == Symbol) {
-            Expression expression = new LoadSymbolExpression(token.getValue(), start.until(token.getRegion()));
+            Expression expression = new LoadSymbolExpression(token.getStringValue(), start.until(token.getRegion()));
 
             while (matches(Dot, ParenL)) {
                 while (consume(Dot) != null) {
                     Token name = expect(Symbol);
-                    expression = new LoadAttributeExpression(expression, name.getValue(), start.until(name.getRegion()));
+                    expression = new LoadAttributeExpression(expression, name.getStringValue(), start.until(name.getRegion()));
                 }
 
                 if (consume(ParenL) != null) {
@@ -268,15 +268,15 @@ public class Parser {
         }
 
         if (token.getKind() == StringPart) {
-            Expression lhs = new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
+            Expression lhs = new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
             Expression rhs = parseExpression();
             Expression string = new BinaryExpression(lhs, rhs, Add, lhs.getRegion().until(rhs.getRegion()));
 
             while (true) {
                 token = expect(String, StringPart);
 
-                if (!token.getValue().isEmpty()) {
-                    rhs = new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
+                if (!token.getStringValue().isEmpty()) {
+                    rhs = new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
                     string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
                 }
 
@@ -292,11 +292,11 @@ public class Parser {
         }
 
         if (token.getKind() == String) {
-            return new LoadConstantExpression<>(token.getValue(), start.until(token.getRegion()));
+            return new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
         }
 
         if (token.getKind() == Number) {
-            return new LoadConstantExpression<>(Integer.parseInt(token.getValue()), start.until(token.getRegion()));
+            return new LoadConstantExpression<>(Integer.parseInt(token.getStringValue()), start.until(token.getRegion()));
         }
 
         throw new AssertionError("Unreachable");
@@ -344,7 +344,7 @@ public class Parser {
         found.append(token.getKind().getQuotedName());
 
         if (token.getKind().hasFlag(TokenFlag.DISPLAY)) {
-            found.append(" '").append(token.getValue()).append("'");
+            found.append(" '").append(token.getStringValue()).append("'");
         }
 
         throw new ScriptException("Expected " + expected + " but found " + found, token.getRegion());

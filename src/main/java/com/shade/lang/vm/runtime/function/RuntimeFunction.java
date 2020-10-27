@@ -43,6 +43,14 @@ public class RuntimeFunction extends Function {
         machine.getCallStack().push(frame);
     }
 
+    public ByteBuffer getChunk() {
+        return chunk;
+    }
+
+    public Map<Integer, Region.Span> getLines() {
+        return lines;
+    }
+
     public Assembler.Guard[] getGuards() {
         return guards;
     }

@@ -35,7 +35,7 @@ public class DeclareFunctionStatement extends Statement {
         AtomicInteger totalSlots = new AtomicInteger();
 
         assembler = new Assembler(Machine.MAX_CODE_SIZE);
-        assembler.span(getRegion().getBegin());
+        assembler.addLine(getRegion().getBegin());
 
         Context functionContext = context.wrap();
         functionContext.setObserver((slot, name) -> {
@@ -43,12 +43,11 @@ public class DeclareFunctionStatement extends Statement {
                 totalSlots.set(slot + 1);
             }
         });
-        functionContext.makeSlots(arguments);
+        functionContext.addSlots(arguments);
 
         body.compile(functionContext, assembler);
 
         if (!body.isControlFlowReturned()) {
-            // TODO: Need a better way to emit implicit return
             assembler.imm8(Opcode.PUSH_INT);
             assembler.imm32(0);
             assembler.imm8(Opcode.RET);
@@ -57,7 +56,7 @@ public class DeclareFunctionStatement extends Statement {
         RuntimeFunction function = new RuntimeFunction(
             context.getModule(),
             name,
-            assembler.getBuffer(),
+            assembler.build(),
             assembler.getConstants(),
             assembler.getLines(),
             assembler.getGuards(),

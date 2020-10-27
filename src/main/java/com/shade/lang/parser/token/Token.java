@@ -3,9 +3,9 @@ package com.shade.lang.parser.token;
 public class Token {
     private final TokenKind kind;
     private final Region region;
-    private final String value;
+    private final Object value;
 
-    public Token(TokenKind kind, Region region, String value) {
+    public Token(TokenKind kind, Region region, Object value) {
         this.kind = kind;
         this.region = region;
         this.value = value;
@@ -14,7 +14,7 @@ public class Token {
     public Token(TokenKind kind, Region region) {
         this.kind = kind;
         this.region = region;
-        this.value = "";
+        this.value = null;
     }
 
     public TokenKind getKind() {
@@ -25,8 +25,8 @@ public class Token {
         return region;
     }
 
-    public String getValue() {
-        return value;
+    public String getStringValue() {
+        return (String) value;
     }
 
     @Override

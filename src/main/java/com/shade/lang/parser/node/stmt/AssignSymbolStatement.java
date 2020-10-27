@@ -29,10 +29,10 @@ public class AssignSymbolStatement extends Statement {
 
         if (context.hasSlot(name)) {
             assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(context.makeSlot(name));
+            assembler.imm8(context.addSlot(name));
         } else {
             assembler.imm8(Opcode.SET_GLOBAL);
-            assembler.imm32(assembler.constant(name));
+            assembler.imm32(assembler.addConstant(name));
         }
     }
 

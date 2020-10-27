@@ -26,7 +26,7 @@ public class DeclareVariableStatement extends Statement {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         if (!context.hasSlot(name)) {
-            int slot = context.makeSlot(name);
+            int slot = context.addSlot(name);
             value.compile(context, assembler);
             assembler.imm8(Opcode.SET_LOCAL);
             assembler.imm8(slot);

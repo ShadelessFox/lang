@@ -4,7 +4,10 @@ import com.shade.lang.parser.token.Region;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -12,33 +15,25 @@ import static com.shade.lang.compiler.Opcode.*;
 
 public class Assembler {
     private final ByteBuffer buffer;
-    private final Set<Label> labels;
+    private final List<Label> labels;
     private final List<String> constants;
-    private final Map<Integer, Region.Span> lines;
     private final List<Guard> guards;
+    private final Map<Integer, Region.Span> lines;
 
     public Assembler(int capacity) {
         this.buffer = ByteBuffer.allocate(capacity);
-        this.labels = new HashSet<>();
+        this.labels = new ArrayList<>();
         this.constants = new ArrayList<>();
-        this.lines = new HashMap<>();
         this.guards = new ArrayList<>();
-    }
-
-    public void imm8(byte imm) {
-        buffer.put(imm);
-    }
-
-    public void imm8(boolean imm) {
-        buffer.put(imm ? (byte) 1 : (byte) 0);
+        this.lines = new HashMap<>();
     }
 
     public void imm8(int imm) {
         buffer.put((byte) (imm & 0xff));
     }
 
-    public void imm16(short imm) {
-        buffer.putShort(imm);
+    public void imm16(int imm) {
+        buffer.putShort((short) (imm & 0xffff));
     }
 
     public void imm32(int imm) {
@@ -49,20 +44,8 @@ public class Assembler {
         buffer.putLong(imm);
     }
 
-    public void span(Region.Span span) {
-        lines.put(buffer.position(), span);
-    }
-
-    public int constant(String value) {
-        if (!constants.contains(value)) {
-            constants.add(value);
-        }
-        return constants.indexOf(value);
-    }
-
     public Label jump(byte opcode) {
         imm8(opcode);
-
         Label label = new Label(buffer.position());
         labels.add(label);
         buffer.putInt(0xcafebabe);
@@ -81,8 +64,15 @@ public class Assembler {
         buffer.putInt(label.position, buffer.position() - label.position);
     }
 
+    public ByteBuffer build() {
+        return (ByteBuffer) ByteBuffer
+            .allocate(buffer.position())
+            .put(buffer.array(), 0, buffer.position())
+            .position(0);
+    }
+
     public void dump(PrintStream stream) {
-        final ByteBuffer buffer = getBuffer();
+        final ByteBuffer buffer = build();
         final Map<Integer, Integer> labels = new HashMap<>();
 
         final Supplier<String> formatConstant = () -> {
@@ -148,36 +138,44 @@ public class Assembler {
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
                 case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
-                // @formatter:on
+                    // @formatter:on
             }
         }
-    }
-
-    public ByteBuffer getBuffer() {
-        return (ByteBuffer) ByteBuffer
-            .allocate(buffer.position())
-            .put(buffer.array(), 0, buffer.position())
-            .position(0);
     }
 
     public String[] getConstants() {
         return constants.toArray(new String[0]);
     }
 
+    public int addConstant(String value) {
+        if (!constants.contains(value)) {
+            constants.add(value);
+        }
+        return constants.indexOf(value);
+    }
+
     public Map<Integer, Region.Span> getLines() {
         return lines;
     }
 
-    public int getPosition() {
-        return buffer.position();
+    public void addLine(Region.Span span) {
+        lines.put(buffer.position(), span);
+    }
+
+    public Guard[] getGuards() {
+        return guards.toArray(new Guard[0]);
     }
 
     public void addGuard(int start, int end, int offset, int slot) {
         guards.add(new Guard(start, end, offset, slot));
     }
 
-    public Guard[] getGuards() {
-        return guards.toArray(new Guard[0]);
+    public int getPosition() {
+        return buffer.position();
+    }
+
+    public int getRemaining() {
+        return buffer.remaining();
     }
 
     public static class Label {
