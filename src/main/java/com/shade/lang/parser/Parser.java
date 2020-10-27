@@ -206,8 +206,8 @@ public class Parser {
             Expression rhs = parseUnaryExpression();
             lookahead = token.getKind();
 
-            while (lookahead.hasFlag(TokenFlag.BINARY) && lookahead.getPrecedence() > operator.getPrecedence()
-                || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence()) {
+            while (lookahead.hasFlag(TokenFlag.BINARY) && (lookahead.getPrecedence() > operator.getPrecedence()
+                || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence())) {
                 rhs = parseExpression(rhs, lookahead.getPrecedence());
                 lookahead = token.getKind();
             }

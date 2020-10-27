@@ -19,8 +19,6 @@ public enum TokenKind {
     Assert("assert", 0, TokenFlag.QUOTED),
     Try("try", 0, TokenFlag.QUOTED),
     Recover("recover", 0, TokenFlag.QUOTED),
-    And("and", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
-    Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
@@ -37,8 +35,11 @@ public enum TokenKind {
     MulAssign("*=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
     DivAssign("/=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
 
-    Eq("==", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
-    NotEq("!=", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
+    And("and", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
+
+    Eq("==", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
+    NotEq("!=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     Less("<", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     LessEq("<=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     Greater(">", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
