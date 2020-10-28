@@ -21,7 +21,7 @@ public class NativeFunction extends Function {
             locals[index - 1] = machine.getOperandStack().pop();
         }
 
-        machine.getCallStack().push(new Machine.NativeFrame(this));
+        machine.getCallStack().push(new Machine.Frame(this, null, null, null));
 
         ScriptObject result = prototype.apply(machine, locals);
 

@@ -447,8 +447,19 @@ public class Machine {
             return locals;
         }
 
-        public Map<Integer, Region.Span> getLines() {
-            return lines;
+        public String getSource() {
+            if (function instanceof RuntimeFunction) {
+                Map<Integer, Region.Span> lines = ((RuntimeFunction) function).getLines();
+                if (lines.containsKey(pc)) {
+                    return function.getModule().getSource() + ':' + lines.get(pc);
+                } else {
+                    return function.getModule().getSource() + ':' + '+' + pc;
+                }
+            } else if (function instanceof NativeFunction) {
+                return "Native function";
+            } else {
+                return "Unknown source";
+            }
         }
 
         @Override
@@ -470,28 +481,16 @@ public class Machine {
 
         @Override
         public String toString() {
-            String position = lines.containsKey(pc) ? lines.get(pc).toString() : "+" + pc;
-            return function.getModule().getName() + "/" + function.getName() + "(" + function.getModule().getSource() + ":" + position + ")";
+            return function.getModule().getName() + '/' + function.getName() + '(' + getSource() + ')';
         }
     }
 
-    public static class NativeFrame extends Frame {
-        public NativeFrame(NativeFunction function) {
-            super(function, null, null, null, null);
-        }
-
-        @Override
-        public String toString() {
-            return getFunction().getModule().getName() + "/" + getFunction().getName() + "(Native Method)";
-        }
-    }
-
-    public static class ParserFrame extends Frame {
+    private static class ParserFrame extends Frame {
         private final String source;
         private final ScriptException exception;
 
         public ParserFrame(String source, ScriptException exception) {
-            super(null, null, null, null, null);
+            super(null, null, null, null);
             this.source = source;
             this.exception = exception;
         }
