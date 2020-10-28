@@ -12,24 +12,35 @@ public class Context implements Iterable<Context> {
     private BiConsumer<Integer, String> observer;
     private int slotsCount;
 
-    public Context(Context parent, int slotsNextId) {
+    public Context(Context parent) {
         this.module = parent.module;
         this.parent = parent;
         this.slots = new ArrayList<>();
-        this.slotsCount = slotsNextId;
+        this.slotsCount = parent.slotsCount;
     }
 
-    public Context(Module module, int slotsNextId) {
+    public Context(Module module) {
         this.module = module;
         this.parent = null;
         this.slots = new ArrayList<>();
-        this.slotsCount = slotsNextId;
+        this.slotsCount = 0;
     }
 
     public Context wrap() {
-        Context context = new Context(this, slotsCount);
+        Context context = new Context(this);
         context.setObserver(observer);
         return context;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Context> T unwrap(Class<? extends T> clazz) {
+        for (Context context : this) {
+            if (clazz.isAssignableFrom(context.getClass())) {
+                return (T) context;
+            }
+        }
+
+        return null;
     }
 
     @Override

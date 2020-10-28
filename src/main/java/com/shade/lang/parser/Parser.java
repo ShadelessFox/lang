@@ -83,6 +83,12 @@ public class Parser {
                 return parseReturnStatement();
             case Try:
                 return parseTryStatement();
+            case Loop:
+                return parseLoopStatement();
+            case Continue:
+                return parseContinueStatement();
+            case Break:
+                return parseBreakStatement();
             case BraceL:
                 return parseBlockStatement();
         }
@@ -114,6 +120,29 @@ public class Parser {
         Token end = expect(Semicolon);
 
         return new ExpressionStatement(expression, expression.getRegion().until(end.getRegion()));
+    }
+
+    private LoopStatement parseLoopStatement() throws ScriptException {
+        Region start = expect(Loop).getRegion();
+        Token mode = consume(While);
+        Expression condition = null;
+        if (mode != null && !matches(BraceL)) {
+            condition = parseExpression();
+        }
+        BlockStatement body = parseBlockStatement();
+        return new LoopStatement(condition, body, start.until(body.getRegion()));
+    }
+
+    private ContinueStatement parseContinueStatement() throws ScriptException {
+        Region start = expect(Continue).getRegion();
+        Region end = expect(Semicolon).getRegion();
+        return new ContinueStatement(start.until(end));
+    }
+
+    private BreakStatement parseBreakStatement() throws ScriptException {
+        Region start = expect(Break).getRegion();
+        Region end = expect(Semicolon).getRegion();
+        return new BreakStatement(start.until(end));
     }
 
     private AssertStatement parseAssertStatement() throws ScriptException {

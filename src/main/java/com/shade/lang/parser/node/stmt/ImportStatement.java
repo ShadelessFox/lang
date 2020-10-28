@@ -18,11 +18,6 @@ public class ImportStatement extends Statement {
     }
 
     @Override
-    public boolean isControlFlowReturned() {
-        return false;
-    }
-
-    @Override
     public void compile(Context context, Assembler assembler) {
         context.getModule().getImports().add(this);
     }

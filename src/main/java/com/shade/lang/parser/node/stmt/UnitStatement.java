@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.compiler.Assembler;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
@@ -17,11 +17,6 @@ public class UnitStatement extends Statement {
         super(region);
         this.name = name;
         this.statements = Collections.unmodifiableList(statements);
-    }
-
-    @Override
-    public boolean isControlFlowReturned() {
-        return false;
     }
 
     @Override

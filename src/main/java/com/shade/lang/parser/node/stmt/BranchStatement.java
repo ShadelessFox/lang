@@ -1,8 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.compiler.Opcode;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -24,6 +24,11 @@ public class BranchStatement extends Statement {
     @Override
     public boolean isControlFlowReturned() {
         return pass.isControlFlowReturned() && (fail == null || fail.isControlFlowReturned());
+    }
+
+    @Override
+    public boolean isControlFlowInterrupted() {
+        return pass.isControlFlowInterrupted() && (fail == null || fail.isControlFlowInterrupted());
     }
 
     @Override

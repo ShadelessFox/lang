@@ -52,6 +52,10 @@ public class Assembler {
     }
 
     public void bind(Label label) {
+        bind(label, buffer.position());
+    }
+
+    public void bind(Label label, int offset) {
         if (label == null) {
             return;
         }
@@ -60,7 +64,7 @@ public class Assembler {
             throw new IllegalArgumentException("Invalid label");
         }
 
-        buffer.putInt(label.position, buffer.position() - label.position);
+        buffer.putInt(label.position, offset - label.position);
     }
 
     public ByteBuffer build() {

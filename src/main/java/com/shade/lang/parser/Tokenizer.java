@@ -80,6 +80,14 @@ public class Tokenizer {
                         return make(TokenKind.Try);
                     case "recover":
                         return make(TokenKind.Recover);
+                    case "loop":
+                        return make(TokenKind.Loop);
+                    case "while":
+                        return make(TokenKind.While);
+                    case "continue":
+                        return make(TokenKind.Continue);
+                    case "break":
+                        return make(TokenKind.Break);
                     default:
                         return make(TokenKind.Symbol, builder.toString());
                 }

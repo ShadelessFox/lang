@@ -63,7 +63,7 @@ public class Machine {
 
     public void load(String name, String source, Reader reader) {
         Module module = new Module(name, source);
-        Context context = new Context(module, 0);
+        Context context = new Context(module);
 
         try {
             Parser parser = new Parser(new Tokenizer(reader));
@@ -447,7 +447,7 @@ public class Machine {
             return locals;
         }
 
-        public String getSource() {
+        public String getSourceLocation() {
             if (function instanceof RuntimeFunction) {
                 Map<Integer, Region.Span> lines = ((RuntimeFunction) function).getLines();
                 if (lines.containsKey(pc)) {
@@ -481,7 +481,7 @@ public class Machine {
 
         @Override
         public String toString() {
-            return function.getModule().getName() + '/' + function.getName() + '(' + getSource() + ')';
+            return function.getModule().getName() + '/' + function.getName() + '(' + getSourceLocation() + ')';
         }
     }
 

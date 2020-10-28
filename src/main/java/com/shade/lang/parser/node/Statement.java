@@ -8,7 +8,13 @@ public abstract class Statement extends Node {
         super(region);
     }
 
-    public abstract boolean isControlFlowReturned();
+    public boolean isControlFlowReturned() {
+        return false;
+    }
+
+    public boolean isControlFlowInterrupted() {
+        return false;
+    }
 
     @Override
     public final void accept(Visitor visitor) {

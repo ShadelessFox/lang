@@ -1,8 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.compiler.Opcode;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -18,11 +18,6 @@ public class AssignAttributeStatement extends Statement {
         this.target = target;
         this.name = name;
         this.value = value;
-    }
-
-    @Override
-    public boolean isControlFlowReturned() {
-        return false;
     }
 
     @Override

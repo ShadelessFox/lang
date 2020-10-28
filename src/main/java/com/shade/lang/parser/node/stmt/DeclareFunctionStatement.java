@@ -26,11 +26,6 @@ public class DeclareFunctionStatement extends Statement {
     }
 
     @Override
-    public boolean isControlFlowReturned() {
-        return false;
-    }
-
-    @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         AtomicInteger totalSlots = new AtomicInteger();
 

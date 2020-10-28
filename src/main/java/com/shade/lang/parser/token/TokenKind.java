@@ -19,6 +19,10 @@ public enum TokenKind {
     Assert("assert", 0, TokenFlag.QUOTED),
     Try("try", 0, TokenFlag.QUOTED),
     Recover("recover", 0, TokenFlag.QUOTED),
+    Loop("loop", 0, TokenFlag.QUOTED),
+    While("while", 0, TokenFlag.QUOTED),
+    Continue("continue", 0, TokenFlag.QUOTED),
+    Break("break", 0, TokenFlag.QUOTED),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
