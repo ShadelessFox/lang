@@ -25,6 +25,8 @@ public class DeclareVariableStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Declare local");
+
         if (!context.hasSlot(name)) {
             int slot = context.addSlot(name);
             value.compile(context, assembler);

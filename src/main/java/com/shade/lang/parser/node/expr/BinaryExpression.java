@@ -63,6 +63,8 @@ public class BinaryExpression extends Expression {
             default:
                 throw new AssertionError("Unsupported binary operator: " + operator);
         }
+
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public Expression getLhs() {

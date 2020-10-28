@@ -27,11 +27,12 @@ public class AssertStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Assert");
         condition.compile(context, assembler);
         assembler.imm8(Opcode.ASSERT);
         assembler.imm32(assembler.addConstant(source));
         assembler.imm32(assembler.addConstant(message));
-        assembler.addLine(getRegion().getBegin());
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public Expression getCondition() {

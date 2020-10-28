@@ -1,8 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
-import com.shade.lang.parser.ScriptException;
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.compiler.Opcode;
+import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
@@ -34,9 +34,6 @@ public class DeclareFunctionStatement extends Statement {
     public void compile(Context context, Assembler assembler) throws ScriptException {
         AtomicInteger totalSlots = new AtomicInteger();
 
-        assembler = new Assembler(Machine.MAX_CODE_SIZE);
-        assembler.addLine(getRegion().getBegin());
-
         Context functionContext = context.wrap();
         functionContext.setObserver((slot, name) -> {
             if (totalSlots.get() < slot + 1) {
@@ -45,7 +42,13 @@ public class DeclareFunctionStatement extends Statement {
         });
         functionContext.addSlots(arguments);
 
+        assembler = new Assembler(Machine.MAX_CODE_SIZE);
+        assembler.addTraceLine(getRegion().getBegin());
+        assembler.addDebugLine(body.getRegion().getBegin(), "Function entry");
+
         body.compile(functionContext, assembler);
+
+        assembler.addDebugLine(getRegion().getEnd(), "Function end");
 
         if (!body.isControlFlowReturned()) {
             assembler.imm8(Opcode.PUSH_INT);
@@ -58,7 +61,7 @@ public class DeclareFunctionStatement extends Statement {
             name,
             assembler.build(),
             assembler.getConstants(),
-            assembler.getLines(),
+            assembler.getTraceLines(),
             assembler.getGuards(),
             arguments.size(), totalSlots.get());
 

@@ -25,6 +25,7 @@ public class AssignSymbolStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Assign symbol");
         value.compile(context, assembler);
 
         if (context.hasSlot(name)) {

@@ -28,6 +28,8 @@ public class BranchStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Branch");
+
         if (condition instanceof LogicalExpression) {
             LogicalExpression expression = (LogicalExpression) condition;
             expression.setPass(pass);

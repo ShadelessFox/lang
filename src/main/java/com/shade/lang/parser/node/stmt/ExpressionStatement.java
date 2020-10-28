@@ -23,8 +23,8 @@ public class ExpressionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Expression");
         expression.compile(context, assembler);
-        assembler.addLine(getRegion().getBegin());
         assembler.imm8(Opcode.POP);
     }
 

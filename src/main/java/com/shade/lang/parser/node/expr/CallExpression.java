@@ -32,7 +32,8 @@ public class CallExpression extends Expression {
 
         assembler.imm8(Opcode.CALL);
         assembler.imm8((byte) arguments.size());
-        assembler.addLine(getRegion().getBegin());
+
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public Expression getCallee() {

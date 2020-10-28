@@ -27,6 +27,7 @@ public class AssignAttributeStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Assign attribute");
         target.compile(context, assembler);
         value.compile(context, assembler);
         assembler.imm8(Opcode.SET_ATTRIBUTE);

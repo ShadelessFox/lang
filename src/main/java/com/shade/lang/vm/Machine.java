@@ -409,15 +409,13 @@ public class Machine {
         private final byte[] chunk;
         private final String[] constants;
         private final ScriptObject[] locals;
-        private final Map<Integer, Region.Span> lines;
         private int pc;
 
-        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] locals, Map<Integer, Region.Span> lines) {
+        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] locals) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
             this.locals = locals;
-            this.lines = lines;
             this.pc = 0;
         }
 

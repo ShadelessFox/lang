@@ -36,6 +36,8 @@ public class UnaryExpression extends Expression {
             default:
                 throw new AssertionError("Unsupported unary operator: " + operator);
         }
+
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public Expression getRhs() {

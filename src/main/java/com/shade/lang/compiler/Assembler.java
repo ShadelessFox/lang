@@ -4,10 +4,7 @@ import com.shade.lang.parser.token.Region;
 
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -18,14 +15,16 @@ public class Assembler {
     private final List<Label> labels;
     private final List<String> constants;
     private final List<Guard> guards;
-    private final Map<Integer, Region.Span> lines;
+    private final Map<Integer, Region.Span> traceLines;
+    private final Map<Region.Span, Integer> debugLines;
 
     public Assembler(int capacity) {
         this.buffer = ByteBuffer.allocate(capacity);
         this.labels = new ArrayList<>();
         this.constants = new ArrayList<>();
         this.guards = new ArrayList<>();
-        this.lines = new HashMap<>();
+        this.traceLines = new LinkedHashMap<>();
+        this.debugLines = new LinkedHashMap<>();
     }
 
     public void imm8(int imm) {
@@ -154,12 +153,20 @@ public class Assembler {
         return constants.indexOf(value);
     }
 
-    public Map<Integer, Region.Span> getLines() {
-        return lines;
+    public Map<Integer, Region.Span> getTraceLines() {
+        return traceLines;
     }
 
-    public void addLine(Region.Span span) {
-        lines.put(buffer.position(), span);
+    public void addTraceLine(Region.Span span) {
+        traceLines.put(buffer.position(), span);
+    }
+
+    public Map<Region.Span, Integer> getDebugLines() {
+        return debugLines;
+    }
+
+    public void addDebugLine(Region.Span span, String note) {
+        debugLines.put(span, buffer.position());
     }
 
     public Guard[] getGuards() {

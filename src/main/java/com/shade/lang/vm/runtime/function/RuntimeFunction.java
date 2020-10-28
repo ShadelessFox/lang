@@ -39,7 +39,7 @@ public class RuntimeFunction extends Function {
             objects[index - 1] = machine.getOperandStack().pop();
         }
 
-        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, objects, lines);
+        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, objects);
         machine.getCallStack().push(frame);
     }
 

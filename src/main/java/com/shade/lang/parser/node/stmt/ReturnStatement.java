@@ -23,6 +23,7 @@ public class ReturnStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.addDebugLine(getRegion().getBegin(), "Return");
         value.compile(context, assembler);
         assembler.imm8(Opcode.RET);
     }

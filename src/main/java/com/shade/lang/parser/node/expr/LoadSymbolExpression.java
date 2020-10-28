@@ -23,6 +23,8 @@ public class LoadSymbolExpression extends Expression {
             assembler.imm8(Opcode.GET_GLOBAL);
             assembler.imm32(assembler.addConstant(name));
         }
+
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public String getName() {
