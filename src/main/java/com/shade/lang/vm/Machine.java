@@ -181,33 +181,39 @@ public class Machine {
                     break;
                 }
                 case ADD: {
-                    Object b = ((Value) operandStack.pop()).getValue();
-                    Object a = ((Value) operandStack.pop()).getValue();
-
-                    if (a instanceof Integer && b instanceof Integer) {
-                        operandStack.push(new Value((int) a + (int) b));
-                    } else {
-                        operandStack.push(new Value(a.toString() + b.toString()));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Value result = a.add(this, b);
+                    if (result != null) {
+                        operandStack.push(result);
                     }
-
                     break;
                 }
                 case SUB: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a - b));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Value result = a.sub(this, b);
+                    if (result != null) {
+                        operandStack.push(result);
+                    }
                     break;
                 }
                 case MUL: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a * b));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Value result = a.mul(this, b);
+                    if (result != null) {
+                        operandStack.push(result);
+                    }
                     break;
                 }
                 case DIV: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a / b));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Value result = a.div(this, b);
+                    if (result != null) {
+                        operandStack.push(result);
+                    }
                     break;
                 }
                 case JUMP: {
