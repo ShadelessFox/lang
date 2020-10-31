@@ -44,10 +44,6 @@ public class Machine {
         modules.put(module.getName(), module);
 
         for (ImportStatement statement : module.getImports()) {
-            if (statement.isPath()) {
-                throw new ScriptException("Loading modules from file is not supported yet", statement.getRegion());
-            }
-
             String name = statement.getName();
 
             if (modules.containsKey(name)) {
@@ -309,6 +305,16 @@ public class Machine {
                         } else {
                             panic("Assertion failed '" + source + "'", true);
                         }
+                    }
+                    break;
+                }
+                case IMPORT: {
+                    String name = frame.nextConstant();
+                    byte slot = frame.nextImm8();
+                    if (modules.containsKey(name)) {
+                        frame.locals[slot] = modules.get(name);
+                    } else {
+                        panic("No such module named '" + name + "'", true);
                     }
                     break;
                 }

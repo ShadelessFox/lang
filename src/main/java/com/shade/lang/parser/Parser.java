@@ -50,7 +50,7 @@ public class Parser {
 
             switch (token.getKind()) {
                 case Import:
-                    statements.add(parseImportStatement(token.getRegion()));
+                    statements.add(parseImportStatement(token.getRegion(), true));
                     break;
                 case Def:
                     statements.add(parseFunctionDeclareStatement(token.getRegion()));
@@ -61,18 +61,20 @@ public class Parser {
         }
     }
 
-    private ImportStatement parseImportStatement(Region start) throws ScriptException {
-        Token name = expect(Symbol, String);
+    private ImportStatement parseImportStatement(Region start, boolean global) throws ScriptException {
+        String name = expect(Symbol).getStringValue();
         String alias = null;
         if (consume(Assign) != null) {
             alias = expect(Symbol).getStringValue();
         }
         Token end = expect(Semicolon);
-        return new ImportStatement(name.getStringValue(), alias, name.getKind() == String, start.until(end.getRegion()));
+        return new ImportStatement(name, alias, global, start.until(end.getRegion()));
     }
 
     private Statement parseStatement() throws ScriptException {
         switch (token.getKind()) {
+            case Import:
+                return parseImportStatement(advance().getRegion(), false);
             case Assert:
                 return parseAssertStatement();
             case Let:
@@ -358,25 +360,26 @@ public class Parser {
             return consumed;
         }
 
-        StringBuilder expected = new StringBuilder();
+        StringBuilder message = new StringBuilder();
+        message.append("Expected ");
 
         for (int index = 0; index < kinds.length; index++) {
-            expected.append(kinds[index].getQuotedName());
+            message.append(kinds[index].getQuotedName());
             if (index < kinds.length - 2) {
-                expected.append(", ");
+                message.append(", ");
             } else if (index < kinds.length - 1) {
-                expected.append(" or ");
+                message.append(" or ");
             }
         }
 
-        StringBuilder found = new StringBuilder();
-        found.append(token.getKind().getQuotedName());
+        message.append(" but found ");
 
+        message.append(token.getKind().getQuotedName());
         if (token.getKind().hasFlag(TokenFlag.DISPLAY)) {
-            found.append(" '").append(token.getStringValue()).append("'");
+            message.append(" '").append(token.getStringValue()).append("'");
         }
 
-        throw new ScriptException("Expected " + expected + " but found " + found, token.getRegion());
+        throw new ScriptException(message.toString(), token.getRegion());
     }
 
     private Token advance() throws ScriptException {

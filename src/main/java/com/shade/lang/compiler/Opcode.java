@@ -47,7 +47,7 @@ public class Opcode {
 
     /* Debugging */
     public static final byte ASSERT        = 0x1F;
-    public static final byte BREAKPOINT    = 0x20;
+    public static final byte IMPORT        = 0x20;
 
 
     // @formatter:on
