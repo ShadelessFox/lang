@@ -54,4 +54,16 @@ public class RuntimeFunction extends Function {
     public Assembler.Guard[] getGuards() {
         return guards;
     }
+
+    public String[] getConstants() {
+        return constants;
+    }
+
+    public int getArguments() {
+        return arguments;
+    }
+
+    public int getLocals() {
+        return locals;
+    }
 }

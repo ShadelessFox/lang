@@ -53,8 +53,6 @@ public class Machine {
                 throw new ScriptException("No such module named '" + statement.getName() + "'", statement.getRegion());
             }
         }
-
-        module.getImports().clear();
     }
 
     public void load(String name, String source, Reader reader) {
@@ -408,6 +406,10 @@ public class Machine {
 
     public int getStatus() {
         return status;
+    }
+
+    public Map<String, Module> getModules() {
+        return modules;
     }
 
     public static class Frame {
