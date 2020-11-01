@@ -23,10 +23,9 @@ public class DeclareVariableStatement extends Statement {
         assembler.addDebugLine(getRegion().getBegin(), "Declare local");
 
         if (!context.hasSlot(name)) {
-            int slot = context.addSlot(name);
             value.compile(context, assembler);
             assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(slot);
+            assembler.imm8(context.addSlot(name));
         } else {
             throw new ScriptException("Local variable '" + name + "' already declared", getRegion());
         }
