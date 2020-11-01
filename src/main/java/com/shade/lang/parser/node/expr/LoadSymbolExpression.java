@@ -6,6 +6,8 @@ import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 
+import java.util.Objects;
+
 public class LoadSymbolExpression extends Expression {
     private final String name;
 
@@ -25,6 +27,19 @@ public class LoadSymbolExpression extends Expression {
         }
 
         assembler.addTraceLine(getRegion().getBegin());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LoadSymbolExpression that = (LoadSymbolExpression) o;
+        return name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 
     public String getName() {

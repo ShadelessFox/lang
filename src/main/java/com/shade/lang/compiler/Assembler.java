@@ -140,6 +140,7 @@ public class Assembler {
                 case RET:           stream.printf("%s: RET%n", line.get()); break;
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
                 case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
+                case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                     // @formatter:on
             }

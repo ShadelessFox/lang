@@ -9,17 +9,16 @@ import com.shade.lang.parser.token.Region;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class CallExpression extends Expression {
     private final Expression callee;
     private final List<Expression> arguments;
-    private final Region region;
 
     public CallExpression(Expression callee, List<Expression> arguments, Region region) {
         super(region);
         this.callee = callee;
         this.arguments = Collections.unmodifiableList(arguments);
-        this.region = region;
     }
 
     @Override
@@ -34,6 +33,19 @@ public class CallExpression extends Expression {
         assembler.imm8((byte) arguments.size());
 
         assembler.addTraceLine(getRegion().getBegin());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CallExpression that = (CallExpression) o;
+        return callee.equals(that.callee) && arguments.equals(that.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(callee, arguments);
     }
 
     public Expression getCallee() {

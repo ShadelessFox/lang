@@ -7,6 +7,8 @@ import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 
+import java.util.Objects;
+
 public class LoadAttributeExpression extends Expression {
     private final Expression owner;
     private final String name;
@@ -23,6 +25,20 @@ public class LoadAttributeExpression extends Expression {
         assembler.imm8(Opcode.GET_ATTRIBUTE);
         assembler.imm32(assembler.addConstant(name));
         assembler.addTraceLine(getRegion().getBegin());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LoadAttributeExpression that = (LoadAttributeExpression) o;
+        return owner.equals(that.owner) &&
+            name.equals(that.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(owner, name);
     }
 
     public Expression getOwner() {

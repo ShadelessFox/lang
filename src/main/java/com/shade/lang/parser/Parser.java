@@ -264,54 +264,34 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Region start = token.getRegion();
-        Token token = expect(ParenL, Symbol, String, StringPart, Number);
+        Token start = expect(Symbol, Number, String, StringPart, ParenL);
 
-        if (token.getKind() == ParenL) {
-            Expression expr = parseExpression();
-            Token end = expect(ParenR);
-            return new CompoundExpression(expr, start.until(end.getRegion()));
+        if (start.getKind() == Symbol) {
+            return parsePrimaryExpression(new LoadSymbolExpression(start.getStringValue(), start.getRegion().until(token.getRegion())));
         }
 
-        if (token.getKind() == Symbol) {
-            Expression expression = new LoadSymbolExpression(token.getStringValue(), start.until(token.getRegion()));
-
-            while (matches(Dot, ParenL)) {
-                while (consume(Dot) != null) {
-                    Token name = expect(Symbol);
-                    expression = new LoadAttributeExpression(expression, name.getStringValue(), start.until(name.getRegion()));
-                }
-
-                if (consume(ParenL) != null) {
-                    List<Expression> arguments = new ArrayList<>();
-                    if (!matches(ParenR, End)) {
-                        arguments.add(parseExpression());
-                        while (consume(Comma) != null) {
-                            arguments.add(parseExpression());
-                        }
-                    }
-                    Token end = expect(ParenR);
-                    expression = new CallExpression(expression, arguments, start.until(end.getRegion()));
-                }
-            }
-
-            return expression;
+        if (start.getKind() == Number) {
+            return new LoadConstantExpression<>(Integer.parseInt(start.getStringValue()), start.getRegion().until(token.getRegion()));
         }
 
-        if (token.getKind() == StringPart) {
-            Expression lhs = new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
+        if (start.getKind() == String) {
+            return new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(token.getRegion()));
+        }
+
+        if (start.getKind() == StringPart) {
+            Expression lhs = new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(token.getRegion()));
             Expression rhs = parseExpression();
             Expression string = new BinaryExpression(lhs, rhs, Add, lhs.getRegion().until(rhs.getRegion()));
 
             while (true) {
-                token = expect(String, StringPart);
+                start = expect(String, StringPart);
 
-                if (!token.getStringValue().isEmpty()) {
-                    rhs = new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
+                if (!start.getStringValue().isEmpty()) {
+                    rhs = new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(start.getRegion()));
                     string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
                 }
 
-                if (token.getKind() == String) {
+                if (start.getKind() == String) {
                     break;
                 }
 
@@ -322,12 +302,39 @@ public class Parser {
             return string;
         }
 
-        if (token.getKind() == String) {
-            return new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
+        if (start.getKind() == ParenL) {
+            Expression expression = parseExpression();
+            expect(ParenR);
+            return parsePrimaryExpression(new CompoundExpression(expression, start.getRegion().until(token.getRegion())));
         }
 
-        if (token.getKind() == Number) {
-            return new LoadConstantExpression<>(Integer.parseInt(token.getStringValue()), start.until(token.getRegion()));
+        throw new AssertionError("Unreachable");
+    }
+
+    private Expression parsePrimaryExpression(Expression lhs) throws ScriptException {
+        Token token = consume(ParenL, Dot);
+
+        if (token == null) {
+            return lhs;
+        }
+
+        if (token.getKind() == Dot) {
+            String name = expect(Symbol).getStringValue();
+            return parsePrimaryExpression(new LoadAttributeExpression(lhs, name, lhs.getRegion().until(token.getRegion())));
+        }
+
+        if (token.getKind() == ParenL) {
+            List<Expression> arguments = new ArrayList<>();
+
+            if (matches(Symbol, Number, String, StringPart, ParenL)) {
+                do {
+                    arguments.add(parseExpression());
+                } while (consume(Comma) != null);
+            }
+
+            Token end = expect(ParenR);
+
+            return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end.getRegion())));
         }
 
         throw new AssertionError("Unreachable");
