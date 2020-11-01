@@ -264,34 +264,35 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Token start = expect(Symbol, Number, String, StringPart, ParenL);
+        Token token = expect(Symbol, Number, String, StringPart, ParenL);
+        Region start = token.getRegion();
 
-        if (start.getKind() == Symbol) {
-            return parsePrimaryExpression(new LoadSymbolExpression(start.getStringValue(), start.getRegion().until(token.getRegion())));
+        if (token.getKind() == Symbol) {
+            return parsePrimaryExpression(new LoadSymbolExpression(token.getStringValue(), start));
         }
 
-        if (start.getKind() == Number) {
-            return new LoadConstantExpression<>(Integer.parseInt(start.getStringValue()), start.getRegion().until(token.getRegion()));
+        if (token.getKind() == Number) {
+            return new LoadConstantExpression<>(Integer.parseInt(token.getStringValue()), start);
         }
 
-        if (start.getKind() == String) {
-            return new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(token.getRegion()));
+        if (token.getKind() == String) {
+            return new LoadConstantExpression<>(token.getStringValue(), start);
         }
 
-        if (start.getKind() == StringPart) {
-            Expression lhs = new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(token.getRegion()));
+        if (token.getKind() == StringPart) {
+            Expression lhs = new LoadConstantExpression<>(token.getStringValue(), start);
             Expression rhs = parseExpression();
             Expression string = new BinaryExpression(lhs, rhs, Add, lhs.getRegion().until(rhs.getRegion()));
 
             while (true) {
-                start = expect(String, StringPart);
+                token = expect(String, StringPart);
 
-                if (!start.getStringValue().isEmpty()) {
-                    rhs = new LoadConstantExpression<>(start.getStringValue(), start.getRegion().until(start.getRegion()));
+                if (!token.getStringValue().isEmpty()) {
+                    rhs = new LoadConstantExpression<>(token.getStringValue(), start.until(token.getRegion()));
                     string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
                 }
 
-                if (start.getKind() == String) {
+                if (token.getKind() == String) {
                     break;
                 }
 
@@ -302,10 +303,10 @@ public class Parser {
             return string;
         }
 
-        if (start.getKind() == ParenL) {
+        if (token.getKind() == ParenL) {
             Expression expression = parseExpression();
-            expect(ParenR);
-            return parsePrimaryExpression(new CompoundExpression(expression, start.getRegion().until(token.getRegion())));
+            Region end = expect(ParenR).getRegion();
+            return parsePrimaryExpression(new CompoundExpression(expression, start.until(end)));
         }
 
         throw new AssertionError("Unreachable");
@@ -319,8 +320,8 @@ public class Parser {
         }
 
         if (token.getKind() == Dot) {
-            String name = expect(Symbol).getStringValue();
-            return parsePrimaryExpression(new LoadAttributeExpression(lhs, name, lhs.getRegion().until(token.getRegion())));
+            Token name = expect(Symbol);
+            return parsePrimaryExpression(new LoadAttributeExpression(lhs, name.getStringValue(), lhs.getRegion().until(name.getRegion())));
         }
 
         if (token.getKind() == ParenL) {
@@ -332,9 +333,8 @@ public class Parser {
                 } while (consume(Comma) != null);
             }
 
-            Token end = expect(ParenR);
-
-            return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end.getRegion())));
+            Region end = expect(ParenR).getRegion();
+            return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end)));
         }
 
         throw new AssertionError("Unreachable");
