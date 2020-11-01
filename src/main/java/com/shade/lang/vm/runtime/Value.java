@@ -44,8 +44,9 @@ public class Value extends ScriptObject {
         return null;
     }
 
-    public Object getValue() {
-        return value;
+    @SuppressWarnings("unchecked")
+    public <T> T getValue() {
+        return (T) value;
     }
 
     @Override

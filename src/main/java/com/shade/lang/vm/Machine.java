@@ -16,6 +16,11 @@ import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.io.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 import static com.shade.lang.compiler.Opcode.*;
@@ -34,7 +39,38 @@ public class Machine {
     private boolean halted;
     private int status;
 
-    public void load(Module module) throws ScriptException {
+    public Module load(Path path) {
+        String source = path.toAbsolutePath().toString();
+        String name = path.getFileName().toString();
+
+        if (name.indexOf('.') >= 0) {
+            name = name.substring(0, name.indexOf('.'));
+        }
+
+        if (modules.containsKey(name)) {
+            return modules.get(name);
+        }
+
+        Module module = new Module(name, source);
+        Context context = new Context(module);
+
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            Parser parser = new Parser(new Tokenizer(reader));
+
+            Node node = parser.parse(source, Parser.Mode.Unit);
+            node.compile(context, null);
+
+            return load(module);
+        } catch (ScriptException e) {
+            callStack.push(new ParserFrame(source, e));
+            panic(e.getMessage());
+            return null;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Module load(Module module) throws ScriptException {
         Objects.requireNonNull(module);
 
         if (modules.containsKey(module.getName())) {
@@ -45,35 +81,21 @@ public class Machine {
 
         for (ImportStatement statement : module.getImports()) {
             String name = statement.getName();
-
-            if (modules.containsKey(name)) {
-                String alias = statement.getAlias() == null ? name : statement.getAlias();
-                module.setAttribute(alias, modules.get(name));
-            } else {
-                throw new ScriptException("No such module named '" + statement.getName() + "'", statement.getRegion());
-            }
+            String alias = statement.getAlias() == null ? name : statement.getAlias();
+            module.setAttribute(alias, load(statement));
         }
+
+        return module;
     }
 
-    public void load(String name, String source, Reader reader) {
-        Module module = new Module(name, source);
-        Context context = new Context(module);
+    public Module load(ImportStatement statement) throws ScriptException {
+        Module module = modules.get(statement.getName());
 
-        try {
-            Parser parser = new Parser(new Tokenizer(reader));
-            Node node = parser.parse(source, Parser.Mode.Unit);
-            node.compile(context, null);
-            load(module);
-        } catch (ScriptException e) {
-            callStack.push(new ParserFrame(source, e));
-            panic(e.getMessage());
+        if (module != null) {
+            return module;
         }
-    }
 
-    public void load(String name, File file) throws IOException {
-        try (FileReader reader = new FileReader(file)) {
-            load(name, file.getPath(), reader);
-        }
+        throw new ScriptException("No module named '" + statement.getName() + "'", statement.getRegion());
     }
 
     public Object call(String moduleName, String attributeName, Object... args) {
@@ -215,7 +237,7 @@ public class Machine {
                     break;
                 }
                 case JUMP_IF_TRUE: {
-                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int value = ((Value) operandStack.pop()).getValue();
                     int offset = frame.nextImm32();
                     if (value != 0) {
                         frame.pc += offset - 4;
@@ -223,7 +245,7 @@ public class Machine {
                     break;
                 }
                 case JUMP_IF_FALSE: {
-                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int value = ((Value) operandStack.pop()).getValue();
                     int offset = frame.nextImm32();
                     if (value == 0) {
                         frame.pc += offset - 4;
@@ -243,26 +265,26 @@ public class Machine {
                     break;
                 }
                 case CMP_LT: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    int b = ((Value) operandStack.pop()).getValue();
+                    int a = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(a < b ? 1 : 0));
                     break;
                 }
                 case CMP_LE: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    int b = ((Value) operandStack.pop()).getValue();
+                    int a = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(a <= b ? 1 : 0));
                     break;
                 }
                 case CMP_GT: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    int b = ((Value) operandStack.pop()).getValue();
+                    int a = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(a > b ? 1 : 0));
                     break;
                 }
                 case CMP_GE: {
-                    int b = (int) ((Value) operandStack.pop()).getValue();
-                    int a = (int) ((Value) operandStack.pop()).getValue();
+                    int b = ((Value) operandStack.pop()).getValue();
+                    int a = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(a >= b ? 1 : 0));
                     break;
                 }
@@ -289,12 +311,12 @@ public class Machine {
                     break;
                 }
                 case NOT: {
-                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int value = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(value == 0 ? 1 : 0));
                     break;
                 }
                 case ASSERT: {
-                    int value = (int) ((Value) operandStack.pop()).getValue();
+                    int value = ((Value) operandStack.pop()).getValue();
                     String source = frame.nextConstant();
                     String message = frame.nextConstant();
                     if (value == 0) {
@@ -476,8 +498,8 @@ public class Machine {
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
             return pc == frame.pc &&
-                Objects.equals(function, frame.function) &&
-                Arrays.equals(chunk, frame.chunk);
+                    Objects.equals(function, frame.function) &&
+                    Arrays.equals(chunk, frame.chunk);
         }
 
         @Override
@@ -506,6 +528,31 @@ public class Machine {
         @Override
         public String toString() {
             return source + "(" + exception.getRegion().getBegin() + ")";
+        }
+    }
+
+    private static class FileVisitor extends SimpleFileVisitor<Path> {
+        private final Path rootPath;
+        private final Path filePath;
+        private Path result;
+
+        public FileVisitor(Path rootPath, Path filePath) {
+            this.rootPath = rootPath;
+            this.filePath = filePath;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            if (rootPath.relativize(file).equals(filePath)) {
+                result = file;
+                return FileVisitResult.TERMINATE;
+            }
+
+            return FileVisitResult.CONTINUE;
+        }
+
+        public Path getResult() {
+            return result;
         }
     }
 }
