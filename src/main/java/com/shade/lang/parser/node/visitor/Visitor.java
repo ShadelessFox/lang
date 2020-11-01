@@ -16,6 +16,8 @@ public interface Visitor {
 
     void visit(CompoundExpression expression);
 
+    void visit(LambdaExpression expression);
+
     void visit(LoadAttributeExpression expression);
 
     void visit(LoadConstantExpression<?> expression);
@@ -36,6 +38,10 @@ public interface Visitor {
 
     void visit(BranchStatement statement);
 
+    void visit(BreakStatement statement);
+
+    void visit(ContinueStatement statement);
+
     void visit(DeclareFunctionStatement statement);
 
     void visit(DeclareVariableStatement statement);
@@ -43,6 +49,8 @@ public interface Visitor {
     void visit(ExpressionStatement statement);
 
     void visit(ImportStatement statement);
+
+    void visit(LoopStatement statement);
 
     void visit(ReturnStatement statement);
 

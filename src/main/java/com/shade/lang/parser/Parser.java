@@ -13,6 +13,7 @@ import com.shade.lang.parser.token.TokenKind;
 import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.shade.lang.parser.token.TokenKind.Number;
 import static com.shade.lang.parser.token.TokenKind.String;
@@ -214,11 +215,10 @@ public class Parser {
         Token name = expect(Symbol);
         List<String> args = new ArrayList<>();
         expect(ParenL);
-        if (!matches(ParenR, End)) {
-            args.add(expect(Symbol).getStringValue());
-            while (consume(Comma) != null) {
+        if (matches(Symbol)) {
+            do {
                 args.add(expect(Symbol).getStringValue());
-            }
+            } while (consume(Comma) != null);
         }
         expect(ParenR);
         BlockStatement body = parseBlockStatement();
@@ -226,7 +226,7 @@ public class Parser {
     }
 
     public Expression parseExpression() throws ScriptException {
-        return parseExpression(parseUnaryExpression(), 0);
+        return parseExpression(parseLambdaExpression(), 0);
     }
 
     private Expression parseExpression(Expression lhs, int minimumPrecedence) throws ScriptException {
@@ -234,7 +234,7 @@ public class Parser {
 
         while (lookahead.hasFlag(TokenFlag.BINARY) && lookahead.getPrecedence() >= minimumPrecedence) {
             TokenKind operator = advance().getKind();
-            Expression rhs = parseUnaryExpression();
+            Expression rhs = parseLambdaExpression();
             lookahead = token.getKind();
 
             while (lookahead.hasFlag(TokenFlag.BINARY) && (lookahead.getPrecedence() > operator.getPrecedence()
@@ -251,6 +251,27 @@ public class Parser {
         }
 
         return lhs;
+    }
+
+    private Expression parseLambdaExpression() throws ScriptException {
+        Token start = consume(Def);
+
+        if (start == null) {
+            return parseUnaryExpression();
+        }
+
+        List<String> args = new ArrayList<>();
+        expect(ParenL);
+        if (matches(Symbol)) {
+            do {
+                args.add(expect(Symbol).getStringValue());
+            } while (consume(Comma) != null);
+        }
+        expect(ParenR);
+        BlockStatement body = parseBlockStatement();
+        String name = "<lambda:" + UUID.randomUUID() + ">";
+        DeclareFunctionStatement function = new DeclareFunctionStatement(name, args, body, start.getRegion().until(body.getRegion()));
+        return new LambdaExpression(function, function.getRegion());
     }
 
     private Expression parseUnaryExpression() throws ScriptException {

@@ -47,6 +47,10 @@ public class SimpleVisitor implements Visitor {
     }
 
     @Override
+    public void visit(LambdaExpression expression) {
+    }
+
+    @Override
     public void visit(LoadAttributeExpression expression) {
     }
 
@@ -87,6 +91,14 @@ public class SimpleVisitor implements Visitor {
     }
 
     @Override
+    public void visit(BreakStatement statement) {
+    }
+
+    @Override
+    public void visit(ContinueStatement statement) {
+    }
+
+    @Override
     public void visit(DeclareFunctionStatement statement) {
     }
 
@@ -100,6 +112,10 @@ public class SimpleVisitor implements Visitor {
 
     @Override
     public void visit(ImportStatement statement) {
+    }
+
+    @Override
+    public void visit(LoopStatement statement) {
     }
 
     @Override
