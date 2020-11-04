@@ -139,6 +139,8 @@ public class Assembler {
                 case CALL:          stream.printf("%s: CALL          %d%n", line.get(), buffer.get()); break;
                 case RET:           stream.printf("%s: RET%n", line.get()); break;
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
+                case DUP:           stream.printf("%s: DUP%n", line.get()); break;
+                case BIND:          stream.printf("%s: BIND          %d%n", line.get(), buffer.get()); break;
                 case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
                 case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));

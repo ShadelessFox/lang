@@ -23,6 +23,7 @@ public enum TokenKind {
     While("while", 0, TokenFlag.QUOTED),
     Continue("continue", 0, TokenFlag.QUOTED),
     Break("break", 0, TokenFlag.QUOTED),
+    Use("use", 0, TokenFlag.QUOTED),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),

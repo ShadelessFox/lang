@@ -33,9 +33,10 @@ public class BlockStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        context = context.wrap();
-        for (Statement statement : statements) {
-            statement.compile(context, assembler);
+        try (Context inner = context.enter()) {
+            for (Statement statement : statements) {
+                statement.compile(inner, assembler);
+            }
         }
     }
 

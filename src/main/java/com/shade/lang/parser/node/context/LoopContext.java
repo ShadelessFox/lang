@@ -14,11 +14,6 @@ public class LoopContext extends Context {
         this.cancellers = new ArrayList<>();
     }
 
-    public LoopContext(Module module) {
-        super(module);
-        this.cancellers = new ArrayList<>();
-    }
-
     public void addCanceller(Assembler.Label label, CancelType type) {
         cancellers.add(new Canceller(label, type));
     }
@@ -48,6 +43,5 @@ public class LoopContext extends Context {
         public CancelType getType() {
             return type;
         }
-
     }
 }

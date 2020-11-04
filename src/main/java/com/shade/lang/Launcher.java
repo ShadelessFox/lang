@@ -47,8 +47,9 @@ public class Launcher {
         stream.writeInt(functions.size());
         for (RuntimeFunction function : functions) {
             stream.writeUTF(function.getName());
-            stream.write(function.getArguments());
-            stream.write(function.getLocals());
+            stream.write(function.getArgumentsCount());
+            stream.write(function.getBoundArgumentsCount());
+            stream.write(function.getLocalsCount());
 
             byte[] chunk = function.getChunk().array();
             stream.writeInt(chunk.length);

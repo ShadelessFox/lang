@@ -14,29 +14,38 @@ public class RuntimeFunction extends Function {
     private final String[] constants;
     private final Map<Integer, Region.Span> lines;
     private final Assembler.Guard[] guards;
-    private final int arguments;
-    private final int locals;
+    private final ScriptObject[] boundArguments;
+    private final int boundArgumentsCount;
+    private final int argumentsCount;
+    private final int localsCount;
 
-    public RuntimeFunction(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int arguments, int locals) {
+    public RuntimeFunction(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
         super(module, name);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;
         this.guards = guards;
-        this.arguments = arguments;
-        this.locals = locals;
+        this.boundArguments = boundArgumentsCount > 0 ? new ScriptObject[boundArgumentsCount] : null;
+        this.argumentsCount = argumentsCount;
+        this.boundArgumentsCount = boundArgumentsCount;
+        this.localsCount = localsCount;
     }
 
     @Override
     public void invoke(Machine machine, int argc) {
-        if (arguments != argc) {
-            machine.panic("Function '" + getName() + "' accepts " + arguments + " argument(-s) but " + argc + " provided", true);
+        if (argumentsCount != argc) {
+            machine.panic("Function '" + getName() + "' accepts " + argumentsCount + " argument(-s) but " + argc + " provided", true);
             return;
         }
 
-        ScriptObject[] objects = new ScriptObject[locals + argc];
-        for (int index = argc; index > 0; index--) {
-            objects[index - 1] = machine.getOperandStack().pop();
+        ScriptObject[] objects = new ScriptObject[localsCount];
+
+        if (boundArgumentsCount > 0) {
+            System.arraycopy(boundArguments, 0, objects, 0, boundArgumentsCount);
+        }
+
+        for (int index = argumentsCount; index > 0; index--) {
+            objects[boundArgumentsCount + index - 1] = machine.getOperandStack().pop();
         }
 
         Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, objects);
@@ -59,11 +68,19 @@ public class RuntimeFunction extends Function {
         return constants;
     }
 
-    public int getArguments() {
-        return arguments;
+    public ScriptObject[] getBoundArguments() {
+        return boundArguments;
     }
 
-    public int getLocals() {
-        return locals;
+    public int getBoundArgumentsCount() {
+        return boundArgumentsCount;
+    }
+
+    public int getArgumentsCount() {
+        return argumentsCount;
+    }
+
+    public int getLocalsCount() {
+        return localsCount;
     }
 }

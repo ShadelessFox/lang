@@ -310,6 +310,15 @@ public class Machine {
                     operandStack.pop();
                     break;
                 }
+                case DUP: {
+                    operandStack.push(operandStack.peek());
+                    break;
+                }
+                case BIND: {
+                    ScriptObject value = operandStack.pop();
+                    RuntimeFunction function = (RuntimeFunction) operandStack.pop();
+                    function.getBoundArguments()[frame.nextImm8()] = value;
+                }
                 case NOT: {
                     int value = ((Value) operandStack.pop()).getValue();
                     operandStack.push(new Value(value == 0 ? 1 : 0));

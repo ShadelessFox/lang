@@ -8,6 +8,8 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.DeclareFunctionStatement;
 import com.shade.lang.parser.token.Region;
 
+import java.util.Map;
+
 public class LambdaExpression extends Expression {
     private final DeclareFunctionStatement function;
 
@@ -18,10 +20,18 @@ public class LambdaExpression extends Expression {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        function.compile(context.getParent(), assembler);
+        function.compile(context, assembler);
 
         assembler.imm8(Opcode.GET_GLOBAL);
         assembler.imm32(assembler.addConstant(function.getName()));
+
+        for (Map.Entry<Integer, Integer> argument : function.getBoundArgumentsMapping().entrySet()) {
+            assembler.imm8(Opcode.DUP);
+            assembler.imm8(Opcode.GET_LOCAL);
+            assembler.imm8(argument.getValue());
+            assembler.imm8(Opcode.BIND);
+            assembler.imm8(argument.getKey());
+        }
     }
 
     public DeclareFunctionStatement getFunction() {

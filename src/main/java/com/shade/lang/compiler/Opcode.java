@@ -44,11 +44,12 @@ public class Opcode {
     public static final byte CALL          = 0x1C;
     public static final byte RET           = 0x1D;
     public static final byte POP           = 0x1E;
+    public static final byte DUP           = 0x1F;
+    public static final byte BIND          = 0x20;
 
     /* Debugging */
-    public static final byte ASSERT        = 0x1F;
-    public static final byte IMPORT        = 0x20;
-
+    public static final byte ASSERT        = 0x21;
+    public static final byte IMPORT        = 0x22;
 
     // @formatter:on
 

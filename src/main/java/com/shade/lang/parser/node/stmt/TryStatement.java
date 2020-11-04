@@ -31,9 +31,13 @@ public class TryStatement extends Statement {
         int regionEnd = assembler.getPosition();
         Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
         int offset = assembler.getPosition();
-        Context recoverContext = context.wrap();
-        int slot = name == null ? -1 : recoverContext.addSlot(name);
-        recover.compile(recoverContext, assembler);
+        int slot = -1;
+        try (Context recoverContext = context.enter()) {
+            if (name != null) {
+                slot = recoverContext.addSlot(name);
+            }
+            recover.compile(recoverContext, assembler);
+        }
         assembler.bind(end);
         assembler.addGuard(regionStart, regionEnd, offset, slot);
     }

@@ -12,6 +12,7 @@ import com.shade.lang.parser.token.TokenKind;
 
 import java.lang.String;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -213,13 +214,8 @@ public class Parser {
 
     private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
         Token name = expect(Symbol);
-        List<String> args = new ArrayList<>();
         expect(ParenL);
-        if (matches(Symbol)) {
-            do {
-                args.add(expect(Symbol).getStringValue());
-            } while (consume(Comma) != null);
-        }
+        List<String> args = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
         expect(ParenR);
         BlockStatement body = parseBlockStatement();
         return new DeclareFunctionStatement(name.getStringValue(), args, body, start.until(body.getRegion()));
@@ -238,7 +234,7 @@ public class Parser {
             lookahead = token.getKind();
 
             while (lookahead.hasFlag(TokenFlag.BINARY) && (lookahead.getPrecedence() > operator.getPrecedence()
-                || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence())) {
+                    || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence())) {
                 rhs = parseExpression(rhs, lookahead.getPrecedence());
                 lookahead = token.getKind();
             }
@@ -260,17 +256,26 @@ public class Parser {
             return parseUnaryExpression();
         }
 
-        List<String> args = new ArrayList<>();
         expect(ParenL);
-        if (matches(Symbol)) {
-            do {
-                args.add(expect(Symbol).getStringValue());
-            } while (consume(Comma) != null);
-        }
+        List<String> parameters = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
         expect(ParenR);
+
+        List<String> capturedParameters = Collections.emptyList();
+
+        if (consume(Use) != null) {
+            expect(ParenL);
+            capturedParameters = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
+            expect(ParenR);
+        }
+
         BlockStatement body = parseBlockStatement();
-        String name = "<lambda:" + UUID.randomUUID() + ">";
-        DeclareFunctionStatement function = new DeclareFunctionStatement(name, args, body, start.getRegion().until(body.getRegion()));
+        DeclareFunctionStatement function = new DeclareFunctionStatement(
+                "<lambda:" + UUID.randomUUID() + ">",
+                parameters,
+                capturedParameters,
+                body,
+                start.getRegion().until(body.getRegion())
+        );
         return new LambdaExpression(function, function.getRegion());
     }
 
@@ -346,19 +351,24 @@ public class Parser {
         }
 
         if (token.getKind() == ParenL) {
-            List<Expression> arguments = new ArrayList<>();
-
-            if (matches(Symbol, Number, String, StringPart, ParenL)) {
-                do {
-                    arguments.add(parseExpression());
-                } while (consume(Comma) != null);
-            }
-
+            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, ParenL}, Comma, this::parseExpression);
             Region end = expect(ParenR).getRegion();
             return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end)));
         }
 
         throw new AssertionError("Unreachable");
+    }
+
+    private <T> List<T> parseList(TokenKind[] start, TokenKind separator, Supplier<T> supplier) throws ScriptException {
+        List<T> items = new ArrayList<>();
+
+        if (matches(start)) {
+            do {
+                items.add(supplier.get());
+            } while (consume(separator) != null);
+        }
+
+        return items;
     }
 
     private boolean matches(TokenKind... kinds) {
@@ -420,5 +430,9 @@ public class Parser {
         Unit,
         Statement,
         Expression
+    }
+
+    private interface Supplier<T> {
+        T get() throws ScriptException;
     }
 }

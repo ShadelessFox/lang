@@ -88,6 +88,8 @@ public class Tokenizer {
                         return make(TokenKind.Continue);
                     case "break":
                         return make(TokenKind.Break);
+                    case "use":
+                        return make(TokenKind.Use);
                     default:
                         return make(TokenKind.Symbol, builder.toString());
                 }
