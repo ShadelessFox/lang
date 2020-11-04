@@ -318,6 +318,7 @@ public class Machine {
                     ScriptObject value = operandStack.pop();
                     RuntimeFunction function = (RuntimeFunction) operandStack.pop();
                     function.getBoundArguments()[frame.nextImm8()] = value;
+                    break;
                 }
                 case NOT: {
                     int value = ((Value) operandStack.pop()).getValue();
