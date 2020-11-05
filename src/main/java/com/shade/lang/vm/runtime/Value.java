@@ -2,6 +2,8 @@ package com.shade.lang.vm.runtime;
 
 import com.shade.lang.vm.Machine;
 
+import java.util.Objects;
+
 public class Value extends ScriptObject {
     private final Object value;
 
@@ -47,6 +49,19 @@ public class Value extends ScriptObject {
     @SuppressWarnings("unchecked")
     public <T> T getValue() {
         return (T) value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Value value1 = (Value) o;
+        return Objects.equals(value, value1.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
     }
 
     @Override

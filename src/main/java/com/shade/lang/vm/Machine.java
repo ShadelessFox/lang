@@ -9,6 +9,7 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.Class;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.Value;
 import com.shade.lang.vm.runtime.function.Function;
@@ -184,7 +185,7 @@ public class Machine {
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
-                        panic("No such property '" + name + "' on target '" + target + "'", true);
+                        panic("No such attribute '" + name + "' on target '" + target + "'", true);
                         break;
                     }
                     operandStack.push(object);
@@ -253,8 +254,8 @@ public class Machine {
                     break;
                 }
                 case CMP_EQ: {
-                    Object b = ((Value) operandStack.pop()).getValue();
-                    Object a = ((Value) operandStack.pop()).getValue();
+                    ScriptObject b = operandStack.pop();
+                    ScriptObject a = operandStack.pop();
                     operandStack.push(new Value(a.equals(b) ? 1 : 0));
                     break;
                 }
@@ -346,6 +347,16 @@ public class Machine {
                     } else {
                         panic("No such module named '" + name + "'", true);
                     }
+                    break;
+                }
+                case NEW: {
+                    ScriptObject object = operandStack.pop();
+                    if (!(object instanceof Class)) {
+                        panic("Cannot instantiate a non-class value");
+                        break;
+                    }
+                    Class clazz = (Class) object;
+                    clazz.invoke(this, frame.nextImm8());
                     break;
                 }
                 default:

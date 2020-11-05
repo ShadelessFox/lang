@@ -90,6 +90,10 @@ public class Tokenizer {
                         return make(TokenKind.Break);
                     case "use":
                         return make(TokenKind.Use);
+                    case "class":
+                        return make(TokenKind.Class);
+                    case "new":
+                        return make(TokenKind.New);
                     default:
                         return make(TokenKind.Symbol, builder.toString());
                 }
@@ -187,6 +191,8 @@ public class Tokenizer {
                     return make(TokenKind.BraceR);
                 case ';':
                     return make(TokenKind.Semicolon);
+                case ':':
+                    return make(TokenKind.Colon);
                 case ',':
                     return make(TokenKind.Comma);
                 case '.':

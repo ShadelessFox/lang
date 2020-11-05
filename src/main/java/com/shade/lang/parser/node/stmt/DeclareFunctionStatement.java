@@ -88,7 +88,7 @@ public class DeclareFunctionStatement extends Statement {
             totalSlots.get()
         );
 
-        context.getModule().setAttribute(name, function);
+        context.setAttribute(name, function);
     }
 
     public String getName() {

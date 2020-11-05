@@ -1,7 +1,6 @@
 package com.shade.lang.parser.node.context;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.vm.runtime.Module;
 
 import java.util.ArrayList;
 import java.util.List;

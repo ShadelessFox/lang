@@ -1,0 +1,58 @@
+package com.shade.lang.parser.node.expr;
+
+import com.shade.lang.compiler.Assembler;
+import com.shade.lang.compiler.Opcode;
+import com.shade.lang.parser.ScriptException;
+import com.shade.lang.parser.node.Expression;
+import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.token.Region;
+
+import java.util.List;
+import java.util.Objects;
+
+public class NewExpression extends Expression {
+    private final String callee;
+    private final List<Expression> arguments;
+
+    public NewExpression(String callee, List<Expression> arguments, Region region) {
+        super(region);
+        this.callee = callee;
+        this.arguments = arguments;
+    }
+
+    @Override
+    public void compile(Context context, Assembler assembler) throws ScriptException {
+        assembler.imm8(Opcode.GET_GLOBAL);
+        assembler.imm32(assembler.addConstant(callee));
+        assembler.addTraceLine(getRegion().getBegin());
+
+        assembler.imm8(Opcode.NEW);
+        assembler.imm8(0);
+
+        if (!arguments.isEmpty()) {
+            throw new ScriptException("Parameterized constructors are not supported yet", getRegion());
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NewExpression that = (NewExpression) o;
+        return callee.equals(that.callee) &&
+                arguments.equals(that.arguments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(callee, arguments);
+    }
+
+    public String getCallee() {
+        return callee;
+    }
+
+    public List<Expression> getArguments() {
+        return arguments;
+    }
+}

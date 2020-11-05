@@ -47,9 +47,9 @@ public class Opcode {
     public static final byte DUP           = 0x1F;
     public static final byte BIND          = 0x20;
 
-    /* Debugging */
     public static final byte ASSERT        = 0x21;
     public static final byte IMPORT        = 0x22;
+    public static final byte NEW           = 0x23;
 
     // @formatter:on
 

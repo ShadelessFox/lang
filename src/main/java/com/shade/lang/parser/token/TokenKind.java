@@ -24,6 +24,8 @@ public enum TokenKind {
     Continue("continue", 0, TokenFlag.QUOTED),
     Break("break", 0, TokenFlag.QUOTED),
     Use("use", 0, TokenFlag.QUOTED),
+    Class("class", 0, TokenFlag.QUOTED),
+    New("new", 0, TokenFlag.QUOTED),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
@@ -31,6 +33,7 @@ public enum TokenKind {
     BraceL("{", 0, TokenFlag.QUOTED),
     BraceR("}", 0, TokenFlag.QUOTED),
     Semicolon(";", 0, TokenFlag.QUOTED),
+    Colon(":", 0, TokenFlag.QUOTED),
     Comma(",", 0, TokenFlag.QUOTED),
     Dot(".", 0, TokenFlag.QUOTED),
 

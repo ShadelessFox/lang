@@ -16,8 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static com.shade.lang.parser.token.TokenKind.Number;
-import static com.shade.lang.parser.token.TokenKind.String;
 import static com.shade.lang.parser.token.TokenKind.*;
 
 public class Parser {
@@ -48,11 +46,14 @@ public class Parser {
         List<Statement> statements = new ArrayList<>();
 
         while (true) {
-            Token token = expect(Import, Def, End);
+            Token token = expect(Import, Class, Def, End);
 
             switch (token.getKind()) {
                 case Import:
                     statements.add(parseImportStatement(token.getRegion(), true));
+                    break;
+                case Class:
+                    statements.add(parseClassDeclareStatement(token.getRegion()));
                     break;
                 case Def:
                     statements.add(parseFunctionDeclareStatement(token.getRegion()));
@@ -213,12 +214,34 @@ public class Parser {
     }
 
     private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
-        Token name = expect(Symbol);
+        String name = expect(Symbol).getStringValue();
         expect(ParenL);
         List<String> args = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
         expect(ParenR);
         BlockStatement body = parseBlockStatement();
-        return new DeclareFunctionStatement(name.getStringValue(), args, body, start.until(body.getRegion()));
+        return new DeclareFunctionStatement(name, args, body, start.until(body.getRegion()));
+    }
+
+    private DeclareClassStatement parseClassDeclareStatement(Region start) throws ScriptException {
+        String name = expect(Symbol).getStringValue();
+
+        List<String> bases = Collections.emptyList();
+        if (consume(Colon) != null) {
+            bases = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
+        }
+
+        List<Statement> members = new ArrayList<>();
+        expect(BraceL);
+        while (!matches(BraceR, End)) {
+            Token token = expect(Def);
+            switch (token.getKind()) {
+                case Def:
+                    members.add(parseFunctionDeclareStatement(token.getRegion()));
+            }
+        }
+        Token end = expect(BraceR);
+
+        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()));
     }
 
     public Expression parseExpression() throws ScriptException {
@@ -290,7 +313,7 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Token token = expect(Symbol, Number, String, StringPart, ParenL);
+        Token token = expect(Symbol, Number, String, StringPart, New, ParenL);
         Region start = token.getRegion();
 
         if (token.getKind() == Symbol) {
@@ -329,6 +352,16 @@ public class Parser {
             return string;
         }
 
+        if (token.getKind() == New) {
+            Token name = expect(Symbol);
+            if (consume(ParenL) != null) {
+                List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
+                Token end = expect(ParenR);
+                return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(end.getRegion()));
+            }
+            return new NewExpression(name.getStringValue(), Collections.emptyList(), token.getRegion().until(name.getRegion()));
+        }
+
         if (token.getKind() == ParenL) {
             Expression expression = parseExpression();
             Region end = expect(ParenR).getRegion();
@@ -351,7 +384,7 @@ public class Parser {
         }
 
         if (token.getKind() == ParenL) {
-            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, ParenL}, Comma, this::parseExpression);
+            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
             Region end = expect(ParenR).getRegion();
             return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end)));
         }

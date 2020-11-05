@@ -83,4 +83,13 @@ public class RuntimeFunction extends Function {
     public int getLocalsCount() {
         return localsCount;
     }
+
+    @Override
+    public String toString() {
+        if (boundArgumentsCount == 0) {
+            return "[Function '" + getName() + "']";
+        } else {
+            return "[Bound Function '" + getName() + "']";
+        }
+    }
 }
