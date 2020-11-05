@@ -11,20 +11,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class NewExpression extends Expression {
-    private final String callee;
+    private final LoadSymbolExpression callee;
     private final List<Expression> arguments;
 
     public NewExpression(String callee, List<Expression> arguments, Region region) {
         super(region);
-        this.callee = callee;
+        this.callee = new LoadSymbolExpression(callee, region);
         this.arguments = arguments;
     }
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.imm8(Opcode.GET_GLOBAL);
-        assembler.imm32(assembler.addConstant(callee));
-        assembler.addTraceLine(getRegion().getBegin());
+        callee.compile(context, assembler);
 
         assembler.imm8(Opcode.NEW);
         assembler.imm8(0);
@@ -49,7 +47,7 @@ public class NewExpression extends Expression {
     }
 
     public String getCallee() {
-        return callee;
+        return callee.getName();
     }
 
     public List<Expression> getArguments() {
