@@ -143,7 +143,7 @@ public class Assembler {
                 case BIND:          stream.printf("%s: BIND          %d%n", line.get(), buffer.get()); break;
                 case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
                 case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
-                case NEW:           stream.printf("%s: NEW           %d%n", line.get(), buffer.get()); break;
+                case NEW:           stream.printf("%s: NEW%n", line.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                     // @formatter:on
             }

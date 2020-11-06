@@ -241,7 +241,7 @@ public class Parser {
         }
         Token end = expect(BraceR);
 
-        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()));
+        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()), null);
     }
 
     public Expression parseExpression() throws ScriptException {
@@ -354,12 +354,10 @@ public class Parser {
 
         if (token.getKind() == New) {
             Token name = expect(Symbol);
-            if (consume(ParenL) != null) {
-                List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
-                Token end = expect(ParenR);
-                return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(end.getRegion()));
-            }
-            return new NewExpression(name.getStringValue(), Collections.emptyList(), token.getRegion().until(name.getRegion()));
+            expect(ParenL);
+            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
+            Token end = expect(ParenR);
+            return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(end.getRegion()));
         }
 
         if (token.getKind() == ParenL) {

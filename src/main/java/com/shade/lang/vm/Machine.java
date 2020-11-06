@@ -356,7 +356,7 @@ public class Machine {
                         break;
                     }
                     Class clazz = (Class) object;
-                    clazz.invoke(this, frame.nextImm8());
+                    clazz.instantiate(this);
                     break;
                 }
                 default:

@@ -1,27 +1,32 @@
 package com.shade.lang.vm.runtime;
 
 import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.util.Map;
 
-public class Class extends Function {
+public class Class extends ScriptObject {
+    private final String name;
     private final Class[] bases;
 
     public Class(Module module, String name, Class[] bases) {
-        super(module, name);
+        this.name = name;
         this.bases = bases;
         populateInheritedAttributes(this);
     }
 
-    @Override
-    public void invoke(Machine machine, int argc) {
+    public void instantiate(Machine machine) {
         Instance instance = new Instance(this);
 
         for (Map.Entry<String, ScriptObject> attribute : getAttributes().entrySet()) {
             if (attribute.getValue() instanceof RuntimeFunction) {
                 RuntimeFunction function = (RuntimeFunction) attribute.getValue();
+
+                // TODO: Add special flag
+                if (function.getName().equals("<init>")) {
+                    instance.setAttribute(attribute.getKey(), function);
+                    continue;
+                }
 
                 if (function.getArgumentsCount() > 0) {
                     RuntimeFunction boundFunction = new RuntimeFunction(
@@ -53,12 +58,16 @@ public class Class extends Function {
         child.getAttributes().putAll(getAttributes());
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Class[] getBases() {
         return bases;
     }
 
     @Override
     public String toString() {
-        return "[Class " + getName() + "]";
+        return "[Class " + name + "]";
     }
 }

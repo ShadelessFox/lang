@@ -25,7 +25,16 @@ public class NewExpression extends Expression {
         callee.compile(context, assembler);
 
         assembler.imm8(Opcode.NEW);
-        assembler.imm8(0);
+
+        assembler.imm8(Opcode.DUP);
+        assembler.imm8(Opcode.DUP);
+
+        assembler.imm8(Opcode.GET_ATTRIBUTE);
+        assembler.imm32(assembler.addConstant("<init>"));
+
+        assembler.imm8(Opcode.CALL);
+        assembler.imm8(1);
+        assembler.imm8(Opcode.POP);
 
         if (!arguments.isEmpty()) {
             throw new ScriptException("Parameterized constructors are not supported yet", getRegion());
