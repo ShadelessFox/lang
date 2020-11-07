@@ -11,10 +11,7 @@ import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
 
 import java.lang.String;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static com.shade.lang.parser.token.TokenKind.*;
 
@@ -90,6 +87,8 @@ public class Parser {
                 return parseTryStatement();
             case Loop:
                 return parseLoopStatement();
+            case For:
+                return parseRangeStatement();
             case Continue:
                 return parseContinueStatement();
             case Super:
@@ -138,6 +137,49 @@ public class Parser {
         }
         BlockStatement body = parseBlockStatement();
         return new LoopStatement(condition, body, start.until(body.getRegion()));
+    }
+
+    private BlockStatement parseRangeStatement() throws ScriptException {
+        Region start = expect(For).getRegion();
+        String variable = expect(Symbol).getStringValue();
+        expect(In);
+        int rangeBegin = expect(Number).getIntegerValue();
+        boolean rangeInclusive = expect(Range, RangeInc).getKind() == RangeInc;
+        int rangeEnd = expect(Number).getIntegerValue();
+        BlockStatement body = parseBlockStatement();
+        Region region = start.until(body.getRegion());
+
+        return new BlockStatement(Arrays.asList(
+            new DeclareVariableStatement(
+                variable,
+                new LoadConstantExpression<>(rangeBegin, region),
+                region
+            ),
+            new LoopStatement(
+                new BinaryExpression(
+                    new LoadSymbolExpression(variable, region),
+                    new LoadConstantExpression<>(rangeEnd, region),
+                    rangeInclusive ? LessEq : Less,
+                    region
+                ),
+                new BlockStatement(
+                    Arrays.asList(
+                        body,
+                        new AssignSymbolStatement(variable,
+                            new BinaryExpression(
+                                new LoadSymbolExpression(variable, region),
+                                new LoadConstantExpression<>(1, region),
+                                Add,
+                                region
+                            ),
+                            region
+                        )
+                    ),
+                    region
+                ),
+                region
+            )
+        ), region);
     }
 
     private ContinueStatement parseContinueStatement() throws ScriptException {
@@ -292,7 +334,7 @@ public class Parser {
             lookahead = token.getKind();
 
             while (lookahead.hasFlag(TokenFlag.BINARY) && (lookahead.getPrecedence() > operator.getPrecedence()
-                    || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence())) {
+                || lookahead.hasFlag(TokenFlag.RIGHT_ASSOCIATIVE) && lookahead.getPrecedence() >= operator.getPrecedence())) {
                 rhs = parseExpression(rhs, lookahead.getPrecedence());
                 lookahead = token.getKind();
             }
@@ -328,11 +370,11 @@ public class Parser {
 
         BlockStatement body = parseBlockStatement();
         DeclareFunctionStatement function = new DeclareFunctionStatement(
-                "<lambda:" + UUID.randomUUID() + ">",
-                parameters,
-                capturedParameters,
-                body,
-                start.getRegion().until(body.getRegion())
+            "<lambda:" + UUID.randomUUID() + ">",
+            parameters,
+            capturedParameters,
+            body,
+            start.getRegion().until(body.getRegion())
         );
         return new LambdaExpression(function, function.getRegion());
     }
@@ -356,7 +398,7 @@ public class Parser {
         }
 
         if (token.getKind() == Number) {
-            return new LoadConstantExpression<>(Integer.parseInt(token.getStringValue()), start);
+            return new LoadConstantExpression<>(token.getIntegerValue(), start);
         }
 
         if (token.getKind() == String) {

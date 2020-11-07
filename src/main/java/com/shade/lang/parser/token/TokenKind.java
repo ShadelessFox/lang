@@ -22,6 +22,7 @@ public enum TokenKind {
     Assert("assert", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Try("try", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Recover("recover", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    For("for", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Loop("loop", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     While("while", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Continue("continue", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
@@ -31,6 +32,7 @@ public enum TokenKind {
     New("new", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Super("super", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Constructor("constructor", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    In("in", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
@@ -41,6 +43,8 @@ public enum TokenKind {
     Colon(":", 0, TokenFlag.QUOTED),
     Comma(",", 0, TokenFlag.QUOTED),
     Dot(".", 0, TokenFlag.QUOTED),
+    Range("..", 0, TokenFlag.QUOTED),
+    RangeInc("..=", 0, TokenFlag.QUOTED),
 
     Assign("=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
     AddAssign("+=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),

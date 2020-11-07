@@ -29,6 +29,10 @@ public class Token {
         return (String) value;
     }
 
+    public int getIntegerValue() {
+        return Integer.parseInt(getStringValue());
+    }
+
     @Override
     public String toString() {
         return "Token{" +
