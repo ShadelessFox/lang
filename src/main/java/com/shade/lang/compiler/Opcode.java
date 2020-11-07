@@ -41,15 +41,15 @@ public class Opcode {
     public static final byte CMP_GE        = 0x1B;
 
     public static final byte ASSERT        = 0x1C;
-    public static final byte IMPORT        = 0x1E;
-    public static final byte NEW           = 0x1F;
+    public static final byte IMPORT        = 0x1D;
+    public static final byte NEW           = 0x1E;
 
-    public static final byte CALL          = 0x20;
-    public static final byte RET           = 0x21;
-    public static final byte POP           = 0x22;
-    public static final byte DUP           = 0x23;
-    public static final byte DUP_AT        = 0x24;
-    public static final byte BIND          = 0x25;
+    public static final byte CALL          = 0x1F;
+    public static final byte RET           = 0x20;
+    public static final byte POP           = 0x21;
+    public static final byte DUP           = 0x22;
+    public static final byte DUP_AT        = 0x23;
+    public static final byte BIND          = 0x24;
 
     // @formatter:on
 
