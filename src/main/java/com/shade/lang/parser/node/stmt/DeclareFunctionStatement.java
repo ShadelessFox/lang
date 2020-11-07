@@ -4,12 +4,17 @@ import com.shade.lang.compiler.Assembler;
 import com.shade.lang.compiler.Opcode;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
+import com.shade.lang.parser.node.context.ClassContext;
 import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.node.context.FunctionContext;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeclareFunctionStatement extends Statement {
@@ -39,17 +44,21 @@ public class DeclareFunctionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        if (context instanceof ClassContext && arguments.isEmpty()) {
+            throw new ScriptException("Class functions must have at least one argument", getRegion());
+        }
+
         for (int index = 0; index < boundArguments.size(); index++) {
             String argument = boundArguments.get(index);
             if (!context.hasSlot(argument)) {
-                throw new ScriptException("Cannot capture not existing variable '" + argument + "'", getRegion());
+                throw new ScriptException("Cannot capture non-existing variable '" + argument + "'", getRegion());
             }
             boundArgumentsMapping.put(index, context.addSlot(argument));
         }
 
         AtomicInteger totalSlots = new AtomicInteger();
 
-        Context functionContext = new Context(context.getModule());
+        FunctionContext functionContext = new FunctionContext(context);
         functionContext.addListener((name, slot) -> {
             if (totalSlots.get() < slot + 1) {
                 totalSlots.set(slot + 1);

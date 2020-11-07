@@ -8,6 +8,7 @@ public class TokenFlag {
     public static final int RELATIONAL        = 1 << 5;
     public static final int ASSIGNMENT        = 1 << 6;
     public static final int RIGHT_ASSOCIATIVE = 1 << 7;
+    public static final int KEYWORD           = 1 << 8;
 
     private TokenFlag() {
     }

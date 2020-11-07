@@ -92,6 +92,8 @@ public class Parser {
                 return parseLoopStatement();
             case Continue:
                 return parseContinueStatement();
+            case Super:
+                return parseSuperStatement();
             case Break:
                 return parseBreakStatement();
             case BraceL:
@@ -148,6 +150,35 @@ public class Parser {
         Region start = expect(Break).getRegion();
         Region end = expect(Semicolon).getRegion();
         return new BreakStatement(start.until(end));
+    }
+
+    private SuperStatement parseSuperStatement() throws ScriptException {
+        Region start = expect(Super).getRegion();
+        String name = null;
+        if (consume(Colon) != null) {
+            name = expect(Symbol).getStringValue();
+        }
+        List<Expression> arguments = new ArrayList<>();
+        list(ParenL, ParenR, Comma, arguments, this::parseExpression);
+        Region end = expect(Semicolon).getRegion();
+        return new SuperStatement(name, arguments, start.until(end));
+    }
+
+    private DeclareFunctionStatement parseConstructorDeclareStatement(Region start) throws ScriptException {
+        List<String> arguments = new ArrayList<>();
+        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
+        List<Statement> statements = new ArrayList<>();
+        Region region = list(BraceL, BraceR, null, statements, () -> {
+            if (matches(Super) && !statements.isEmpty() && !(statements.get(statements.size() - 1) instanceof SuperStatement)) {
+                throw new ScriptException("Mixing 'super' and regular statements is not allowed", token.getRegion());
+            }
+            if (matches(Return)) {
+                throw new ScriptException("Cannot return from constructor", token.getRegion());
+            }
+            return parseStatement();
+        });
+        BlockStatement body = new BlockStatement(statements, region);
+        return new DeclareFunctionStatement("<init>", arguments, body, start.until(body.getRegion()));
     }
 
     private AssertStatement parseAssertStatement() throws ScriptException {
@@ -233,15 +264,19 @@ public class Parser {
         List<Statement> members = new ArrayList<>();
         expect(BraceL);
         while (!matches(BraceR, End)) {
-            Token token = expect(Def);
+            Token token = expect(Def, Constructor);
             switch (token.getKind()) {
                 case Def:
                     members.add(parseFunctionDeclareStatement(token.getRegion()));
+                    break;
+                case Constructor:
+                    members.add(parseConstructorDeclareStatement(token.getRegion()));
+                    break;
             }
         }
         Token end = expect(BraceR);
 
-        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()), null);
+        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()));
     }
 
     public Expression parseExpression() throws ScriptException {
@@ -400,6 +435,20 @@ public class Parser {
         }
 
         return items;
+    }
+
+    private <T> Region list(TokenKind opening, TokenKind closing, TokenKind separator, List<T> output, Supplier<T> supplier) throws ScriptException {
+        Region begin = expect(opening).getRegion();
+
+        if (!matches(closing)) {
+            do {
+                output.add(supplier.get());
+            } while (separator != null && consume(separator) != null || !matches(closing, End));
+        }
+
+        Region end = expect(closing).getRegion();
+
+        return begin.until(end);
     }
 
     private boolean matches(TokenKind... kinds) {

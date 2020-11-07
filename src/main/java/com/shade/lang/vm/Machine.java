@@ -315,6 +315,10 @@ public class Machine {
                     operandStack.push(operandStack.peek());
                     break;
                 }
+                case DUP_AT: {
+                    operandStack.push(operandStack.get(operandStack.size() + frame.nextImm8()));
+                    break;
+                }
                 case BIND: {
                     ScriptObject value = operandStack.pop();
                     RuntimeFunction function = (RuntimeFunction) operandStack.pop();

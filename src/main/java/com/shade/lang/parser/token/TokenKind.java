@@ -1,5 +1,8 @@
 package com.shade.lang.parser.token;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum TokenKind {
     /* Special */
     Symbol("symbol", 0, TokenFlag.DISPLAY),
@@ -9,23 +12,25 @@ public enum TokenKind {
     End("end of file", 0, TokenFlag.DISPLAY),
 
     /* Keywords */
-    Let("let", 0, TokenFlag.QUOTED),
-    Def("def", 0, TokenFlag.QUOTED),
-    If("if", 0, TokenFlag.QUOTED),
-    Else("else", 0, TokenFlag.QUOTED),
-    Return("return", 0, TokenFlag.QUOTED),
-    Not("not", 0, TokenFlag.QUOTED),
-    Import("import", 0, TokenFlag.QUOTED),
-    Assert("assert", 0, TokenFlag.QUOTED),
-    Try("try", 0, TokenFlag.QUOTED),
-    Recover("recover", 0, TokenFlag.QUOTED),
-    Loop("loop", 0, TokenFlag.QUOTED),
-    While("while", 0, TokenFlag.QUOTED),
-    Continue("continue", 0, TokenFlag.QUOTED),
-    Break("break", 0, TokenFlag.QUOTED),
-    Use("use", 0, TokenFlag.QUOTED),
-    Class("class", 0, TokenFlag.QUOTED),
-    New("new", 0, TokenFlag.QUOTED),
+    Let("let", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Def("def", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    If("if", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Else("else", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Return("return", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Not("not", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Import("import", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Assert("assert", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Try("try", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Recover("recover", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Loop("loop", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    While("while", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Continue("continue", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Break("break", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Use("use", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Class("class", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    New("new", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Super("super", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Constructor("constructor", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
 
     /* Operators */
     ParenL("(", 0, TokenFlag.QUOTED),
@@ -43,8 +48,8 @@ public enum TokenKind {
     MulAssign("*=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
     DivAssign("/=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
 
-    Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
-    And("and", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL),
+    Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL | TokenFlag.KEYWORD),
+    And("and", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL | TokenFlag.KEYWORD),
 
     Eq("==", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     NotEq("!=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
@@ -57,6 +62,16 @@ public enum TokenKind {
     Sub("-", 4, TokenFlag.QUOTED | TokenFlag.BINARY),
     Mul("*", 5, TokenFlag.QUOTED | TokenFlag.BINARY),
     Div("/", 5, TokenFlag.QUOTED | TokenFlag.BINARY);
+
+    public static final Map<String, TokenKind> KEYWORDS = new HashMap<>();
+
+    static {
+        for (TokenKind kind : values()) {
+            if (kind.hasFlag(TokenFlag.KEYWORD)) {
+                KEYWORDS.put(kind.name, kind);
+            }
+        }
+    }
 
     private final String name;
     private final int precedence;

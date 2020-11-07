@@ -34,7 +34,7 @@ public class RuntimeFunction extends Function {
     @Override
     public void invoke(Machine machine, int argc) {
         if (argumentsCount != argc) {
-            machine.panic("Function '" + getName() + "' accepts " + argumentsCount + " argument(-s) but " + argc + " provided", true);
+            machine.panic("Function '" + getName() + "' accepts " + argumentsCount + " argument" + (argumentsCount == 1 ? "" : "s") + " but " + argc + " " + (argc > 1 ? "were" : "was") + " provided", true);
             return;
         }
 

@@ -55,47 +55,12 @@ public class Tokenizer {
                     builder.append(read());
                 }
 
-                switch (builder.toString()) {
-                    case "let":
-                        return make(TokenKind.Let);
-                    case "def":
-                        return make(TokenKind.Def);
-                    case "if":
-                        return make(TokenKind.If);
-                    case "else":
-                        return make(TokenKind.Else);
-                    case "return":
-                        return make(TokenKind.Return);
-                    case "and":
-                        return make(TokenKind.And);
-                    case "or":
-                        return make(TokenKind.Or);
-                    case "not":
-                        return make(TokenKind.Not);
-                    case "import":
-                        return make(TokenKind.Import);
-                    case "assert":
-                        return make(TokenKind.Assert);
-                    case "try":
-                        return make(TokenKind.Try);
-                    case "recover":
-                        return make(TokenKind.Recover);
-                    case "loop":
-                        return make(TokenKind.Loop);
-                    case "while":
-                        return make(TokenKind.While);
-                    case "continue":
-                        return make(TokenKind.Continue);
-                    case "break":
-                        return make(TokenKind.Break);
-                    case "use":
-                        return make(TokenKind.Use);
-                    case "class":
-                        return make(TokenKind.Class);
-                    case "new":
-                        return make(TokenKind.New);
-                    default:
-                        return make(TokenKind.Symbol, builder.toString());
+                TokenKind keyword = TokenKind.KEYWORDS.get(builder.toString());
+
+                if (keyword == null) {
+                    return make(TokenKind.Symbol, builder.toString());
+                } else {
+                    return make(keyword);
                 }
             }
 

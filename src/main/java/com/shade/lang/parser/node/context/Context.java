@@ -9,11 +9,11 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class Context implements Closeable, Iterable<Context.Scope> {
-    private final Module module;
-    private final Context parent;
-    private final Stack<Scope> scopes;
-    private final List<BiConsumer<String, Integer>> listeners;
-    private int nextLocalSlot;
+    protected final Module module;
+    protected final Context parent;
+    protected final Stack<Scope> scopes;
+    protected final List<BiConsumer<String, Integer>> listeners;
+    protected int nextLocalSlot;
 
     public Context(Context parent) {
         this.module = parent.module;

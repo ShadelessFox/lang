@@ -5,12 +5,15 @@ import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.Value;
+import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,15 +28,20 @@ public class Launcher {
             machine.call("sandbox", "main");
         }
 
+//        try (DataOutputStream stream = new DataOutputStream(new FileOutputStream("sandbox.bin"))) {
+//            export(machine.getModules().get("sandbox"), stream);
+//        }
+
         System.exit(machine.getStatus());
     }
 
     private static void export(Module module, DataOutputStream stream) throws IOException {
         final List<RuntimeFunction> functions = module.getAttributes()
-                .values().stream()
-                .filter(x -> x instanceof RuntimeFunction)
-                .map(x -> (RuntimeFunction) x)
-                .collect(Collectors.toList());
+            .values().stream()
+            .filter(x -> x instanceof RuntimeFunction)
+            .map(x -> (RuntimeFunction) x)
+            .sorted(Comparator.comparing(Function::getName))
+            .collect(Collectors.toList());
 
         stream.write(new byte[]{'A', 'S', 'H', 0});
         stream.writeLong(0);
@@ -76,15 +84,22 @@ public class Launcher {
         public Builtin() {
             super("builtin", "<builtin>");
 
+            setAttribute("to_string", new NativeFunction(this, "to_string", (machine, args) -> new Value(args[0].toString())));
+
             setAttribute("print", new NativeFunction(this, "print", (machine, args) -> {
+                machine.getOut().print(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+                return new Value(0);
+            }));
+
+            setAttribute("println", new NativeFunction(this, "println", (machine, args) -> {
                 machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
                 return new Value(0);
             }));
 
             setAttribute("debug", new NativeFunction(this, "debug", (machine, args) -> {
                 Machine.Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
-                machine.getOut().print("[" + frame.getSourceLocation() + "] ");
-                machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+                machine.getErr().print("[" + frame.getSourceLocation() + "] ");
+                machine.getErr().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
                 return new Value(0);
             }));
 

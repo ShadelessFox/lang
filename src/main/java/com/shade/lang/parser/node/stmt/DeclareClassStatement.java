@@ -23,14 +23,12 @@ public class DeclareClassStatement extends Statement {
     private final String name;
     private final List<String> bases;
     private final List<Statement> members;
-    private final Statement constructor;
 
-    public DeclareClassStatement(String name, List<String> bases, List<Statement> members, Region region, Statement constructor) {
+    public DeclareClassStatement(String name, List<String> bases, List<Statement> members, Region region) {
         super(region);
         this.name = name;
         this.bases = Collections.unmodifiableList(bases);
         this.members = Collections.unmodifiableList(members);
-        this.constructor = constructor;
     }
 
     @Override
@@ -57,42 +55,26 @@ public class DeclareClassStatement extends Statement {
         Class clazz = new Class(module, name, resolvedBases);
         ClassContext clazzContext = new ClassContext(context, clazz);
 
-        if (constructor == null) {
-            List<Statement> baseConstructors = new ArrayList<>();
-
-            for (Class base : resolvedBases) {
-                Expression getSelf = new LoadSymbolExpression("self", getRegion());
-                Expression getBase = new LoadSymbolExpression(base.getName(), getRegion());
-                Expression getBaseConstructor = new LoadAttributeExpression(getBase, "<init>", getRegion());
-
-                // TODO: Check that base constructor does not accept parameters in this case
-                Expression callConstructor = new CallExpression(
-                        getBaseConstructor,
-                        Collections.singletonList(getSelf),
-                        getRegion()
-                );
-
-                baseConstructors.add(new ExpressionStatement(callConstructor, getRegion()));
-            }
-
-            DeclareFunctionStatement constructor = new DeclareFunctionStatement(
-                    "<init>",
-                    Collections.singletonList("self"),
-                    new BlockStatement(
-                            baseConstructors,
-                            getRegion()
-                    ),
-                    getRegion()
-            );
-
-            constructor.compile(clazzContext, null);
-        } else {
-            // TODO: Verify that all base classes' constructors are called first
-            throw new ScriptException("User-defined constructors are not supported yet", getRegion());
-        }
+        boolean foundConstructor = false;
 
         for (Statement member : members) {
+            if (member instanceof DeclareFunctionStatement) {
+                DeclareFunctionStatement function = (DeclareFunctionStatement) member;
+
+                if (function.getName().equals("<init>")) {
+                    if (foundConstructor) {
+                        throw new ScriptException("Constructor already declared", member.getRegion());
+                    }
+
+                    foundConstructor = true;
+                }
+            }
+
             member.compile(clazzContext, null);
+        }
+
+        if (!foundConstructor) {
+            throw new ScriptException("Constructor must be defined", getRegion());
         }
 
         context.setAttribute(name, clazz);
@@ -108,10 +90,6 @@ public class DeclareClassStatement extends Statement {
 
     public List<Statement> getMembers() {
         return members;
-    }
-
-    public Statement getConstructor() {
-        return constructor;
     }
 
     @Override

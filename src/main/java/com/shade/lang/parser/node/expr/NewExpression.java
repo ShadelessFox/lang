@@ -23,22 +23,27 @@ public class NewExpression extends Expression {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         callee.compile(context, assembler);
-
         assembler.imm8(Opcode.NEW);
 
         assembler.imm8(Opcode.DUP);
-        assembler.imm8(Opcode.DUP);
+
+        for (Expression argument : arguments) {
+            argument.compile(context, assembler);
+        }
+
+        if (arguments.isEmpty()) {
+            assembler.imm8(Opcode.DUP);
+        } else {
+            assembler.imm8(Opcode.DUP_AT);
+            assembler.imm8(-arguments.size() - 1);
+        }
 
         assembler.imm8(Opcode.GET_ATTRIBUTE);
         assembler.imm32(assembler.addConstant("<init>"));
-
         assembler.imm8(Opcode.CALL);
-        assembler.imm8(1);
+        assembler.imm8(arguments.size() + 1);
+        assembler.addTraceLine(getRegion().getBegin());
         assembler.imm8(Opcode.POP);
-
-        if (!arguments.isEmpty()) {
-            throw new ScriptException("Parameterized constructors are not supported yet", getRegion());
-        }
     }
 
     @Override
