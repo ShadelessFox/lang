@@ -2,19 +2,14 @@ package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.ScriptException;
-import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.ClassContext;
 import com.shade.lang.parser.node.context.Context;
-import com.shade.lang.parser.node.expr.CallExpression;
-import com.shade.lang.parser.node.expr.LoadAttributeExpression;
-import com.shade.lang.parser.node.expr.LoadSymbolExpression;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -42,7 +37,7 @@ public class DeclareClassStatement extends Statement {
             ScriptObject object = module.getAttribute(base);
 
             if (object == null) {
-                throw new ScriptException("Cannot find base class '" + base + "'", getRegion());
+                throw new ScriptException("Cannot find base class named '" + base + "'", getRegion());
             }
 
             if (!(object instanceof Class)) {
@@ -52,7 +47,7 @@ public class DeclareClassStatement extends Statement {
             resolvedBases[index] = (Class) object;
         }
 
-        Class clazz = new Class(module, name, resolvedBases);
+        Class clazz = new Class(name, resolvedBases);
         ClassContext clazzContext = new ClassContext(context, clazz);
 
         boolean foundConstructor = false;

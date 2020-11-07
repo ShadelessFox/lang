@@ -9,7 +9,7 @@ public class Class extends ScriptObject {
     private final String name;
     private final Class[] bases;
 
-    public Class(Module module, String name, Class[] bases) {
+    public Class(String name, Class[] bases) {
         this.name = name;
         this.bases = bases;
         populateInheritedAttributes(this);
@@ -22,28 +22,29 @@ public class Class extends ScriptObject {
             if (attribute.getValue() instanceof RuntimeFunction) {
                 RuntimeFunction function = (RuntimeFunction) attribute.getValue();
 
-                // TODO: Add special flag
+                /*
+                 * Don't bind self parameter for constructors because
+                 * they can be called with derived class' instance
+                 */
                 if (function.getName().equals("<init>")) {
                     instance.setAttribute(attribute.getKey(), function);
                     continue;
                 }
 
-                if (function.getArgumentsCount() > 0) {
-                    RuntimeFunction boundFunction = new RuntimeFunction(
-                            function.getModule(),
-                            function.getName(),
-                            function.getChunk(),
-                            function.getConstants(),
-                            function.getLines(),
-                            function.getGuards(),
-                            function.getArgumentsCount() - 1,
-                            1,
-                            function.getLocalsCount()
-                    );
+                RuntimeFunction boundFunction = new RuntimeFunction(
+                        function.getModule(),
+                        function.getName(),
+                        function.getChunk(),
+                        function.getConstants(),
+                        function.getLines(),
+                        function.getGuards(),
+                        function.getArgumentsCount() - 1,
+                        1,
+                        function.getLocalsCount()
+                );
 
-                    boundFunction.getBoundArguments()[0] = instance;
-                    instance.setAttribute(attribute.getKey(), boundFunction);
-                }
+                boundFunction.getBoundArguments()[0] = instance;
+                instance.setAttribute(attribute.getKey(), boundFunction);
             }
         }
 
@@ -55,7 +56,9 @@ public class Class extends ScriptObject {
             base.populateInheritedAttributes(child);
         }
 
-        child.getAttributes().putAll(getAttributes());
+        if (child != this) {
+            child.getAttributes().putAll(getAttributes());
+        }
     }
 
     public String getName() {
