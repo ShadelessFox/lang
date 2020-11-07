@@ -146,6 +146,7 @@ public class Parser {
         int rangeBegin = expect(Number).getIntegerValue();
         boolean rangeInclusive = expect(Range, RangeInc).getKind() == RangeInc;
         int rangeEnd = expect(Number).getIntegerValue();
+        boolean rangeDescending = rangeEnd < rangeBegin;
         BlockStatement body = parseBlockStatement();
         Region region = start.until(body.getRegion());
 
@@ -159,7 +160,7 @@ public class Parser {
                 new BinaryExpression(
                     new LoadSymbolExpression(variable, region),
                     new LoadConstantExpression<>(rangeEnd, region),
-                    rangeInclusive ? LessEq : Less,
+                    rangeInclusive ? rangeDescending ? GreaterEq : LessEq : rangeDescending ? Greater : Less,
                     region
                 ),
                 new BlockStatement(
@@ -169,7 +170,7 @@ public class Parser {
                             new BinaryExpression(
                                 new LoadSymbolExpression(variable, region),
                                 new LoadConstantExpression<>(1, region),
-                                Add,
+                                rangeDescending ? Sub : Add,
                                 region
                             ),
                             region
