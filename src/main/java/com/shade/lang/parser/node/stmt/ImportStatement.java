@@ -27,6 +27,7 @@ public class ImportStatement extends Statement {
             assembler.imm8(Opcode.IMPORT);
             assembler.imm32(assembler.addConstant(name));
             assembler.imm8(context.addSlot(alias == null ? name : alias));
+            assembler.addTraceLine(getRegion().getBegin());
         }
     }
 

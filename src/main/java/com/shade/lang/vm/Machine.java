@@ -8,15 +8,15 @@ import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
-import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.Class;
-import com.shade.lang.vm.runtime.ScriptObject;
-import com.shade.lang.vm.runtime.Value;
+import com.shade.lang.vm.runtime.*;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +30,7 @@ public class Machine {
     public static final int MAX_STACK_DEPTH = 8192;
     public static final int MAX_CODE_SIZE = 16384;
 
+    private final List<Path> searchRoots = new ArrayList<>();
     private final Map<String, Module> modules = new HashMap<>();
     private final Stack<ScriptObject> operandStack = new Stack<>();
     private final Stack<Frame> callStack = new Stack<>();
@@ -83,20 +84,44 @@ public class Machine {
         for (ImportStatement statement : module.getImports()) {
             String name = statement.getName();
             String alias = statement.getAlias() == null ? name : statement.getAlias();
-            module.setAttribute(alias, load(statement));
+            Module loaded = load(name);
+            if (loaded != null) {
+                if (loaded == module) {
+                    throw new ScriptException("Cannot import itself", statement.getRegion());
+                }
+                module.setAttribute(alias, loaded);
+            } else {
+                throw new ScriptException("Cannot find module named '" + name + "'", statement.getRegion());
+            }
         }
 
         return module;
     }
 
-    public Module load(ImportStatement statement) throws ScriptException {
-        Module module = modules.get(statement.getName());
+    public Module load(String name) {
+        Module module = modules.get(name);
 
         if (module != null) {
             return module;
         }
 
-        throw new ScriptException("No module named '" + statement.getName() + "'", statement.getRegion());
+        for (Path root : searchRoots) {
+            ImportFileVisitor visitor = new ImportFileVisitor(name);
+
+            try {
+                Files.walkFileTree(root, visitor);
+            } catch (IOException e) {
+                throw new RuntimeException("Internal error while loading module", e);
+            }
+
+            Path result = visitor.getResult();
+
+            if (result != null) {
+                return load(result);
+            }
+        }
+
+        return null;
     }
 
     public Object call(String moduleName, String attributeName, Object... args) {
@@ -346,10 +371,15 @@ public class Machine {
                 case IMPORT: {
                     String name = frame.nextConstant();
                     byte slot = frame.nextImm8();
-                    if (modules.containsKey(name)) {
-                        frame.locals[slot] = modules.get(name);
+                    Module module = load(name);
+                    if (module != null) {
+                        if (module == frame.getFunction().getModule()) {
+                            panic("Cannot import itself", true);
+                            break;
+                        }
+                        frame.locals[slot] = module;
                     } else {
-                        panic("No such module named '" + name + "'", true);
+                        panic("Cannot find module named '" + name + "'", true);
                     }
                     break;
                 }
@@ -372,6 +402,7 @@ public class Machine {
     public void panic(String message, boolean recoverable) {
         int lastFrameRepeated = 0;
         Frame lastFrame = null;
+        Frame rootFrame = callStack.peek();
 
         StringBuilder builder = new StringBuilder();
         builder.append("Panicking: ").append(message).append('\n');
@@ -457,6 +488,10 @@ public class Machine {
 
     public Map<String, Module> getModules() {
         return modules;
+    }
+
+    public List<Path> getSearchRoots() {
+        return searchRoots;
     }
 
     public static class Frame {
@@ -569,6 +604,35 @@ public class Machine {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             if (rootPath.relativize(file).equals(filePath)) {
+                result = file;
+                return FileVisitResult.TERMINATE;
+            }
+
+            return FileVisitResult.CONTINUE;
+        }
+
+        public Path getResult() {
+            return result;
+        }
+    }
+
+    private static class ImportFileVisitor extends SimpleFileVisitor<Path> {
+        private final String name;
+        private Path result;
+
+        public ImportFileVisitor(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            String filename = file.getFileName().toString();
+
+            if (filename.indexOf('.') >= 0) {
+                filename = filename.substring(0, filename.indexOf('.'));
+            }
+
+            if (filename.equals(name)) {
                 result = file;
                 return FileVisitResult.TERMINATE;
             }
