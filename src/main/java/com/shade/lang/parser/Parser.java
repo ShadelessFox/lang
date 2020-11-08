@@ -141,7 +141,7 @@ public class Parser {
 
     private BlockStatement parseRangeStatement() throws ScriptException {
         Region start = expect(For).getRegion();
-        String variable = expect(Symbol).getStringValue();
+        Token variable = expect(Symbol);
         expect(In);
         int rangeBegin = expect(Number).getIntegerValue();
         boolean rangeInclusive = expect(Range, RangeInc).getKind() == RangeInc;
@@ -152,13 +152,13 @@ public class Parser {
 
         return new BlockStatement(Arrays.asList(
             new DeclareVariableStatement(
-                variable,
-                new LoadConstantExpression<>(rangeBegin, region),
-                region
+                variable.getStringValue(),
+                new LoadConstantExpression<>(rangeBegin, variable.getRegion()),
+                variable.getRegion()
             ),
             new LoopStatement(
                 new BinaryExpression(
-                    new LoadSymbolExpression(variable, region),
+                    new LoadSymbolExpression(variable.getStringValue(), region),
                     new LoadConstantExpression<>(rangeEnd, region),
                     rangeInclusive ? rangeDescending ? GreaterEq : LessEq : rangeDescending ? Greater : Less,
                     region
@@ -166,9 +166,9 @@ public class Parser {
                 new BlockStatement(
                     Arrays.asList(
                         body,
-                        new AssignSymbolStatement(variable,
+                        new AssignSymbolStatement(variable.getStringValue(),
                             new BinaryExpression(
-                                new LoadSymbolExpression(variable, region),
+                                new LoadSymbolExpression(variable.getStringValue(), region),
                                 new LoadConstantExpression<>(1, region),
                                 rangeDescending ? Sub : Add,
                                 region
