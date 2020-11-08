@@ -83,8 +83,8 @@ public class Region {
             if (o == null || getClass() != o.getClass()) return false;
             Span span = (Span) o;
             return line == span.line &&
-                    column == span.column &&
-                    offset == span.offset;
+                column == span.column &&
+                offset == span.offset;
         }
 
         @Override

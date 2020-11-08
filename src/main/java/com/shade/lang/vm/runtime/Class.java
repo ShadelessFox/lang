@@ -1,6 +1,5 @@
 package com.shade.lang.vm.runtime;
 
-import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.util.Map;
@@ -15,7 +14,7 @@ public class Class extends ScriptObject {
         populateInheritedAttributes(this);
     }
 
-    public void instantiate(Machine machine) {
+    public Instance instantiate() {
         Instance instance = new Instance(this);
 
         for (Map.Entry<String, ScriptObject> attribute : getAttributes().entrySet()) {
@@ -32,15 +31,15 @@ public class Class extends ScriptObject {
                 }
 
                 RuntimeFunction boundFunction = new RuntimeFunction(
-                        function.getModule(),
-                        function.getName(),
-                        function.getChunk(),
-                        function.getConstants(),
-                        function.getLines(),
-                        function.getGuards(),
-                        function.getArgumentsCount() - 1,
-                        1,
-                        function.getLocalsCount()
+                    function.getModule(),
+                    function.getName(),
+                    function.getChunk(),
+                    function.getConstants(),
+                    function.getLines(),
+                    function.getGuards(),
+                    function.getArgumentsCount() - 1,
+                    1,
+                    function.getLocalsCount()
                 );
 
                 boundFunction.getBoundArguments()[0] = instance;
@@ -48,7 +47,7 @@ public class Class extends ScriptObject {
             }
         }
 
-        machine.getOperandStack().push(instance);
+        return instance;
     }
 
     private void populateInheritedAttributes(Class child) {

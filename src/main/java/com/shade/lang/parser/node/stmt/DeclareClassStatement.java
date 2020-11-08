@@ -93,8 +93,8 @@ public class DeclareClassStatement extends Statement {
         if (o == null || getClass() != o.getClass()) return false;
         DeclareClassStatement that = (DeclareClassStatement) o;
         return name.equals(that.name) &&
-                bases.equals(that.bases) &&
-                members.equals(that.members);
+            bases.equals(that.bases) &&
+            members.equals(that.members);
     }
 
     @Override

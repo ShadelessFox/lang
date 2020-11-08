@@ -390,7 +390,7 @@ public class Machine {
                         break;
                     }
                     Class clazz = (Class) object;
-                    clazz.instantiate(this);
+                    operandStack.push(clazz.instantiate());
                     break;
                 }
                 default:
@@ -558,8 +558,8 @@ public class Machine {
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
             return pc == frame.pc &&
-                    Objects.equals(function, frame.function) &&
-                    Arrays.equals(chunk, frame.chunk);
+                Objects.equals(function, frame.function) &&
+                Arrays.equals(chunk, frame.chunk);
         }
 
         @Override

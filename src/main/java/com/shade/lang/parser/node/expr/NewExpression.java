@@ -40,6 +40,8 @@ public class NewExpression extends Expression {
 
         assembler.imm8(Opcode.GET_ATTRIBUTE);
         assembler.imm32(assembler.addConstant("<init>"));
+        assembler.addTraceLine(getRegion().getBegin());
+
         assembler.imm8(Opcode.CALL);
         assembler.imm8(arguments.size() + 1);
         assembler.addTraceLine(getRegion().getBegin());
@@ -52,7 +54,7 @@ public class NewExpression extends Expression {
         if (o == null || getClass() != o.getClass()) return false;
         NewExpression that = (NewExpression) o;
         return callee.equals(that.callee) &&
-                arguments.equals(that.arguments);
+            arguments.equals(that.arguments);
     }
 
     @Override
