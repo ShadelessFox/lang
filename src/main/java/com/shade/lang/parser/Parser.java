@@ -253,13 +253,9 @@ public class Parser {
     }
 
     private BlockStatement parseBlockStatement() throws ScriptException {
-        Region start = expect(BraceL).getRegion();
         List<Statement> statements = new ArrayList<>();
-        while (!matches(BraceR, End)) {
-            statements.add(parseStatement());
-        }
-        Token end = expect(BraceR);
-        return new BlockStatement(statements, start.until(end.getRegion()));
+        Region region = list(BraceL, BraceR, null, statements, this::parseStatement);
+        return new BlockStatement(statements, region);
     }
 
     private BranchStatement parseBranchStatement() throws ScriptException {
@@ -289,37 +285,34 @@ public class Parser {
 
     private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
         String name = expect(Symbol).getStringValue();
-        expect(ParenL);
-        List<String> args = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
-        expect(ParenR);
+        List<String> arguments = new ArrayList<>();
+        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
         BlockStatement body = parseBlockStatement();
-        return new DeclareFunctionStatement(name, args, body, start.until(body.getRegion()));
+        return new DeclareFunctionStatement(name, arguments, body, start.until(body.getRegion()));
     }
 
     private DeclareClassStatement parseClassDeclareStatement(Region start) throws ScriptException {
         String name = expect(Symbol).getStringValue();
 
-        List<String> bases = Collections.emptyList();
+        List<String> bases = new ArrayList<>();
         if (consume(Colon) != null) {
-            bases = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
+            list(new TokenKind[]{Symbol}, Comma, bases, () -> expect(Symbol).getStringValue());
         }
 
         List<Statement> members = new ArrayList<>();
-        expect(BraceL);
-        while (!matches(BraceR, End)) {
+        Region region = list(BraceL, BraceR, null, members, () -> {
             Token token = expect(Def, Constructor);
             switch (token.getKind()) {
                 case Def:
-                    members.add(parseFunctionDeclareStatement(token.getRegion()));
-                    break;
+                    return parseFunctionDeclareStatement(token.getRegion());
                 case Constructor:
-                    members.add(parseConstructorDeclareStatement(token.getRegion()));
-                    break;
+                    return parseConstructorDeclareStatement(token.getRegion());
+                default:
+                    return null;
             }
-        }
-        Token end = expect(BraceR);
+        });
 
-        return new DeclareClassStatement(name, bases, members, start.until(end.getRegion()));
+        return new DeclareClassStatement(name, bases, members, start.until(region));
     }
 
     public Expression parseExpression() throws ScriptException {
@@ -357,23 +350,19 @@ public class Parser {
             return parseUnaryExpression();
         }
 
-        expect(ParenL);
-        List<String> parameters = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
-        expect(ParenR);
+        List<String> arguments = new ArrayList<>();
+        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
 
-        List<String> capturedParameters = Collections.emptyList();
-
+        List<String> boundArguments = new ArrayList<>();
         if (consume(Use) != null) {
-            expect(ParenL);
-            capturedParameters = parseList(new TokenKind[]{Symbol}, Comma, () -> expect(Symbol).getStringValue());
-            expect(ParenR);
+            list(ParenL, ParenR, Comma, boundArguments, () -> expect(Symbol).getStringValue());
         }
 
         BlockStatement body = parseBlockStatement();
         DeclareFunctionStatement function = new DeclareFunctionStatement(
             "<lambda:" + UUID.randomUUID() + ">",
-            parameters,
-            capturedParameters,
+            arguments,
+            boundArguments,
             body,
             start.getRegion().until(body.getRegion())
         );
@@ -432,10 +421,9 @@ public class Parser {
 
         if (token.getKind() == New) {
             Token name = expect(Symbol);
-            expect(ParenL);
-            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
-            Token end = expect(ParenR);
-            return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(end.getRegion()));
+            List<Expression> arguments = new ArrayList<>();
+            Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
+            return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(region));
         }
 
         if (token.getKind() == ParenL) {
@@ -448,39 +436,21 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression(Expression lhs) throws ScriptException {
-        Token token = consume(ParenL, Dot);
-
-        if (token == null) {
+        if (!matches(ParenL, Dot)) {
             return lhs;
         }
 
-        if (token.getKind() == Dot) {
+        if (consume(Dot) != null) {
             Token name = expect(Symbol);
             return parsePrimaryExpression(new LoadAttributeExpression(lhs, name.getStringValue(), lhs.getRegion().until(name.getRegion())));
         }
 
-        if (token.getKind() == ParenL) {
-            List<Expression> arguments = parseList(new TokenKind[]{Symbol, Number, String, StringPart, New, ParenL}, Comma, this::parseExpression);
-            Region end = expect(ParenR).getRegion();
-            return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(end)));
-        }
-
-        throw new AssertionError("Unreachable");
+        List<Expression> arguments = new ArrayList<>();
+        Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
+        return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(region)));
     }
 
-    private <T> List<T> parseList(TokenKind[] start, TokenKind separator, Supplier<T> supplier) throws ScriptException {
-        List<T> items = new ArrayList<>();
-
-        if (matches(start)) {
-            do {
-                items.add(supplier.get());
-            } while (consume(separator) != null);
-        }
-
-        return items;
-    }
-
-    private <T> Region list(TokenKind opening, TokenKind closing, TokenKind separator, List<T> output, Supplier<T> supplier) throws ScriptException {
+    private <T> Region list(TokenKind opening, TokenKind closing, TokenKind separator, Collection<T> output, Supplier<T> supplier) throws ScriptException {
         Region begin = expect(opening).getRegion();
 
         if (!matches(closing)) {
@@ -491,6 +461,17 @@ public class Parser {
 
         Region end = expect(closing).getRegion();
 
+        return begin.until(end);
+    }
+
+    private <T> Region list(TokenKind[] starting, TokenKind separator, Collection<T> output, Supplier<T> supplier) throws ScriptException {
+        Region begin = token.getRegion();
+        if (matches(starting)) {
+            do {
+                output.add(supplier.get());
+            } while (consume(separator) != null);
+        }
+        Region end = token.getRegion();
         return begin.until(end);
     }
 
