@@ -3,13 +3,14 @@ package com.shade.lang.vm.runtime.function;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.value.Value;
 
 import java.util.function.BiFunction;
 
 public class NativeFunction extends Function {
-    private final BiFunction<Machine, ScriptObject[], ScriptObject> prototype;
+    private final BiFunction<Machine, ScriptObject[], Object> prototype;
 
-    public NativeFunction(Module module, String name, BiFunction<Machine, ScriptObject[], ScriptObject> prototype) {
+    public NativeFunction(Module module, String name, BiFunction<Machine, ScriptObject[], Object> prototype) {
         super(module, name);
         this.prototype = prototype;
     }
@@ -23,10 +24,14 @@ public class NativeFunction extends Function {
 
         machine.getCallStack().push(new Machine.Frame(this, null, null, null));
 
-        ScriptObject result = prototype.apply(machine, locals);
+        Object result = prototype.apply(machine, locals);
+
+        if (!(result instanceof Value)) {
+            result = Value.from(result);
+        }
 
         if (result != null) {
-            machine.getOperandStack().push(result);
+            machine.getOperandStack().push((ScriptObject) result);
             machine.getCallStack().pop();
         }
     }

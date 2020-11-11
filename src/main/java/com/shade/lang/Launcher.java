@@ -4,14 +4,14 @@ import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
-import com.shade.lang.vm.runtime.Value;
+import com.shade.lang.vm.runtime.value.Value;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 public class Launcher {
     public static void main(String[] args) throws Exception {
         Machine machine = new Machine();
+        machine.getSearchRoots().add(Paths.get("src/main/resources"));
         machine.load(Builtin.INSTANCE);
         machine.load(Paths.get("src/main/resources/sandbox.ash"));
 
@@ -84,38 +85,38 @@ public class Launcher {
         public Builtin() {
             super("builtin", "<builtin>");
 
-            setAttribute("to_string", new NativeFunction(this, "to_string", (machine, args) -> new Value(args[0].toString())));
+            setAttribute("to_string", new NativeFunction(this, "to_string", (machine, args) -> args[0].toString()));
 
             setAttribute("print", new NativeFunction(this, "print", (machine, args) -> {
                 machine.getOut().print(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return new Value(0);
+                return 0;
             }));
 
             setAttribute("println", new NativeFunction(this, "println", (machine, args) -> {
                 machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return new Value(0);
+                return 0;
             }));
 
             setAttribute("debug", new NativeFunction(this, "debug", (machine, args) -> {
                 Machine.Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
                 machine.getErr().print("[" + frame.getSourceLocation() + "] ");
                 machine.getErr().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return new Value(0);
+                return 0;
             }));
 
             setAttribute("panic", new NativeFunction(this, "panic", (machine, args) -> {
-                String message = ((Value) args[0]).getValue();
-                boolean recoverable = ((Value) args[1]).<Integer>getValue() == 1;
+                String message = (String) ((Value) args[0]).getValue();
+                boolean recoverable = !((Value) args[1]).getValue().equals(BigInteger.ZERO);
                 machine.panic(message, recoverable);
                 return null;
             }));
 
             setAttribute("debug_assert", new NativeFunction(this, "assert", (machine, args) -> {
-                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || (int) x.getValue() == 0)) {
+                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || x.getValue().equals(BigInteger.ZERO))) {
                     machine.panic("Assertion failed", true);
                     return null;
                 }
-                return new Value(0);
+                return 0;
             }));
         }
     }

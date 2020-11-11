@@ -13,10 +13,13 @@ import com.shade.lang.vm.runtime.*;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
+import com.shade.lang.vm.runtime.value.NumberValue;
+import com.shade.lang.vm.runtime.value.Value;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -145,7 +148,7 @@ public class Machine {
             if (arg instanceof ScriptObject) {
                 operandStack.push((ScriptObject) arg);
             } else {
-                operandStack.push(new Value(arg));
+                operandStack.push(Value.from(arg));
             }
         }
 
@@ -174,11 +177,11 @@ public class Machine {
 
             switch (frame.nextImm8()) {
                 case PUSH_CONST: {
-                    operandStack.push(new Value(frame.nextConstant()));
+                    operandStack.push(Value.from(frame.nextConstant()));
                     break;
                 }
                 case PUSH_INT: {
-                    operandStack.push(new Value(frame.nextImm32()));
+                    operandStack.push(NumberValue.from(frame.nextImm32()));
                     break;
                 }
                 case GET_GLOBAL: {
@@ -263,17 +266,17 @@ public class Machine {
                     break;
                 }
                 case JUMP_IF_TRUE: {
-                    int value = ((Value) operandStack.pop()).getValue();
+                    Boolean value = ((Value) operandStack.pop()).getBoolean(this);
                     int offset = frame.nextImm32();
-                    if (value != 0) {
+                    if (value != null && value) {
                         frame.pc += offset - 4;
                     }
                     break;
                 }
                 case JUMP_IF_FALSE: {
-                    int value = ((Value) operandStack.pop()).getValue();
+                    Boolean value = ((Value) operandStack.pop()).getBoolean(this);
                     int offset = frame.nextImm32();
-                    if (value == 0) {
+                    if (value != null && !value) {
                         frame.pc += offset - 4;
                     }
                     break;
@@ -281,37 +284,49 @@ public class Machine {
                 case CMP_EQ: {
                     ScriptObject b = operandStack.pop();
                     ScriptObject a = operandStack.pop();
-                    operandStack.push(new Value(a.equals(b) ? 1 : 0));
+                    operandStack.push(NumberValue.from(a.equals(b) ? 1 : 0));
                     break;
                 }
                 case CMP_NE: {
-                    Object b = ((Value) operandStack.pop()).getValue();
-                    Object a = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a.equals(b) ? 0 : 1));
+                    ScriptObject b = operandStack.pop();
+                    ScriptObject a = operandStack.pop();
+                    operandStack.push(NumberValue.from(a.equals(b) ? 0 : 1));
                     break;
                 }
                 case CMP_LT: {
-                    int b = ((Value) operandStack.pop()).getValue();
-                    int a = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a < b ? 1 : 0));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Integer result = a.compare(this, b);
+                    if (result != null) {
+                        operandStack.push(NumberValue.from(result < 0 ? 1 : 0));
+                    }
                     break;
                 }
                 case CMP_LE: {
-                    int b = ((Value) operandStack.pop()).getValue();
-                    int a = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a <= b ? 1 : 0));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Integer result = a.compare(this, b);
+                    if (result != null) {
+                        operandStack.push(NumberValue.from(result <= 0 ? 1 : 0));
+                    }
                     break;
                 }
                 case CMP_GT: {
-                    int b = ((Value) operandStack.pop()).getValue();
-                    int a = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a > b ? 1 : 0));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Integer result = a.compare(this, b);
+                    if (result != null) {
+                        operandStack.push(NumberValue.from(result > 0 ? 1 : 0));
+                    }
                     break;
                 }
                 case CMP_GE: {
-                    int b = ((Value) operandStack.pop()).getValue();
-                    int a = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(a >= b ? 1 : 0));
+                    Value b = (Value) operandStack.pop();
+                    Value a = (Value) operandStack.pop();
+                    Integer result = a.compare(this, b);
+                    if (result != null) {
+                        operandStack.push(NumberValue.from(result >= 0 ? 1 : 0));
+                    }
                     break;
                 }
                 case CALL: {
@@ -351,15 +366,15 @@ public class Machine {
                     break;
                 }
                 case NOT: {
-                    int value = ((Value) operandStack.pop()).getValue();
-                    operandStack.push(new Value(value == 0 ? 1 : 0));
+                    BigInteger value = (BigInteger) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(NumberValue.from(value.equals(BigInteger.ZERO) ? 1 : 0));
                     break;
                 }
                 case ASSERT: {
-                    int value = ((Value) operandStack.pop()).getValue();
+                    BigInteger value = (BigInteger) ((Value) operandStack.pop()).getValue();
                     String source = frame.nextConstant();
                     String message = frame.nextConstant();
-                    if (value == 0) {
+                    if (value.equals(BigInteger.ZERO)) {
                         if (message != null) {
                             panic("Assertion failed '" + source + "': " + message, true);
                         } else {
@@ -402,7 +417,6 @@ public class Machine {
     public void panic(String message, boolean recoverable) {
         int lastFrameRepeated = 0;
         Frame lastFrame = null;
-        Frame rootFrame = callStack.peek();
 
         StringBuilder builder = new StringBuilder();
         builder.append("Panicking: ").append(message).append('\n');
@@ -416,7 +430,7 @@ public class Machine {
                 for (Assembler.Guard guard : function.getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
                         if (guard.hasSlot()) {
-                            currentFrame.locals[guard.getSlot()] = new Value(message);
+                            currentFrame.locals[guard.getSlot()] = Value.from(message);
                         }
 
                         currentFrame.pc = guard.getOffset();
