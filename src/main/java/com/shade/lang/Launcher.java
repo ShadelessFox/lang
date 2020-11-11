@@ -106,13 +106,13 @@ public class Launcher {
 
             setAttribute("panic", new NativeFunction(this, "panic", (machine, args) -> {
                 String message = (String) ((Value) args[0]).getValue();
-                boolean recoverable = !((Value) args[1]).getValue().equals(BigInteger.ZERO);
+                boolean recoverable = (Integer) ((Value) args[1]).getValue() != 0;
                 machine.panic(message, recoverable);
                 return null;
             }));
 
             setAttribute("debug_assert", new NativeFunction(this, "assert", (machine, args) -> {
-                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || x.getValue().equals(BigInteger.ZERO))) {
+                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || (Integer) x.getValue() == 0)) {
                     machine.panic("Assertion failed", true);
                     return null;
                 }

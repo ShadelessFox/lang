@@ -19,7 +19,6 @@ import com.shade.lang.vm.runtime.value.Value;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.math.BigInteger;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -366,15 +365,15 @@ public class Machine {
                     break;
                 }
                 case NOT: {
-                    BigInteger value = (BigInteger) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(NumberValue.from(value.equals(BigInteger.ZERO) ? 1 : 0));
+                    Integer value = (Integer) ((Value) operandStack.pop()).getValue();
+                    operandStack.push(NumberValue.from(value == 0 ? 1 : 0));
                     break;
                 }
                 case ASSERT: {
-                    BigInteger value = (BigInteger) ((Value) operandStack.pop()).getValue();
+                    Integer value = (Integer) ((Value) operandStack.pop()).getValue();
                     String source = frame.nextConstant();
                     String message = frame.nextConstant();
-                    if (value.equals(BigInteger.ZERO)) {
+                    if (value == 0) {
                         if (message != null) {
                             panic("Assertion failed '" + source + "': " + message, true);
                         } else {
