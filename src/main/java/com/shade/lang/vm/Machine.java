@@ -13,7 +13,6 @@ import com.shade.lang.vm.runtime.*;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
-import com.shade.lang.vm.runtime.value.NumberValue;
 import com.shade.lang.vm.runtime.value.Value;
 
 import java.io.BufferedReader;
@@ -179,13 +178,9 @@ public class Machine {
                     operandStack.push(Value.from(frame.nextConstant()));
                     break;
                 }
-                case PUSH_INT: {
-                    operandStack.push(NumberValue.from(frame.nextImm32()));
-                    break;
-                }
                 case GET_GLOBAL: {
                     Module module = frame.getFunction().getModule();
-                    String name = frame.nextConstant();
+                    String name = (String) frame.nextConstant();
                     ScriptObject value = module.getAttribute(name);
                     if (value == null) {
                         panic("No such global '" + name + "'", true);
@@ -196,7 +191,7 @@ public class Machine {
                 }
                 case SET_GLOBAL: {
                     Module module = frame.getFunction().getModule();
-                    module.setAttribute(frame.nextConstant(), operandStack.pop());
+                    module.setAttribute((String) frame.nextConstant(), operandStack.pop());
                     break;
                 }
                 case GET_LOCAL: {
@@ -208,7 +203,7 @@ public class Machine {
                     break;
                 }
                 case GET_ATTRIBUTE: {
-                    String name = frame.nextConstant();
+                    String name = (String) frame.nextConstant();
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
@@ -221,7 +216,7 @@ public class Machine {
                 case SET_ATTRIBUTE: {
                     ScriptObject value = operandStack.pop();
                     ScriptObject target = operandStack.pop();
-                    target.setAttribute(frame.nextConstant(), value);
+                    target.setAttribute((String) frame.nextConstant(), value);
                     break;
                 }
                 case ADD: {
@@ -265,17 +260,17 @@ public class Machine {
                     break;
                 }
                 case JUMP_IF_TRUE: {
-                    Boolean value = ((Value) operandStack.pop()).getBoolean(this);
+                    Value value = (Value) operandStack.pop();
                     int offset = frame.nextImm32();
-                    if (value != null && value) {
+                    if (value.getBoolean(this) == Boolean.TRUE) {
                         frame.pc += offset - 4;
                     }
                     break;
                 }
                 case JUMP_IF_FALSE: {
-                    Boolean value = ((Value) operandStack.pop()).getBoolean(this);
+                    Value value = (Value) operandStack.pop();
                     int offset = frame.nextImm32();
-                    if (value != null && !value) {
+                    if (value.getBoolean(this) == Boolean.FALSE) {
                         frame.pc += offset - 4;
                     }
                     break;
@@ -283,13 +278,13 @@ public class Machine {
                 case CMP_EQ: {
                     ScriptObject b = operandStack.pop();
                     ScriptObject a = operandStack.pop();
-                    operandStack.push(NumberValue.from(a.equals(b) ? 1 : 0));
+                    operandStack.push(Value.from(a.equals(b)));
                     break;
                 }
                 case CMP_NE: {
                     ScriptObject b = operandStack.pop();
                     ScriptObject a = operandStack.pop();
-                    operandStack.push(NumberValue.from(a.equals(b) ? 0 : 1));
+                    operandStack.push(Value.from(!a.equals(b)));
                     break;
                 }
                 case CMP_LT: {
@@ -297,7 +292,7 @@ public class Machine {
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
                     if (result != null) {
-                        operandStack.push(NumberValue.from(result < 0 ? 1 : 0));
+                        operandStack.push(Value.from(result < 0));
                     }
                     break;
                 }
@@ -306,7 +301,7 @@ public class Machine {
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
                     if (result != null) {
-                        operandStack.push(NumberValue.from(result <= 0 ? 1 : 0));
+                        operandStack.push(Value.from(result <= 0));
                     }
                     break;
                 }
@@ -315,7 +310,7 @@ public class Machine {
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
                     if (result != null) {
-                        operandStack.push(NumberValue.from(result > 0 ? 1 : 0));
+                        operandStack.push(Value.from(result > 0));
                     }
                     break;
                 }
@@ -324,7 +319,7 @@ public class Machine {
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
                     if (result != null) {
-                        operandStack.push(NumberValue.from(result >= 0 ? 1 : 0));
+                        operandStack.push(Value.from(result >= 0));
                     }
                     break;
                 }
@@ -365,15 +360,15 @@ public class Machine {
                     break;
                 }
                 case NOT: {
-                    Integer value = (Integer) ((Value) operandStack.pop()).getValue();
-                    operandStack.push(NumberValue.from(value == 0 ? 1 : 0));
+                    Value value = (Value) operandStack.pop();
+                    operandStack.push(Value.from(value.getBoolean(this) == Boolean.FALSE));
                     break;
                 }
                 case ASSERT: {
-                    Integer value = (Integer) ((Value) operandStack.pop()).getValue();
-                    String source = frame.nextConstant();
-                    String message = frame.nextConstant();
-                    if (value == 0) {
+                    Value value = (Value) operandStack.pop();
+                    String source = (String) frame.nextConstant();
+                    String message = (String) frame.nextConstant();
+                    if (value.getBoolean(this) == Boolean.FALSE) {
                         if (message != null) {
                             panic("Assertion failed '" + source + "': " + message, true);
                         } else {
@@ -383,7 +378,7 @@ public class Machine {
                     break;
                 }
                 case IMPORT: {
-                    String name = frame.nextConstant();
+                    String name = (String) frame.nextConstant();
                     byte slot = frame.nextImm8();
                     Module module = load(name);
                     if (module != null) {
@@ -510,11 +505,11 @@ public class Machine {
     public static class Frame {
         private final Function function;
         private final byte[] chunk;
-        private final String[] constants;
+        private final Object[] constants;
         private final ScriptObject[] locals;
         private int pc;
 
-        public Frame(Function function, byte[] chunk, String[] constants, ScriptObject[] locals) {
+        public Frame(Function function, byte[] chunk, Object[] constants, ScriptObject[] locals) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
@@ -522,7 +517,7 @@ public class Machine {
             this.pc = 0;
         }
 
-        private String nextConstant() {
+        private Object nextConstant() {
             return constants[nextImm32()];
         }
 
@@ -542,7 +537,7 @@ public class Machine {
             return chunk;
         }
 
-        public String[] getConstants() {
+        public Object[] getConstants() {
             return constants;
         }
 

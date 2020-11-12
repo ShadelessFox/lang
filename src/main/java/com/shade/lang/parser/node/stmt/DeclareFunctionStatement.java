@@ -80,8 +80,8 @@ public class DeclareFunctionStatement extends Statement {
         assembler.addDebugLine(getRegion().getEnd(), "Function end");
 
         if (!body.isControlFlowReturned()) {
-            assembler.imm8(Opcode.PUSH_INT);
-            assembler.imm32(0);
+            assembler.imm8(Opcode.PUSH_CONST);
+            assembler.imm32(assembler.addConstant(0));
             assembler.imm8(Opcode.RET);
         }
 

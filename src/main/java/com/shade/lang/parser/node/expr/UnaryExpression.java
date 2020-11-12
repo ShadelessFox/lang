@@ -26,8 +26,8 @@ public class UnaryExpression extends Expression {
             case Add:
                 break;
             case Sub:
-                assembler.imm8(Opcode.PUSH_INT);
-                assembler.imm32(-1);
+                assembler.imm8(Opcode.PUSH_CONST);
+                assembler.imm32(assembler.addConstant(-1));
                 assembler.imm8(Opcode.MUL);
                 break;
             case Not:

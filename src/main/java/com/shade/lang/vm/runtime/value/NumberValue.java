@@ -50,11 +50,6 @@ public class NumberValue extends Value {
     }
 
     @Override
-    public Boolean getBoolean(Machine machine) {
-        return value > 0;
-    }
-
-    @Override
     public Integer getValue() {
         return value;
     }

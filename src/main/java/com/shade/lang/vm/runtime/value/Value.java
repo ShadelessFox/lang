@@ -13,6 +13,8 @@ public abstract class Value extends ScriptObject {
             return new NumberValue((int) value);
         } else if (value instanceof String) {
             return new StringValue((String) value);
+        } else if (value instanceof Boolean) {
+            return new BooleanValue((Boolean) value);
         }
         throw new IllegalArgumentException("Unsupported value: " + value.getClass());
     }

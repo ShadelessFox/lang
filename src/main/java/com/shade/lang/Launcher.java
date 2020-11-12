@@ -4,14 +4,14 @@ import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
-import com.shade.lang.vm.runtime.value.Value;
+import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
+import com.shade.lang.vm.runtime.value.Value;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
@@ -65,8 +65,9 @@ public class Launcher {
             stream.write(chunk);
 
             stream.writeInt(function.getConstants().length);
-            for (String constant : function.getConstants()) {
-                stream.writeUTF(constant == null ? "" : constant);
+            for (Object constant : function.getConstants()) {
+                // TODO: Write constants along with its type tag
+                throw new IllegalArgumentException("Unsupported constant type: " + constant.getClass());
             }
 
             stream.writeInt(function.getGuards().length);
@@ -111,10 +112,16 @@ public class Launcher {
                 return null;
             }));
 
-            setAttribute("debug_assert", new NativeFunction(this, "assert", (machine, args) -> {
-                if (Stream.of(args).map(x -> (Value) x).anyMatch(x -> x == null || (Integer) x.getValue() == 0)) {
-                    machine.panic("Assertion failed", true);
-                    return null;
+            setAttribute("debug_assert", new NativeFunction(this, "debug_assert", (machine, args) -> {
+                for (ScriptObject argument : args) {
+                    Boolean value = ((Value) argument).getBoolean(machine);
+                    if (value == null) {
+                        return null;
+                    }
+                    if (value == Boolean.FALSE) {
+                        machine.panic("Assertion failed", true);
+                        return null;
+                    }
                 }
                 return 0;
             }));

@@ -29,6 +29,7 @@ public class LoopStatement extends Statement {
         if (condition != null) {
             condition.compile(context, assembler);
             end = assembler.jump(Opcode.JUMP_IF_FALSE);
+            assembler.addTraceLine(getRegion().getBegin());
         }
 
         LoopContext loopContext = new LoopContext(context);

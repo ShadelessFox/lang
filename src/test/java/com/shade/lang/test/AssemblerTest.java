@@ -57,8 +57,8 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x01,
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x02,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x00,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x01,
             Opcode.ADD
         });
     }
@@ -72,8 +72,8 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x01,
-            Opcode.PUSH_INT, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x00,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x01,
             Opcode.MUL
         });
     }
@@ -86,7 +86,7 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x01,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x00,
             Opcode.RET
         });
     }
@@ -100,10 +100,10 @@ public class AssemblerTest {
             region
         ));
 
-        Assert.assertArrayEquals(result.getConstants(), new String[]{ "abc", "def" });
+        Assert.assertArrayEquals(result.getConstants(), new Object[]{ 1, "abc", "def" });
         Assert.assertArrayEquals(result.build().array(), new byte[]{
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x01,
-            Opcode.ASSERT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x00,
+            Opcode.ASSERT, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02
         });
     }
 
@@ -117,12 +117,12 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x01,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x00,
             Opcode.JUMP_IF_FALSE, 0x00, 0x00, 0x00, 0x0F,
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x02,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x01,
             Opcode.POP,
             Opcode.JUMP, 0x00, 0x00, 0x00, 0x0A,
-            Opcode.PUSH_INT, 0x00, 0x00, 0x00, 0x03,
+            Opcode.PUSH_CONST, 0x00, 0x00, 0x00, 0x02,
             Opcode.POP,
         });
     }

@@ -13,7 +13,7 @@ import static com.shade.lang.compiler.Opcode.*;
 public class Assembler {
     private final ByteBuffer buffer;
     private final List<Label> labels;
-    private final List<String> constants;
+    private final List<Object> constants;
     private final List<Guard> guards;
     private final Map<Integer, Region.Span> traceLines;
     private final Map<Region.Span, Integer> debugLines;
@@ -79,14 +79,17 @@ public class Assembler {
         final Map<Integer, Integer> labels = new HashMap<>();
 
         final Supplier<String> formatConstant = () -> {
-            String constant = constants.get(buffer.getInt());
+            Object constant = constants.get(buffer.getInt());
 
-            if (constant != null) {
-                return String.format("'%s'", constant.chars()
+            if (constant == null) {
+                return null;
+            }
+            if (constant instanceof String) {
+                return String.format("'%s'", ((String) constant).chars()
                     .mapToObj(x -> x <= 27 ? String.format("\\x%02x", x) : String.valueOf((char) x))
                     .collect(Collectors.joining()));
             } else {
-                return "<null>";
+                return constant.toString();
             }
         };
 
@@ -115,7 +118,6 @@ public class Assembler {
             switch (buffer.get()) {
                 // @formatter:off
                 case PUSH_CONST:    stream.printf("%s: PUSH_CONST    %s%n", line.get(), formatConstant.get()); break;
-                case PUSH_INT:      stream.printf("%s: PUSH_INT      %#x%n", line.get(), buffer.getInt()); break;
                 case GET_GLOBAL:    stream.printf("%s: GET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
                 case SET_GLOBAL:    stream.printf("%s: SET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
                 case GET_LOCAL:     stream.printf("%s: GET_LOCAL     %d%n", line.get(), buffer.get()); break;
@@ -127,6 +129,11 @@ public class Assembler {
                 case MUL:           stream.printf("%s: MUL%n", line.get()); break;
                 case DIV:           stream.printf("%s: DIV%n", line.get()); break;
                 case NOT:           stream.printf("%s: NOT%n", line.get()); break;
+                case AND:           stream.printf("%s: AND%n", line.get()); break;
+                case OR:            stream.printf("%s: OR%n", line.get()); break;
+                case XOR:           stream.printf("%s: XOR%n", line.get()); break;
+                case SHL:           stream.printf("%s: SHL%n", line.get()); break;
+                case SHR:           stream.printf("%s: SHR%n", line.get()); break;
                 case JUMP:          stream.printf("%s: JUMP          %s%n", line.get(), formatLabel.get()); break;
                 case JUMP_IF_TRUE:  stream.printf("%s: JUMP_IF_TRUE  %s%n", line.get(), formatLabel.get()); break;
                 case JUMP_IF_FALSE: stream.printf("%s: JUMP_IF_FALSE %s%n", line.get(), formatLabel.get()); break;
@@ -136,26 +143,26 @@ public class Assembler {
                 case CMP_LE:        stream.printf("%s: CMP_LE%n", line.get()); break;
                 case CMP_GT:        stream.printf("%s: CMP_GT%n", line.get()); break;
                 case CMP_GE:        stream.printf("%s: CMP_GE%n", line.get()); break;
+                case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
+                case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
+                case NEW:           stream.printf("%s: NEW%n", line.get()); break;
                 case CALL:          stream.printf("%s: CALL          %d%n", line.get(), buffer.get()); break;
                 case RET:           stream.printf("%s: RET%n", line.get()); break;
                 case POP:           stream.printf("%s: POP%n", line.get()); break;
                 case DUP:           stream.printf("%s: DUP%n", line.get()); break;
                 case DUP_AT:        stream.printf("%s: DUP_AT        %d%n", line.get(), buffer.get()); break;
                 case BIND:          stream.printf("%s: BIND          %d%n", line.get(), buffer.get()); break;
-                case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
-                case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
-                case NEW:           stream.printf("%s: NEW%n", line.get()); break;
                 default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
                     // @formatter:on
             }
         }
     }
 
-    public String[] getConstants() {
-        return constants.toArray(new String[0]);
+    public Object[] getConstants() {
+        return constants.toArray(new Object[0]);
     }
 
-    public int addConstant(String value) {
+    public int addConstant(Object value) {
         if (!constants.contains(value)) {
             constants.add(value);
         }

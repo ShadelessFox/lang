@@ -34,8 +34,8 @@ public class LogicalExpression extends Expression {
         this.lhs = lhs;
         this.rhs = rhs;
         this.operator = operator;
-        this.pass = new LoadConstantExpression<>(1, region);
-        this.fail = new LoadConstantExpression<>(0, region);
+        this.pass = new LoadConstantExpression<>(true, region);
+        this.fail = new LoadConstantExpression<>(false, region);
     }
 
     @Override
@@ -72,9 +72,11 @@ public class LogicalExpression extends Expression {
             switch (logical.operator) {
                 case And:
                     failLabels.add(assembler.jump(Opcode.JUMP_IF_FALSE));
+                    assembler.addTraceLine(getRegion().getBegin());
                     break;
                 case Or:
                     passLabels.add(assembler.jump(Opcode.JUMP_IF_TRUE));
+                    assembler.addTraceLine(getRegion().getBegin());
                     break;
             }
 
@@ -82,6 +84,7 @@ public class LogicalExpression extends Expression {
 
             if (root) {
                 failLabels.add(assembler.jump(Opcode.JUMP_IF_FALSE));
+                assembler.addTraceLine(getRegion().getBegin());
             }
         } else {
             node.compile(context, assembler);

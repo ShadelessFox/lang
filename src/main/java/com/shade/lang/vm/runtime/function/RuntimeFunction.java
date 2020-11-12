@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class RuntimeFunction extends Function {
     private final ByteBuffer chunk;
-    private final String[] constants;
+    private final Object[] constants;
     private final Map<Integer, Region.Span> lines;
     private final Assembler.Guard[] guards;
     private final ScriptObject[] boundArguments;
@@ -19,7 +19,7 @@ public class RuntimeFunction extends Function {
     private final int argumentsCount;
     private final int localsCount;
 
-    public RuntimeFunction(Module module, String name, ByteBuffer chunk, String[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
+    public RuntimeFunction(Module module, String name, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
         super(module, name);
         this.chunk = chunk;
         this.constants = constants;
@@ -64,7 +64,7 @@ public class RuntimeFunction extends Function {
         return guards;
     }
 
-    public String[] getConstants() {
+    public Object[] getConstants() {
         return constants;
     }
 

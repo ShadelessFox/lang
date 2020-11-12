@@ -43,6 +43,7 @@ public class BranchStatement extends Statement {
         } else {
             condition.compile(context, assembler);
             Assembler.Label alt = assembler.jump(Opcode.JUMP_IF_FALSE);
+            assembler.addTraceLine(getRegion().getBegin());
             pass.compile(context, assembler);
             Assembler.Label end = pass.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
             assembler.bind(alt);

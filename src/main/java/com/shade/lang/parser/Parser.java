@@ -392,11 +392,11 @@ public class Parser {
         }
 
         if (token.getKind() == True) {
-            return new LoadConstantExpression<>(1, start);
+            return new LoadConstantExpression<>(true, start);
         }
 
         if (token.getKind() == False) {
-            return new LoadConstantExpression<>(0, start);
+            return new LoadConstantExpression<>(false, start);
         }
 
         if (token.getKind() == String) {
