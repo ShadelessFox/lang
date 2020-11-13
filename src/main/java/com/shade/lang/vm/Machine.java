@@ -210,7 +210,7 @@ public class Machine {
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
-                        panic("No such attribute '" + name + "' on target '" + target + "'", true);
+                        panic("No such attribute '" + name + "' on object '" + target + "'", true);
                         break;
                     }
                     operandStack.push(object);
@@ -219,14 +219,19 @@ public class Machine {
                 case SET_ATTRIBUTE: {
                     ScriptObject value = operandStack.pop();
                     ScriptObject target = operandStack.pop();
-                    target.setAttribute((String) frame.nextConstant(), value);
+                    String name = (String) frame.nextConstant();
+                    if (target.isImmutable()) {
+                        panic("Cannot assign attribute to immutable object '" + target + "'");
+                        break;
+                    }
+                    target.setAttribute(name, value);
                     break;
                 }
                 case GET_INDEX: {
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof Index)) {
-                        panic("Object does not support index accessing: " + object);
+                        panic("Object does not support index accessing: '" + object + "'");
                         break;
                     }
                     ScriptObject result = ((Index) object).getIndex(this, index);
@@ -240,7 +245,11 @@ public class Machine {
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof MutableIndex)) {
-                        panic("Object does not support index assignment: " + object);
+                        panic("Object does not support index assignment: '" + object + "'");
+                        break;
+                    }
+                    if (object.isImmutable()) {
+                        panic("Cannot assign index to immutable object '" + object + "'");
                         break;
                     }
                     ((MutableIndex) object).setIndex(this, index, value);

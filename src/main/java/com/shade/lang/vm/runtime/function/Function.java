@@ -9,6 +9,7 @@ public abstract class Function extends ScriptObject {
     private final String name;
 
     public Function(Module module, String name) {
+        super(true);
         this.module = module;
         this.name = name;
     }

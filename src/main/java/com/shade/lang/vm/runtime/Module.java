@@ -11,6 +11,7 @@ public class Module extends ScriptObject {
     private final List<ImportStatement> imports;
 
     public Module(String name, String source) {
+        super(true);
         this.name = name;
         this.source = source;
         this.imports = new ArrayList<>();

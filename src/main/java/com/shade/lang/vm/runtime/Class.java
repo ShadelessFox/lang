@@ -9,6 +9,7 @@ public class Class extends ScriptObject {
     private final Class[] bases;
 
     public Class(String name, Class[] bases) {
+        super(true);
         this.name = name;
         this.bases = bases;
         populateInheritedAttributes(this);

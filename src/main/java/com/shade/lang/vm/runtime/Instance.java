@@ -4,6 +4,7 @@ public class Instance extends ScriptObject {
     private final Class base;
 
     public Instance(Class base) {
+        super(false);
         this.base = base;
     }
 

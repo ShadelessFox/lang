@@ -6,6 +6,10 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import java.util.Objects;
 
 public abstract class Value extends ScriptObject {
+    protected Value() {
+        super(true);
+    }
+
     public static Value from(Object value) {
         if (value == null) {
             return null;

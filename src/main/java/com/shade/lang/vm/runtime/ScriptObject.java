@@ -5,13 +5,11 @@ import java.util.Map;
 
 public abstract class ScriptObject {
     protected final Map<String, ScriptObject> attributes;
+    protected final boolean immutable;
 
-    public ScriptObject(Map<String, ScriptObject> attributes) {
-        this.attributes = attributes;
-    }
-
-    public ScriptObject() {
+    public ScriptObject(boolean immutable) {
         this.attributes = new HashMap<>();
+        this.immutable = immutable;
     }
 
     public void setAttribute(String name, ScriptObject value) {
@@ -24,5 +22,9 @@ public abstract class ScriptObject {
 
     public Map<String, ScriptObject> getAttributes() {
         return attributes;
+    }
+
+    public boolean isImmutable() {
+        return immutable;
     }
 }

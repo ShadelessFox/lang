@@ -27,6 +27,7 @@ public class AssignAttributeStatement extends Statement {
         value.compile(context, assembler);
         assembler.imm8(Opcode.SET_ATTRIBUTE);
         assembler.imm32(assembler.addConstant(name));
+        assembler.addTraceLine(getRegion().getBegin());
     }
 
     public String getName() {
