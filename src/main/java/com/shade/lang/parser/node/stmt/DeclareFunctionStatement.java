@@ -81,7 +81,7 @@ public class DeclareFunctionStatement extends Statement {
 
         if (!body.isControlFlowReturned()) {
             assembler.imm8(Opcode.PUSH_CONST);
-            assembler.imm32(assembler.addConstant(0));
+            assembler.imm32(assembler.addConstant(Void.TYPE));
             assembler.imm8(Opcode.RET);
         }
 

@@ -383,7 +383,7 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Token token = expect(Symbol, Number, True, False, String, StringPart, New, ParenL);
+        Token token = expect(Symbol, Number, True, False, None, String, StringPart, New, ParenL);
         Region start = token.getRegion();
 
         if (token.getKind() == Symbol) {
@@ -400,6 +400,10 @@ public class Parser {
 
         if (token.getKind() == False) {
             return parsePrimaryExpression(new LoadConstantExpression<>(false, start));
+        }
+
+        if (token.getKind() == None) {
+            return parsePrimaryExpression(new LoadConstantExpression<>(Void.TYPE, start));
         }
 
         if (token.getKind() == String) {

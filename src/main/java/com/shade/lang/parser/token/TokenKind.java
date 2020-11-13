@@ -14,6 +14,7 @@ public enum TokenKind {
     /* Keywords */
     True("true", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     False("false", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    None("none", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Let("let", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Def("def", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     If("if", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),

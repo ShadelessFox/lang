@@ -16,7 +16,7 @@ public class LoadConstantExpression<T> extends Expression {
 
     @Override
     public void compile(Context context, Assembler assembler) {
-        if (value instanceof String || value instanceof Number || value instanceof Boolean) {
+        if (value instanceof String || value instanceof Number || value instanceof Boolean || value == Void.TYPE) {
             assembler.imm8(Opcode.PUSH_CONST);
             assembler.imm32(assembler.addConstant(value));
             return;

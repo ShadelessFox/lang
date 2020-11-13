@@ -13,6 +13,8 @@ public abstract class Value extends ScriptObject {
     public static Value from(Object value) {
         if (value == null) {
             return null;
+        } else if (value == Void.TYPE) {
+            return NoneValue.INSTANCE;
         } else if (value instanceof Integer) {
             return new NumberValue((int) value);
         } else if (value instanceof String) {
