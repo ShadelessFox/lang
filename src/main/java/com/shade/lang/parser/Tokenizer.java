@@ -154,6 +154,10 @@ public class Tokenizer {
                     return make(TokenKind.BraceL);
                 case '}':
                     return make(TokenKind.BraceR);
+                case '[':
+                    return make(TokenKind.BracketL);
+                case ']':
+                    return make(TokenKind.BracketR);
                 case ';':
                     return make(TokenKind.Semicolon);
                 case ':':

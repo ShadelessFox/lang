@@ -124,6 +124,8 @@ public class Assembler {
                 case SET_LOCAL:     stream.printf("%s: SET_LOCAL     %d%n", line.get(), buffer.get()); break;
                 case GET_ATTRIBUTE: stream.printf("%s: GET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
                 case SET_ATTRIBUTE: stream.printf("%s: SET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
+                case GET_INDEX:     stream.printf("%s: GET_INDEX%n", line.get()); break;
+                case SET_INDEX:     stream.printf("%s: SET_INDEX%n", line.get()); break;
                 case ADD:           stream.printf("%s: ADD%n", line.get()); break;
                 case SUB:           stream.printf("%s: SUB%n", line.get()); break;
                 case MUL:           stream.printf("%s: MUL%n", line.get()); break;

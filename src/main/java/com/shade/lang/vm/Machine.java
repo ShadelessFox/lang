@@ -9,7 +9,10 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
-import com.shade.lang.vm.runtime.*;
+import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.extension.Index;
+import com.shade.lang.vm.runtime.extension.MutableIndex;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
@@ -217,6 +220,30 @@ public class Machine {
                     ScriptObject value = operandStack.pop();
                     ScriptObject target = operandStack.pop();
                     target.setAttribute((String) frame.nextConstant(), value);
+                    break;
+                }
+                case GET_INDEX: {
+                    ScriptObject index = operandStack.pop();
+                    ScriptObject object = operandStack.pop();
+                    if (!(object instanceof Index)) {
+                        panic("Object does not support index accessing: " + object);
+                        break;
+                    }
+                    ScriptObject result = ((Index) object).getIndex(this, index);
+                    if (result != null) {
+                        operandStack.push(result);
+                    }
+                    break;
+                }
+                case SET_INDEX: {
+                    ScriptObject value = operandStack.pop();
+                    ScriptObject index = operandStack.pop();
+                    ScriptObject object = operandStack.pop();
+                    if (!(object instanceof MutableIndex)) {
+                        panic("Object does not support index assignment: " + object);
+                        break;
+                    }
+                    ((MutableIndex) object).setIndex(this, index, value);
                     break;
                 }
                 case ADD: {

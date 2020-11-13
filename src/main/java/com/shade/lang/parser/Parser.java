@@ -114,12 +114,15 @@ public class Parser {
                 LoadAttributeExpression attribute = (LoadAttributeExpression) expression;
                 return new AssignAttributeStatement(attribute.getOwner(), attribute.getName(), value, expression.getRegion().until(end.getRegion()));
             } else if (expression instanceof LoadSymbolExpression) {
-                LoadSymbolExpression attribute = (LoadSymbolExpression) expression;
-                return new AssignSymbolStatement(attribute.getName(), value, expression.getRegion().until(end.getRegion()));
+                LoadSymbolExpression symbol = (LoadSymbolExpression) expression;
+                return new AssignSymbolStatement(symbol.getName(), value, expression.getRegion().until(end.getRegion()));
+            }  else if (expression instanceof LoadIndexExpression) {
+                LoadIndexExpression index = (LoadIndexExpression) expression;
+                return new AssignIndexStatement(index.getOwner(), index.getIndex(), value, expression.getRegion().until(end.getRegion()));
             } else if (expression instanceof LoadConstantExpression<?>) {
                 throw new ScriptException("Left hand side expression must not be a constant value", expression.getRegion());
             } else {
-                throw new RuntimeException("Not implemented");
+                throw new ScriptException("Expressions is not assignable", expression.getRegion());
             }
         }
 
@@ -388,19 +391,19 @@ public class Parser {
         }
 
         if (token.getKind() == Number) {
-            return new LoadConstantExpression<>(token.getIntegerValue(), start);
+            return parsePrimaryExpression(new LoadConstantExpression<>(token.getIntegerValue(), start));
         }
 
         if (token.getKind() == True) {
-            return new LoadConstantExpression<>(true, start);
+            return parsePrimaryExpression(new LoadConstantExpression<>(true, start));
         }
 
         if (token.getKind() == False) {
-            return new LoadConstantExpression<>(false, start);
+            return parsePrimaryExpression(new LoadConstantExpression<>(false, start));
         }
 
         if (token.getKind() == String) {
-            return new LoadConstantExpression<>(token.getStringValue(), start);
+            return parsePrimaryExpression(new LoadConstantExpression<>(token.getStringValue(), start));
         }
 
         if (token.getKind() == StringPart) {
@@ -424,7 +427,7 @@ public class Parser {
                 string = new BinaryExpression(string, rhs, Add, string.getRegion().until(rhs.getRegion()));
             }
 
-            return string;
+            return parsePrimaryExpression(string);
         }
 
         if (token.getKind() == New) {
@@ -444,13 +447,19 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression(Expression lhs) throws ScriptException {
-        if (!matches(ParenL, Dot)) {
+        if (!matches(ParenL, Dot, BracketL)) {
             return lhs;
         }
 
         if (consume(Dot) != null) {
             Token name = expect(Symbol);
             return parsePrimaryExpression(new LoadAttributeExpression(lhs, name.getStringValue(), lhs.getRegion().until(name.getRegion())));
+        }
+
+        if (consume(BracketL) != null) {
+            Expression index = parseExpression();
+            Region end = expect(BracketR).getRegion();
+            return parsePrimaryExpression(new LoadIndexExpression(lhs, index, lhs.getRegion().until(end)));
         }
 
         List<Expression> arguments = new ArrayList<>();

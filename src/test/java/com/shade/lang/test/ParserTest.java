@@ -4,10 +4,7 @@ import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
 import com.shade.lang.parser.node.Node;
-import com.shade.lang.parser.node.expr.CallExpression;
-import com.shade.lang.parser.node.expr.CompoundExpression;
-import com.shade.lang.parser.node.expr.LoadAttributeExpression;
-import com.shade.lang.parser.node.expr.LoadSymbolExpression;
+import com.shade.lang.parser.node.expr.*;
 import com.shade.lang.parser.token.Region;
 import org.junit.Assert;
 import org.junit.Before;
@@ -121,6 +118,27 @@ public class ParserTest {
             ),
             region
         ));
+    }
+
+    @Test
+    public void testIndex() throws ScriptException {
+        Node result = prepare("a[b[c]][d]").parseExpression();
+        Assert.assertEquals(
+            new LoadIndexExpression(
+                new LoadIndexExpression(
+                    new LoadSymbolExpression("a", region),
+                    new LoadIndexExpression(
+                        new LoadSymbolExpression("b", region),
+                        new LoadSymbolExpression("c", region),
+                        region
+                    ),
+                    region
+                ),
+                new LoadSymbolExpression("d", region),
+                region
+            ),
+            result
+        );
     }
 
     private Parser prepare(String source) throws ScriptException {

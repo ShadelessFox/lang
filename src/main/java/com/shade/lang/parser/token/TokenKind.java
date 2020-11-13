@@ -41,6 +41,8 @@ public enum TokenKind {
     ParenR(")", 0, TokenFlag.QUOTED),
     BraceL("{", 0, TokenFlag.QUOTED),
     BraceR("}", 0, TokenFlag.QUOTED),
+    BracketL("[", 0, TokenFlag.QUOTED),
+    BracketR("]", 0, TokenFlag.QUOTED),
     Semicolon(";", 0, TokenFlag.QUOTED),
     Colon(":", 0, TokenFlag.QUOTED),
     Comma(",", 0, TokenFlag.QUOTED),
