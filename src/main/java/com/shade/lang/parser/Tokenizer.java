@@ -114,9 +114,38 @@ public class Tokenizer {
                             case '\\':
                                 next = '\\';
                                 break;
-                            case 'x':
-                                next = (char) (consumeHex() * 16 + consumeHex());
+                            case 'x': {
+                                int value = readEscape(2, 2, 16);
+                                if (value > 0x7F) {
+                                    error("Hexadecimal escape sequence must be within the range \\x{00} .. \\x{7f}");
+                                }
+                                next = (char) value;
                                 break;
+                            }
+                            case 'o': {
+                                int value = readEscape(3, 3, 8);
+                                if (value > 0x7F) {
+                                    error("Octal escape sequence must be within the range \\o{000} .. \\o{177}");
+                                }
+                                next = (char) value;
+                                break;
+                            }
+                            case 'u': {
+                                int value = readEscape(2, 6, 16);
+                                if (value > 0x10FFFF) {
+                                    error("Unicode escape sequence must be within the range \\u{00} .. \\u{10ffff}");
+                                }
+                                if (value >= 0xD800 && 0xDFFF >= value) {
+                                    error("Unicode escape sequence must not contain surrogate pairs");
+                                }
+                                if (value > 0x10000) {
+                                    builder.append((char) ((value - 0x10000 >> 10) + 0xD800));
+                                    next = (char) ((value - 0x10000 & 0x3ff) + 0xDC00);
+                                } else {
+                                    next = (char) value;
+                                }
+                                break;
+                            }
                             case '{':
                                 modeStack.push(Mode.Inside);
                                 return make(TokenKind.StringPart, start, tell().offsetBy(-2), builder.toString());
@@ -227,23 +256,6 @@ public class Tokenizer {
         return false;
     }
 
-    private byte consumeHex() throws ScriptException {
-        if (ch >= '0' && ch <= '9') {
-            return (byte) (read() - '0');
-        }
-
-        if (ch >= 'a' && ch <= 'f') {
-            return (byte) (read() - 'a' + 10);
-        }
-
-        if (ch >= 'A' && ch <= 'F') {
-            return (byte) (read() - 'A' + 10);
-        }
-
-        error("Expected hexadecimal number");
-        return 0;
-    }
-
     private char read() throws ScriptException {
         if (ch > 0) {
             if (ch == '\n') {
@@ -267,6 +279,47 @@ public class Tokenizer {
         buffer.append(ch);
 
         return last;
+    }
+
+    private int readEscape(int minLength, int maxLength, int radix) throws ScriptException {
+        int index = 0;
+        int value = 0;
+        if (read() != '{') {
+            error("Expected an opening brace");
+        }
+        for (; index < maxLength; index++) {
+            if (isDigit(ch, radix)) {
+                value = value * radix + toDigit(ch, radix);
+                read();
+            } else {
+                break;
+            }
+        }
+        if (read() != '}') {
+            error("Expected a closing brace");
+        }
+        if (index < minLength) {
+            error("Expected at least %d digits with radix %d", minLength, radix);
+        }
+        return value;
+    }
+
+    private static boolean isDigit(char ch, int radix) {
+        int index = "0123456789abcdefABCDEF".indexOf(ch);
+        return 0 <= index && (index <= 16 && index < radix || index >= 16 && index - 6 < radix);
+    }
+
+    private static byte toDigit(char ch, int radix) {
+        if (ch >= '0' && ch <= '0' + Math.min(10, radix)) {
+            return (byte) (ch - '0');
+        }
+        if (radix > 10 && ch >= 'a' && ch <= 'a' + radix - 10) {
+            return (byte) (ch - 'a' + 10);
+        }
+        if (radix > 10 && ch >= 'A' && ch <= 'A' + radix - 10) {
+            return (byte) (ch - 'A' + 10);
+        }
+        throw new IllegalArgumentException("Cannot convert character '" + ch + "' to digit with radix " + radix);
     }
 
     private enum Mode {
