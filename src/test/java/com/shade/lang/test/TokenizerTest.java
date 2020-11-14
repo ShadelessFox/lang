@@ -61,9 +61,37 @@ public class TokenizerTest {
         Assert.assertThrows(ScriptException.class, () -> make("\\u{dfff}").next());
     }
 
-    private static void expect(TokenKind kind, String value, Token actual) {
+    @Test
+    public void testIntegerNumber() throws ScriptException {
+        Tokenizer tokenizer = make("100 1_0_0");
+        expect(TokenKind.Number, 100, tokenizer.next());
+        expect(TokenKind.Number, 100, tokenizer.next());
+        Assert.assertThrows(ScriptException.class, () -> make("100_").next());
+    }
+
+    @Test
+    public void testFloatNumber() throws ScriptException {
+        Tokenizer tokenizer = make("0.1 100.00 1e3 1e+3 1e-3 1.5e2 1.0. 123.. 0..10");
+        expect(TokenKind.Number, 0.1f, tokenizer.next());
+        expect(TokenKind.Number, 100.0f, tokenizer.next());
+        expect(TokenKind.Number, 1.0e3f, tokenizer.next());
+        expect(TokenKind.Number, 1.0e+3f, tokenizer.next());
+        expect(TokenKind.Number, 1.0e-3f, tokenizer.next());
+        expect(TokenKind.Number, 1.5e2f, tokenizer.next());
+        expect(TokenKind.Number, 1.0f, tokenizer.next());
+        expect(TokenKind.Dot, null, tokenizer.next());
+        expect(TokenKind.Number, 123, tokenizer.next());
+        expect(TokenKind.Range, null, tokenizer.next());
+        expect(TokenKind.Number, 0, tokenizer.next());
+        expect(TokenKind.Range, null, tokenizer.next());
+        expect(TokenKind.Number, 10, tokenizer.next());
+        Assert.assertThrows(ScriptException.class, () -> make("1.0e").next());
+        Assert.assertThrows(ScriptException.class, () -> make("1.0e+").next());
+    }
+
+    private static void expect(TokenKind kind, Object value, Token actual) {
         Assert.assertEquals(kind, actual.getKind());
-        Assert.assertEquals(value, actual.getStringValue());
+        Assert.assertEquals(value, actual.getValue());
     }
 
     private static Tokenizer make(String source) throws ScriptException {

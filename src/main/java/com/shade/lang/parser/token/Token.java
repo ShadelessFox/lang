@@ -25,12 +25,16 @@ public class Token {
         return region;
     }
 
+    public Object getValue() {
+        return value;
+    }
+
     public String getStringValue() {
         return (String) value;
     }
 
-    public int getIntegerValue() {
-        return Integer.parseInt(getStringValue());
+    public Integer getIntegerValue() {
+        return (Integer) value;
     }
 
     @Override

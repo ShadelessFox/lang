@@ -12,6 +12,9 @@ public class Tokenizer {
     private static final char CHAR_EOF = '\uFFFF';
     private static final char CHAR_NEWLINE = '\n';
 
+    private static final char NUMBER_DIGIT_SEPARATOR = '_';
+    private static final char NUMBER_DECIMAL_SEPARATOR = '.';
+
     private final Reader reader;
     private final StringBuilder buffer;
     private final Stack<Mode> modeStack;
@@ -20,6 +23,7 @@ public class Tokenizer {
     private int column;
     private int offset;
     private char ch;
+    private char lookahead;
 
     public Tokenizer(Reader reader) throws ScriptException {
         this.reader = reader;
@@ -27,7 +31,7 @@ public class Tokenizer {
         this.modeStack = new Stack<>();
         this.line = 1;
         this.column = 1;
-        this.read();
+        this.fill();
     }
 
     public Token next() throws ScriptException {
@@ -160,16 +164,75 @@ public class Tokenizer {
 
             if (ch >= '0' && ch <= '9') {
                 StringBuilder builder = new StringBuilder();
+                boolean seenDecimalSeparator = false;
+                boolean seenScientificNotation = false;
 
-                while (ch >= '0' && ch <= '9') {
-                    builder.append(read());
+                while (true) {
+                    if (ch == NUMBER_DIGIT_SEPARATOR) {
+                        read();
+
+                        if (ch < '0' || ch > '9') {
+                            error("Digit separator must be followed by a digit");
+                        }
+
+                        continue;
+                    }
+
+                    if (ch == NUMBER_DECIMAL_SEPARATOR) {
+                        if (seenDecimalSeparator) {
+                            break;
+                        }
+
+                        if (lookahead < '0' || lookahead > '9') {
+                            break;
+                        }
+
+                        seenDecimalSeparator = true;
+
+                        read();
+                        builder.append('.');
+
+                        continue;
+                    }
+
+                    if (ch == 'e' || ch == 'E') {
+                        if (seenScientificNotation) {
+                            break;
+                        }
+
+                        seenScientificNotation = true;
+
+                        read();
+                        builder.append('e');
+
+                        if (ch == '+' || ch == '-') {
+                            builder.append(read());
+                        }
+
+                        if (ch <= '0' || ch > '9') {
+                            error("Digit is required after exponent notation");
+                        }
+
+                        continue;
+                    }
+
+                    if (ch >= '0' && ch <= '9') {
+                        builder.append(read());
+                        continue;
+                    }
+
+                    break;
                 }
 
-                return new Token(TokenKind.Number, start.until(tell()), builder.toString());
+                if (seenDecimalSeparator || seenScientificNotation) {
+                    return make(TokenKind.Number, start, tell(), Float.parseFloat(builder.toString()));
+                } else {
+                    return make(TokenKind.Number, start, tell(), Integer.parseInt(builder.toString()));
+                }
             }
 
             if (ch == CHAR_EOF) {
-                return new Token(TokenKind.End, start.until(start));
+                return make(TokenKind.End, start, start, null);
             }
 
             char next = read();
@@ -227,11 +290,11 @@ public class Tokenizer {
         return new Token(kind, start.until(tell()));
     }
 
-    private Token make(TokenKind kind, String value) {
+    private Token make(TokenKind kind, Object value) {
         return new Token(kind, start.until(tell()), value);
     }
 
-    private Token make(TokenKind kind, Region.Span start, Region.Span end, String value) {
+    private Token make(TokenKind kind, Region.Span start, Region.Span end, Object value) {
         return new Token(kind, start.until(end), value);
     }
 
@@ -257,28 +320,38 @@ public class Tokenizer {
     }
 
     private char read() throws ScriptException {
-        if (ch > 0) {
-            if (ch == '\n') {
-                line += 1;
-                column = 1;
-            } else {
-                column += 1;
-            }
+        char previous = ch;
 
-            offset += 1;
-        }
-
-        char last = ch;
+        buffer.append(lookahead);
 
         try {
+            ch = lookahead;
+            lookahead = (char) reader.read();
+        } catch (IOException e) {
+            throw new ScriptException("Internal exception", e, tell().until(tell()));
+        }
+
+        if (previous == '\n') {
+            line += 1;
+            column = 1;
+        } else {
+            column += 1;
+        }
+
+        offset += 1;
+
+        return previous;
+    }
+
+    private void fill() throws ScriptException {
+        try {
             ch = (char) reader.read();
+            lookahead = (char) reader.read();
         } catch (IOException e) {
             throw new ScriptException("Internal exception", e, tell().until(tell()));
         }
 
         buffer.append(ch);
-
-        return last;
     }
 
     private int readEscape(int minLength, int maxLength, int radix) throws ScriptException {
