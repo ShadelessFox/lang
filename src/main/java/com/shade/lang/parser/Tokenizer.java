@@ -119,7 +119,7 @@ public class Tokenizer {
                                 next = '\\';
                                 break;
                             case 'x': {
-                                int value = readEscape(2, 2, 16);
+                                int value = readEscape(2, 2, Radix.Hexadecimal);
                                 if (value > 0x7F) {
                                     error("Hexadecimal escape sequence must be within the range \\x{00} .. \\x{7f}");
                                 }
@@ -127,7 +127,7 @@ public class Tokenizer {
                                 break;
                             }
                             case 'o': {
-                                int value = readEscape(3, 3, 8);
+                                int value = readEscape(3, 3, Radix.Octal);
                                 if (value > 0x7F) {
                                     error("Octal escape sequence must be within the range \\o{000} .. \\o{177}");
                                 }
@@ -135,7 +135,7 @@ public class Tokenizer {
                                 break;
                             }
                             case 'u': {
-                                int value = readEscape(2, 6, 16);
+                                int value = readEscape(2, 6, Radix.Hexadecimal);
                                 if (value > 0x10FFFF) {
                                     error("Unicode escape sequence must be within the range \\u{00} .. \\u{10ffff}");
                                 }
@@ -166,19 +166,57 @@ public class Tokenizer {
                 StringBuilder builder = new StringBuilder();
                 boolean seenDecimalSeparator = false;
                 boolean seenScientificNotation = false;
+                Radix radix = Radix.Decimal;
+
+                if (ch == '0') {
+                    read();
+
+                    if (ch >= '0' && ch <= '9') {
+                        error("Zero digit must not be followed by any other digits");
+                    }
+
+                    boolean foundRadixPrefix = false;
+
+                    switch (ch) {
+                        case 'b':
+                            radix = Radix.Binary;
+                            foundRadixPrefix = true;
+                            break;
+                        case 'o':
+                            radix = Radix.Octal;
+                            foundRadixPrefix = true;
+                            break;
+                        case 'x':
+                            radix = Radix.Hexadecimal;
+                            foundRadixPrefix = true;
+                            break;
+                        default:
+                            builder.append('0');
+                    }
+
+                    if (foundRadixPrefix) {
+                        read();
+
+                        if (!isDigit(ch, radix.base)) {
+                            error("%s numbers must contain at least one %s digit", radix, radix.toString().toLowerCase());
+                        }
+                    }
+                } else {
+                    builder.append(read());
+                }
 
                 while (true) {
                     if (ch == NUMBER_DIGIT_SEPARATOR) {
                         read();
 
-                        if (ch < '0' || ch > '9') {
+                        if (!isDigit(ch, radix.base)) {
                             error("Digit separator must be followed by a digit");
                         }
 
                         continue;
                     }
 
-                    if (ch == NUMBER_DECIMAL_SEPARATOR) {
+                    if (radix == Radix.Decimal && ch == NUMBER_DECIMAL_SEPARATOR) {
                         if (seenDecimalSeparator) {
                             break;
                         }
@@ -195,7 +233,7 @@ public class Tokenizer {
                         continue;
                     }
 
-                    if (ch == 'e' || ch == 'E') {
+                    if (radix == Radix.Decimal && (ch == 'e' || ch == 'E')) {
                         if (seenScientificNotation) {
                             break;
                         }
@@ -216,9 +254,11 @@ public class Tokenizer {
                         continue;
                     }
 
-                    if (ch >= '0' && ch <= '9') {
+                    if (isDigit(ch, radix.base)) {
                         builder.append(read());
                         continue;
+                    } else if (isDigit(ch, 16)) {
+                        error("Number digits must be %s but found digit %c", radix.toString().toLowerCase(), ch);
                     }
 
                     break;
@@ -227,7 +267,7 @@ public class Tokenizer {
                 if (seenDecimalSeparator || seenScientificNotation) {
                     return make(TokenKind.Number, start, tell(), Float.parseFloat(builder.toString()));
                 } else {
-                    return make(TokenKind.Number, start, tell(), Integer.parseInt(builder.toString()));
+                    return make(TokenKind.Number, start, tell(), Integer.parseInt(builder.toString(), radix.base));
                 }
             }
 
@@ -299,11 +339,15 @@ public class Tokenizer {
     }
 
     private void error(String message, Object... args) throws ScriptException {
-        throw new ScriptException(String.format(message, args), start.until(tell()));
+        error(tell(), message, args);
     }
 
-    private void error(Region.Span start, Region.Span end, String message, Object... args) throws ScriptException {
-        throw new ScriptException(String.format(message, args), start.until(end));
+    private void error(Region.Span span, String message, Object... args) throws ScriptException {
+        error(span.until(span), message, args);
+    }
+
+    private void error(Region region, String message, Object... args) throws ScriptException {
+        throw new ScriptException(String.format(message, args), region);
     }
 
     private Region.Span tell() {
@@ -354,15 +398,15 @@ public class Tokenizer {
         buffer.append(ch);
     }
 
-    private int readEscape(int minLength, int maxLength, int radix) throws ScriptException {
+    private int readEscape(int minLength, int maxLength, Radix radix) throws ScriptException {
         int index = 0;
         int value = 0;
         if (read() != '{') {
             error("Expected an opening brace");
         }
         for (; index < maxLength; index++) {
-            if (isDigit(ch, radix)) {
-                value = value * radix + toDigit(ch, radix);
+            if (isDigit(ch, radix.base)) {
+                value = value * radix.base + toDigit(ch, radix.base);
                 read();
             } else {
                 break;
@@ -372,7 +416,7 @@ public class Tokenizer {
             error("Expected a closing brace");
         }
         if (index < minLength) {
-            error("Expected at least %d digits with radix %d", minLength, radix);
+            error(tell().offsetBy(-index - 1).until(tell().offsetBy(-1)), "Expected at least %s %s digits", minLength, radix.toString().toLowerCase());
         }
         return value;
     }
@@ -398,5 +442,18 @@ public class Tokenizer {
     private enum Mode {
         Normal,
         Inside
+    }
+
+    private enum Radix {
+        Binary(2),
+        Octal(8),
+        Decimal(10),
+        Hexadecimal(16);
+
+        private final int base;
+
+        Radix(int base) {
+            this.base = base;
+        }
     }
 }

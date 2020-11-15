@@ -63,10 +63,19 @@ public class TokenizerTest {
 
     @Test
     public void testIntegerNumber() throws ScriptException {
-        Tokenizer tokenizer = make("100 1_0_0");
+        Tokenizer tokenizer = make("100 1_0_0 0b1111 0o177 0o3_7_7 0x7f 0xf_f");
         expect(TokenKind.Number, 100, tokenizer.next());
         expect(TokenKind.Number, 100, tokenizer.next());
+        expect(TokenKind.Number, 15, tokenizer.next());
+        expect(TokenKind.Number, 0x7f, tokenizer.next());
+        expect(TokenKind.Number, 0xff, tokenizer.next());
+        expect(TokenKind.Number, 0x7f, tokenizer.next());
+        expect(TokenKind.Number, 0xff, tokenizer.next());
         Assert.assertThrows(ScriptException.class, () -> make("100_").next());
+        Assert.assertThrows(ScriptException.class, () -> make("0123").next());
+        Assert.assertThrows(ScriptException.class, () -> make("0b").next());
+        Assert.assertThrows(ScriptException.class, () -> make("0o").next());
+        Assert.assertThrows(ScriptException.class, () -> make("0x").next());
     }
 
     @Test
