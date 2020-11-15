@@ -6,6 +6,8 @@ import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 
+import java.util.Objects;
+
 public class LoadConstantExpression<T> extends Expression {
     private final T value;
 
@@ -23,6 +25,19 @@ public class LoadConstantExpression<T> extends Expression {
         }
 
         throw new RuntimeException("Unsupported constant value: " + value + " (" + value.getClass() + ")");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LoadConstantExpression<?> that = (LoadConstantExpression<?>) o;
+        return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
     }
 
     public T getValue() {

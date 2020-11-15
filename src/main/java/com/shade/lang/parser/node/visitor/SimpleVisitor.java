@@ -59,11 +59,19 @@ public class SimpleVisitor implements Visitor {
     }
 
     @Override
+    public void visit(LoadIndexExpression expression) {
+    }
+
+    @Override
     public void visit(LoadSymbolExpression expression) {
     }
 
     @Override
     public void visit(LogicalExpression expression) {
+    }
+
+    @Override
+    public void visit(NewExpression expression) {
     }
 
     @Override
@@ -76,6 +84,10 @@ public class SimpleVisitor implements Visitor {
 
     @Override
     public void visit(AssignAttributeStatement statement) {
+    }
+
+    @Override
+    public void visit(AssignIndexStatement statement) {
     }
 
     @Override
@@ -96,6 +108,10 @@ public class SimpleVisitor implements Visitor {
 
     @Override
     public void visit(ContinueStatement statement) {
+    }
+
+    @Override
+    public void visit(DeclareClassStatement statement) {
     }
 
     @Override

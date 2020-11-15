@@ -1,6 +1,7 @@
 package com.shade.lang.vm;
 
 import com.shade.lang.compiler.Assembler;
+import com.shade.lang.optimizer.Optimizer;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.Tokenizer;
@@ -64,6 +65,7 @@ public class Machine {
             Parser parser = new Parser(new Tokenizer(reader));
 
             Node node = parser.parse(source, Parser.Mode.Unit);
+            node = Optimizer.optimize(node, Integer.MAX_VALUE, Integer.getInteger("ash.optlevel", 0));
             node.compile(context, null);
 
             return load(module);

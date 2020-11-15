@@ -8,6 +8,7 @@ import com.shade.lang.parser.token.Region;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class BlockStatement extends Statement {
     private final List<Statement> statements;
@@ -38,6 +39,19 @@ public class BlockStatement extends Statement {
                 statement.compile(inner, assembler);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlockStatement that = (BlockStatement) o;
+        return Objects.equals(statements, that.statements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(statements);
     }
 
     public List<Statement> getStatements() {

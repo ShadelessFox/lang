@@ -22,15 +22,21 @@ public interface Visitor {
 
     void visit(LoadConstantExpression<?> expression);
 
+    void visit(LoadIndexExpression expression);
+
     void visit(LoadSymbolExpression expression);
 
     void visit(LogicalExpression expression);
+
+    void visit(NewExpression expression);
 
     void visit(UnaryExpression expression);
 
     void visit(AssertStatement statement);
 
     void visit(AssignAttributeStatement statement);
+
+    void visit(AssignIndexStatement statement);
 
     void visit(AssignSymbolStatement statement);
 
@@ -41,6 +47,8 @@ public interface Visitor {
     void visit(BreakStatement statement);
 
     void visit(ContinueStatement statement);
+
+    void visit(DeclareClassStatement statement);
 
     void visit(DeclareFunctionStatement statement);
 

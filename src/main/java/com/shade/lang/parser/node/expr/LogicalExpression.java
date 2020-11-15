@@ -14,20 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LogicalExpression extends Expression {
-    private final Node lhs;
-    private final Node rhs;
+    private final Expression lhs;
+    private final Expression rhs;
     private final TokenKind operator;
     private Node pass;
     private Node fail;
-
-    public LogicalExpression(Expression lhs, Expression rhs, TokenKind operator, Node pass, Node fail, Region region) {
-        super(region);
-        this.lhs = lhs;
-        this.rhs = rhs;
-        this.operator = operator;
-        this.pass = pass;
-        this.fail = fail;
-    }
 
     public LogicalExpression(Expression lhs, Expression rhs, TokenKind operator, Region region) {
         super(region);
@@ -48,10 +39,7 @@ public class LogicalExpression extends Expression {
         passLabels.forEach(assembler::bind);
         pass.compile(context, assembler);
 
-        Assembler.Label end = null;
-        if (!(lhs instanceof Statement) || !((Statement) lhs).isControlFlowReturned()) {
-            end = assembler.jump(Opcode.JUMP);
-        }
+        Assembler.Label end = assembler.jump(Opcode.JUMP);
 
         failLabels.forEach(assembler::bind);
         if (fail != null) {
@@ -91,11 +79,11 @@ public class LogicalExpression extends Expression {
         }
     }
 
-    public Node getLhs() {
+    public Expression getLhs() {
         return lhs;
     }
 
-    public Node getRhs() {
+    public Expression getRhs() {
         return rhs;
     }
 

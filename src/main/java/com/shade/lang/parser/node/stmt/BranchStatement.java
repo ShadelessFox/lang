@@ -23,12 +23,12 @@ public class BranchStatement extends Statement {
 
     @Override
     public boolean isControlFlowReturned() {
-        return pass.isControlFlowReturned() && (fail == null || fail.isControlFlowReturned());
+        return pass.isControlFlowReturned() && fail != null && fail.isControlFlowReturned();
     }
 
     @Override
     public boolean isControlFlowInterrupted() {
-        return pass.isControlFlowInterrupted() && (fail == null || fail.isControlFlowInterrupted());
+        return pass.isControlFlowInterrupted() && fail != null && fail.isControlFlowInterrupted();
     }
 
     @Override
