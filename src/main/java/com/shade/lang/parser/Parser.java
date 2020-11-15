@@ -116,7 +116,7 @@ public class Parser {
             } else if (expression instanceof LoadSymbolExpression) {
                 LoadSymbolExpression symbol = (LoadSymbolExpression) expression;
                 return new AssignSymbolStatement(symbol.getName(), value, expression.getRegion().until(end.getRegion()));
-            }  else if (expression instanceof LoadIndexExpression) {
+            } else if (expression instanceof LoadIndexExpression) {
                 LoadIndexExpression index = (LoadIndexExpression) expression;
                 return new AssignIndexStatement(index.getOwner(), index.getIndex(), value, expression.getRegion().until(end.getRegion()));
             } else if (expression instanceof LoadConstantExpression<?>) {
@@ -146,9 +146,13 @@ public class Parser {
         Region start = expect(For).getRegion();
         Token variable = expect(Symbol);
         expect(In);
-        int rangeBegin = expect(Number).getIntegerValue();
+        // TODO: This will fail because number can be either integer or float.
+        //       This could be fixed in the future with addition of range objects
+        //       that will assert type at run-time, but currently it will just explode
+        //       if floating-point value was used.
+        int rangeBegin = (Integer) expect(Number).getNumberValue();
         boolean rangeInclusive = expect(Range, RangeInc).getKind() == RangeInc;
-        int rangeEnd = expect(Number).getIntegerValue();
+        int rangeEnd = (Integer) expect(Number).getNumberValue();
         boolean rangeDescending = rangeEnd < rangeBegin;
         BlockStatement body = parseBlockStatement();
         Region region = start.until(body.getRegion());
@@ -391,7 +395,7 @@ public class Parser {
         }
 
         if (token.getKind() == Number) {
-            return parsePrimaryExpression(new LoadConstantExpression<>(token.getIntegerValue(), start));
+            return parsePrimaryExpression(new LoadConstantExpression<>(token.getNumberValue(), start));
         }
 
         if (token.getKind() == True) {

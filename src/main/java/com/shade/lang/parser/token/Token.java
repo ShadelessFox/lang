@@ -33,8 +33,8 @@ public class Token {
         return (String) value;
     }
 
-    public Integer getIntegerValue() {
-        return (Integer) value;
+    public Number getNumberValue() {
+        return (Number) value;
     }
 
     @Override

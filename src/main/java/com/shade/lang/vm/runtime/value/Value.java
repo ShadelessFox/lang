@@ -16,7 +16,9 @@ public abstract class Value extends ScriptObject {
         } else if (value == Void.TYPE) {
             return NoneValue.INSTANCE;
         } else if (value instanceof Integer) {
-            return new NumberValue((int) value);
+            return new IntegerValue((int) value);
+        } else if (value instanceof Float) {
+            return new FloatValue((float) value);
         } else if (value instanceof String) {
             return new StringValue((String) value);
         } else if (value instanceof Boolean) {
