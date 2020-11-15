@@ -30,32 +30,32 @@ public abstract class Value extends ScriptObject {
     public abstract Object getValue();
 
     public Value add(Machine machine, Value other) {
-        machine.panic(String.format("Unsupported operands for operator '+': '%s' and '%s'", getValue(), other.getValue()));
+        machine.panic(String.format("Unsupported operands for operator '+': '%s' and '%s'", getValue(), other.getValue()), true);
         return null;
     }
 
     public Value sub(Machine machine, Value other) {
-        machine.panic(String.format("Unsupported operands for operator '-': '%s' and '%s'", getValue(), other.getValue()));
+        machine.panic(String.format("Unsupported operands for operator '-': '%s' and '%s'", getValue(), other.getValue()), true);
         return null;
     }
 
     public Value mul(Machine machine, Value other) {
-        machine.panic(String.format("Unsupported operands for operator '*': '%s' and '%s'", getValue(), other.getValue()));
+        machine.panic(String.format("Unsupported operands for operator '*': '%s' and '%s'", getValue(), other.getValue()), true);
         return null;
     }
 
     public Value div(Machine machine, Value other) {
-        machine.panic(String.format("Unsupported operands for operator '/': '%s' and '%s'", getValue(), other.getValue()));
+        machine.panic(String.format("Unsupported operands for operator '/': '%s' and '%s'", getValue(), other.getValue()), true);
         return null;
     }
 
     public Integer compare(Machine machine, Value other) {
-        machine.panic(String.format("Cannot compare values: '%s' and '%s'", getValue(), other.getValue()));
+        machine.panic(String.format("Cannot compare values: '%s' and '%s'", getValue(), other.getValue()), true);
         return null;
     }
 
     public Boolean getBoolean(Machine machine) {
-        machine.panic(String.format("Cannot reinterpret value as a boolean: '%s'", getValue()));
+        machine.panic(String.format("Cannot reinterpret value as a boolean: '%s'", getValue()), true);
         return null;
     }
 

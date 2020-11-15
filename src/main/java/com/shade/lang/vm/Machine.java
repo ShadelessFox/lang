@@ -188,7 +188,7 @@ public class Machine {
                     String name = (String) frame.nextConstant();
                     ScriptObject value = module.getAttribute(name);
                     if (value == null) {
-                        panic("No such global '" + name + "'", true);
+                        panic("Module '" + module.getName() + "' has no such global '" + name + "'", true);
                         break;
                     }
                     operandStack.push(value);
@@ -212,7 +212,7 @@ public class Machine {
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
-                        panic("No such attribute '" + name + "' on object '" + target + "'", true);
+                        panic("Object '" + target + "' has no such attribute '" + name + "'", true);
                         break;
                     }
                     operandStack.push(object);
@@ -223,7 +223,7 @@ public class Machine {
                     ScriptObject target = operandStack.pop();
                     String name = (String) frame.nextConstant();
                     if (target.isImmutable()) {
-                        panic("Cannot assign attribute to immutable object '" + target + "'");
+                        panic("Cannot assign attribute to immutable object '" + target + "'", true);
                         break;
                     }
                     target.setAttribute(name, value);
@@ -233,7 +233,7 @@ public class Machine {
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof Index)) {
-                        panic("Object does not support index accessing: '" + object + "'");
+                        panic("Object '" + object + "' does not support index accessing", true);
                         break;
                     }
                     ScriptObject result = ((Index) object).getIndex(this, index);
@@ -247,11 +247,11 @@ public class Machine {
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof MutableIndex)) {
-                        panic("Object does not support index assignment: '" + object + "'");
+                        panic("Object '" + object + "' does not support index assignment", true);
                         break;
                     }
                     if (object.isImmutable()) {
-                        panic("Cannot assign index to immutable object '" + object + "'");
+                        panic("Cannot assign index to immutable object '" + object + "'", true);
                         break;
                     }
                     ((MutableIndex) object).setIndex(this, index, value);
@@ -363,12 +363,12 @@ public class Machine {
                 }
                 case CALL: {
                     byte argc = frame.nextImm8();
-                    Object callable = operandStack.pop();
-                    if (!(callable instanceof Function)) {
-                        panic("Not a callable object: " + callable);
+                    Object object = operandStack.pop();
+                    if (!(object instanceof Function)) {
+                        panic("Object '" + object + "' is not callable", true);
                         break;
                     }
-                    Function function = (Function) callable;
+                    Function function = (Function) object;
                     function.invoke(this, argc);
                     break;
                 }
@@ -433,7 +433,7 @@ public class Machine {
                 case NEW: {
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof Class)) {
-                        panic("Cannot instantiate a non-class value");
+                        panic("Cannot instantiate a non-class value", true);
                         break;
                     }
                     Class clazz = (Class) object;
