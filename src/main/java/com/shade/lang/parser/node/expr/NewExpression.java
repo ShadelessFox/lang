@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Objects;
 
 public class NewExpression extends Expression {
-    private final LoadSymbolExpression callee;
+    private final Expression callee;
     private final List<Expression> arguments;
 
-    public NewExpression(String callee, List<Expression> arguments, Region region) {
+    public NewExpression(Expression callee, List<Expression> arguments, Region region) {
         super(region);
-        this.callee = new LoadSymbolExpression(callee, region);
+        this.callee = callee;
         this.arguments = arguments;
     }
 
@@ -62,8 +62,8 @@ public class NewExpression extends Expression {
         return Objects.hash(callee, arguments);
     }
 
-    public String getCallee() {
-        return callee.getName();
+    public Expression getCallee() {
+        return callee;
     }
 
     public List<Expression> getArguments() {

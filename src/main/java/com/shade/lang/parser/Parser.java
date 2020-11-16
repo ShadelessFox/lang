@@ -439,10 +439,20 @@ public class Parser {
         }
 
         if (token.getKind() == New) {
-            Token name = expect(Symbol);
+            Expression callee = null;
+
+            do {
+                Token name = expect(Symbol);
+                if (callee == null) {
+                    callee = new LoadSymbolExpression(name.getStringValue(), name.getRegion());
+                } else {
+                    callee = new LoadAttributeExpression(callee, name.getStringValue(), callee.getRegion().until(name.getRegion()));
+                }
+            } while (consume(Dot) != null);
+
             List<Expression> arguments = new ArrayList<>();
             Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
-            return new NewExpression(name.getStringValue(), arguments, token.getRegion().until(region));
+            return new NewExpression(callee, arguments, token.getRegion().until(region));
         }
 
         if (token.getKind() == ParenL) {
