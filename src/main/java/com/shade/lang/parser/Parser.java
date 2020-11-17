@@ -216,7 +216,7 @@ public class Parser {
 
     private DeclareFunctionStatement parseConstructorDeclareStatement(Region start) throws ScriptException {
         List<String> arguments = new ArrayList<>();
-        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
+        boolean variadic = parseFunctionArgumentsList(arguments);
         List<Statement> statements = new ArrayList<>();
         Region region = list(BraceL, BraceR, null, statements, () -> {
             if (matches(Super) && !statements.isEmpty() && !(statements.get(statements.size() - 1) instanceof SuperStatement)) {
@@ -228,7 +228,7 @@ public class Parser {
             return parseStatement();
         });
         BlockStatement body = new BlockStatement(statements, region);
-        return new DeclareFunctionStatement("<init>", arguments, body, start.until(body.getRegion()));
+        return new DeclareFunctionStatement("<init>", arguments, body, variadic, start.until(body.getRegion()));
     }
 
     private AssertStatement parseAssertStatement() throws ScriptException {
@@ -293,9 +293,31 @@ public class Parser {
     private DeclareFunctionStatement parseFunctionDeclareStatement(Region start) throws ScriptException {
         String name = expect(Symbol).getStringValue();
         List<String> arguments = new ArrayList<>();
-        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
+        boolean variadic = parseFunctionArgumentsList(arguments);
         BlockStatement body = parseBlockStatement();
-        return new DeclareFunctionStatement(name, arguments, body, start.until(body.getRegion()));
+        return new DeclareFunctionStatement(name, arguments, body, variadic, start.until(body.getRegion()));
+    }
+
+    private boolean parseFunctionArgumentsList(Collection<String> output)throws ScriptException {
+        expect(ParenL);
+
+        if (!matches(ParenR)) {
+            output.add(expect(Symbol).getStringValue());
+
+            while (!matches(ParenR, End)) {
+                Token token = expect(Comma, Ellipsis);
+
+                if (token.getKind() == Ellipsis) {
+                    expect(ParenR);
+                    return true;
+                }
+
+                output.add(expect(Symbol).getStringValue());
+            }
+        }
+
+        expect(ParenR);
+        return false;
     }
 
     private DeclareClassStatement parseClassDeclareStatement(Region start) throws ScriptException {
@@ -358,7 +380,7 @@ public class Parser {
         }
 
         List<String> arguments = new ArrayList<>();
-        list(ParenL, ParenR, Comma, arguments, () -> expect(Symbol).getStringValue());
+        boolean variadic = parseFunctionArgumentsList(arguments);
 
         List<String> boundArguments = new ArrayList<>();
         if (consume(Use) != null) {
@@ -371,8 +393,8 @@ public class Parser {
             arguments,
             boundArguments,
             body,
-            start.getRegion().until(body.getRegion())
-        );
+            variadic,
+            start.getRegion().until(body.getRegion()));
         return new LambdaExpression(function, function.getRegion());
     }
 

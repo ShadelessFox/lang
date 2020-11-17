@@ -207,7 +207,7 @@ public abstract class SimpleTransformer implements Transformer {
         BlockStatement body = (BlockStatement) statement.getBody().transform(this);
 
         if (body != statement.getBody()) {
-            return new DeclareFunctionStatement(statement.getName(), statement.getArguments(), statement.getBoundArguments(), body, statement.getRegion());
+            return new DeclareFunctionStatement(statement.getName(), statement.getArguments(), statement.getBoundArguments(), body, statement.isVariadic(), statement.getRegion());
         }
 
         return statement;

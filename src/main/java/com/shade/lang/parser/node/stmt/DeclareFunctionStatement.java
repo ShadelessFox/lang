@@ -9,6 +9,7 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.context.FunctionContext;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
+import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.util.Collections;
@@ -23,23 +24,26 @@ public class DeclareFunctionStatement extends Statement {
     private final List<String> boundArguments;
     private final Map<Integer, Integer> boundArgumentsMapping;
     private final BlockStatement body;
+    private final boolean variadic;
 
-    public DeclareFunctionStatement(String name, List<String> arguments, List<String> boundArguments, BlockStatement body, Region region) {
+    public DeclareFunctionStatement(String name, List<String> arguments, List<String> boundArguments, BlockStatement body, boolean variadic, Region region) {
         super(region);
         this.name = name;
         this.arguments = Collections.unmodifiableList(arguments);
         this.boundArguments = Collections.unmodifiableList(boundArguments);
         this.boundArgumentsMapping = new LinkedHashMap<>();
         this.body = body;
+        this.variadic = variadic;
     }
 
-    public DeclareFunctionStatement(String name, List<String> arguments, BlockStatement body, Region region) {
+    public DeclareFunctionStatement(String name, List<String> arguments, BlockStatement body, boolean variadic, Region region) {
         super(region);
         this.name = name;
         this.arguments = Collections.unmodifiableList(arguments);
         this.boundArguments = Collections.emptyList();
         this.boundArgumentsMapping = new LinkedHashMap<>();
         this.body = body;
+        this.variadic = variadic;
     }
 
     @Override
@@ -88,6 +92,7 @@ public class DeclareFunctionStatement extends Statement {
         RuntimeFunction function = new RuntimeFunction(
             context.getModule(),
             name,
+            variadic ? Function.FLAG_VARIADIC : 0,
             assembler.build(),
             assembler.getConstants(),
             assembler.getTraceLines(),
@@ -118,5 +123,9 @@ public class DeclareFunctionStatement extends Statement {
 
     public BlockStatement getBody() {
         return body;
+    }
+
+    public boolean isVariadic() {
+        return variadic;
     }
 }

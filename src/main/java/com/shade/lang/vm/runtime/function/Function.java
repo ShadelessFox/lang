@@ -25,24 +25,28 @@ public abstract class Function extends ScriptObject {
     protected boolean isInvalidArguments(Machine machine, int passedArgumentsCount) {
         boolean variadic = hasFlag(Function.FLAG_VARIADIC);
 
-        if (passedArgumentsCount < argumentsCount || argumentsCount < passedArgumentsCount && !variadic) {
-            machine.panic(
-                String.format(
-                    "Function '%s' takes %d %s %s but %d %s provided",
-                    getName(),
-                    argumentsCount,
-                    variadic ? "or more" : "",
-                    argumentsCount != 1 || variadic ? "arguments" : "argument",
-                    passedArgumentsCount,
-                    passedArgumentsCount != 1 ? "were" : "was"
-                ),
-                true
-            );
-
-            return true;
+        if ((variadic && argumentsCount - 1 <= passedArgumentsCount)) {
+            return false;
         }
 
-        return false;
+        if (!variadic && argumentsCount == passedArgumentsCount) {
+            return false;
+        }
+
+        machine.panic(
+            String.format(
+                "Function '%s' takes %d%s %s but %d %s provided",
+                getName(),
+                argumentsCount,
+                variadic ? " or more" : "",
+                argumentsCount != 1 || variadic ? "arguments" : "argument",
+                passedArgumentsCount,
+                passedArgumentsCount != 1 ? "were" : "was"
+            ),
+            true
+        );
+
+        return true;
     }
 
     public Module getModule() {

@@ -25,6 +25,8 @@ public class NativeFunction extends Function {
             return;
         }
 
+        // TODO: Crazy (also partially shared) math here, refactor this please...
+
         boolean variadic = hasFlag(Function.FLAG_VARIADIC);
 
         Object[] arguments = new Object[boundArguments.size() + argumentsCount + (variadic ? 1 : 0)];

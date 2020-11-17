@@ -5,6 +5,7 @@ import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.value.Value;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -18,8 +19,8 @@ public class RuntimeFunction extends Function {
     private final int boundArgumentsCount;
     private final int localsCount;
 
-    public RuntimeFunction(Module module, String name, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
-        super(module, name, argumentsCount, 0);
+    public RuntimeFunction(Module module, String name, int flags, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
+        super(module, name, argumentsCount, flags);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;
@@ -35,17 +36,32 @@ public class RuntimeFunction extends Function {
             return;
         }
 
-        ScriptObject[] objects = new ScriptObject[localsCount];
+        // TODO: Crazy (also partially shared) math here, refactor this please...
+
+        boolean variadic = hasFlag(Function.FLAG_VARIADIC);
+
+        ScriptObject[] arguments = new ScriptObject[localsCount];
+
+        if (variadic) {
+            ScriptObject[] variadicArguments = new ScriptObject[argc - argumentsCount + 1];
+            arguments[argumentsCount + boundArgumentsCount - 1] = Value.from(variadicArguments);
+            for (int index = 0; index < variadicArguments.length; index++) {
+                variadicArguments[variadicArguments.length - index - 1] = machine.getOperandStack().pop();
+            }
+            for (int index = getArgumentsCount() - 1; index > 0; index--) {
+                arguments[boundArgumentsCount + index - 1] = machine.getOperandStack().pop();
+            }
+        } else {
+            for (int index = getArgumentsCount(); index > 0; index--) {
+                arguments[boundArgumentsCount + index - 1] = machine.getOperandStack().pop();
+            }
+        }
 
         if (boundArgumentsCount > 0) {
-            System.arraycopy(boundArguments, 0, objects, 0, boundArgumentsCount);
+            System.arraycopy(boundArguments, 0, arguments, 0, boundArgumentsCount);
         }
 
-        for (int index = getArgumentsCount(); index > 0; index--) {
-            objects[boundArgumentsCount + index - 1] = machine.getOperandStack().pop();
-        }
-
-        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, objects);
+        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, arguments);
         machine.getCallStack().push(frame);
     }
 

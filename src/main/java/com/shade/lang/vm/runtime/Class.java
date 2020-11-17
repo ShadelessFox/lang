@@ -35,6 +35,7 @@ public class Class extends ScriptObject {
                 RuntimeFunction boundFunction = new RuntimeFunction(
                     function.getModule(),
                     function.getName(),
+                    function.getFlags(),
                     function.getChunk(),
                     function.getConstants(),
                     function.getLines(),
