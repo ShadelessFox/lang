@@ -61,6 +61,7 @@ public class Class extends ScriptObject {
                 NativeFunction boundFunction = new NativeFunction(
                     function.getModule(),
                     function.getName(),
+                    function.getArgumentsCount(),
                     function.getFlags(),
                     function.getPrototype()
                 );
