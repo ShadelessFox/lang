@@ -90,12 +90,12 @@ public class Launcher {
             setAttribute("to_string", new NativeFunction(this, "to_string", 1, 0, (machine, args) -> args[0].toString()));
 
             setAttribute("print", new NativeFunction(this, "print", 0, Function.FLAG_VARIADIC, (machine, args) -> {
-                machine.getOut().print(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+                machine.getOut().print(Stream.of((Object[]) args[0]).map(Object::toString).collect(Collectors.joining(" ")));
                 return NoneValue.INSTANCE;
             }));
 
             setAttribute("println", new NativeFunction(this, "println", 0, Function.FLAG_VARIADIC, (machine, args) -> {
-                machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
+                machine.getOut().println(Stream.of((Object[]) args[0]).map(Object::toString).collect(Collectors.joining(" ")));
                 return NoneValue.INSTANCE;
             }));
 
@@ -114,7 +114,7 @@ public class Launcher {
             }));
 
             setAttribute("debug_assert", new NativeFunction(this, "debug_assert", 1, 0, (machine, args) -> {
-                for (ScriptObject argument : args) {
+                for (Object argument : args) {
                     Boolean value = ((Value) argument).getBoolean(machine);
                     if (value == null) {
                         return null;

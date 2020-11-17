@@ -16,25 +16,22 @@ public class RuntimeFunction extends Function {
     private final Assembler.Guard[] guards;
     private final ScriptObject[] boundArguments;
     private final int boundArgumentsCount;
-    private final int argumentsCount;
     private final int localsCount;
 
     public RuntimeFunction(Module module, String name, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
-        super(module, name, 0);
+        super(module, name, argumentsCount, 0);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;
         this.guards = guards;
         this.boundArguments = boundArgumentsCount > 0 ? new ScriptObject[boundArgumentsCount] : null;
-        this.argumentsCount = argumentsCount;
         this.boundArgumentsCount = boundArgumentsCount;
         this.localsCount = localsCount;
     }
 
     @Override
     public void invoke(Machine machine, int argc) {
-        if (argumentsCount != argc) {
-            machine.panic("Function '" + getName() + "' accepts " + argumentsCount + " argument" + (argumentsCount == 1 ? "" : "s") + " but " + argc + " " + (argc > 1 ? "were" : "was") + " provided", true);
+        if (isInvalidArguments(machine, argc)) {
             return;
         }
 
@@ -44,7 +41,7 @@ public class RuntimeFunction extends Function {
             System.arraycopy(boundArguments, 0, objects, 0, boundArgumentsCount);
         }
 
-        for (int index = argumentsCount; index > 0; index--) {
+        for (int index = getArgumentsCount(); index > 0; index--) {
             objects[boundArgumentsCount + index - 1] = machine.getOperandStack().pop();
         }
 
@@ -74,10 +71,6 @@ public class RuntimeFunction extends Function {
 
     public int getBoundArgumentsCount() {
         return boundArgumentsCount;
-    }
-
-    public int getArgumentsCount() {
-        return argumentsCount;
     }
 
     public int getLocalsCount() {
