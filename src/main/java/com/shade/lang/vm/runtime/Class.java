@@ -1,5 +1,6 @@
 package com.shade.lang.vm.runtime;
 
+import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
 import java.util.Map;
@@ -44,6 +45,27 @@ public class Class extends ScriptObject {
                 );
 
                 boundFunction.getBoundArguments()[0] = instance;
+                instance.setAttribute(attribute.getKey(), boundFunction);
+            } else if (attribute.getValue() instanceof NativeFunction) {
+                NativeFunction function = (NativeFunction) attribute.getValue();
+
+                /*
+                 * Don't bind self parameter for constructors because
+                 * they can be called with derived class' instance
+                 */
+                if (function.getName().equals("<init>")) {
+                    instance.setAttribute(attribute.getKey(), function);
+                    continue;
+                }
+
+                NativeFunction boundFunction = new NativeFunction(
+                    function.getModule(),
+                    function.getName(),
+                    function.getFlags(),
+                    function.getPrototype()
+                );
+                boundFunction.addBoundArgument(instance);
+
                 instance.setAttribute(attribute.getKey(), boundFunction);
             }
         }
