@@ -98,6 +98,17 @@ public class TokenizerTest {
         Assert.assertThrows(ScriptException.class, () -> make("1.0e+").next());
     }
 
+    @Test
+    public void testOperators() throws ScriptException {
+        Tokenizer tokenizer = make(". .. ..= ... + +=");
+        expect(TokenKind.Dot, null, tokenizer.next());
+        expect(TokenKind.Range, null, tokenizer.next());
+        expect(TokenKind.RangeInc, null, tokenizer.next());
+        expect(TokenKind.Ellipsis, null, tokenizer.next());
+        expect(TokenKind.Add, null, tokenizer.next());
+        expect(TokenKind.AddAssign, null, tokenizer.next());
+    }
+
     private static void expect(TokenKind kind, Object value, Token actual) {
         Assert.assertEquals(kind, actual.getKind());
         Assert.assertEquals(value, actual.getValue());

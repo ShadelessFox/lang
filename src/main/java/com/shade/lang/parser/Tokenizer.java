@@ -297,7 +297,7 @@ public class Tokenizer {
                 case ',':
                     return make(TokenKind.Comma);
                 case '.':
-                    return consume('.') ? consume('=') ? make(TokenKind.RangeInc) : make(TokenKind.Range) : make(TokenKind.Dot);
+                    return consume('.') ? consume('.') ? make(TokenKind.Ellipsis) : consume('=') ? make(TokenKind.RangeInc) : make(TokenKind.Range) : make(TokenKind.Dot);
                 case '+':
                     return consume('=') ? make(TokenKind.AddAssign) : make(TokenKind.Add);
                 case '-':

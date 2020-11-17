@@ -20,7 +20,7 @@ public class RuntimeFunction extends Function {
     private final int localsCount;
 
     public RuntimeFunction(Module module, String name, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
-        super(module, name);
+        super(module, name, 0);
         this.chunk = chunk;
         this.constants = constants;
         this.lines = lines;

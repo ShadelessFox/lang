@@ -10,8 +10,8 @@ import java.util.function.BiFunction;
 public class NativeFunction extends Function {
     private final BiFunction<Machine, ScriptObject[], Object> prototype;
 
-    public NativeFunction(Module module, String name, BiFunction<Machine, ScriptObject[], Object> prototype) {
-        super(module, name);
+    public NativeFunction(Module module, String name, int flags, BiFunction<Machine, ScriptObject[], Object> prototype) {
+        super(module, name, flags);
         this.prototype = prototype;
     }
 

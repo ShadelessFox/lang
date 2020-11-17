@@ -489,23 +489,29 @@ public class Parser {
         Region begin = expect(opening).getRegion();
 
         if (!matches(closing)) {
-            do {
+            output.add(supplier.get());
+
+            while (!matches(closing, End)) {
+                if (separator != null) {
+                    expect(separator);
+                }
                 output.add(supplier.get());
-            } while (separator != null && consume(separator) != null || !matches(closing, End));
+            }
         }
 
         Region end = expect(closing).getRegion();
-
         return begin.until(end);
     }
 
     private <T> Region list(TokenKind[] starting, TokenKind separator, Collection<T> output, Supplier<T> supplier) throws ScriptException {
         Region begin = token.getRegion();
+
         if (matches(starting)) {
             do {
                 output.add(supplier.get());
             } while (consume(separator) != null);
         }
+
         Region end = token.getRegion();
         return begin.until(end);
     }

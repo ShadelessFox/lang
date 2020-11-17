@@ -86,33 +86,33 @@ public class Launcher {
         public Builtin() {
             super("builtin", "<builtin>");
 
-            setAttribute("to_string", new NativeFunction(this, "to_string", (machine, args) -> args[0].toString()));
+            setAttribute("to_string", new NativeFunction(this, "to_string", 0, (machine, args) -> args[0].toString()));
 
-            setAttribute("print", new NativeFunction(this, "print", (machine, args) -> {
+            setAttribute("print", new NativeFunction(this, "print", Function.FLAG_VARIADIC, (machine, args) -> {
                 machine.getOut().print(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return 0;
+                return NoneValue.INSTANCE;
             }));
 
-            setAttribute("println", new NativeFunction(this, "println", (machine, args) -> {
+            setAttribute("println", new NativeFunction(this, "println", Function.FLAG_VARIADIC, (machine, args) -> {
                 machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return 0;
+                return NoneValue.INSTANCE;
             }));
 
-            setAttribute("debug", new NativeFunction(this, "debug", (machine, args) -> {
+            setAttribute("debug", new NativeFunction(this, "debug", 0, (machine, args) -> {
                 Machine.Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
                 machine.getErr().print("[" + frame.getSourceLocation() + "] ");
                 machine.getErr().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-                return 0;
+                return NoneValue.INSTANCE;
             }));
 
-            setAttribute("panic", new NativeFunction(this, "panic", (machine, args) -> {
+            setAttribute("panic", new NativeFunction(this, "panic", 0, (machine, args) -> {
                 String message = (String) ((Value) args[0]).getValue();
                 boolean recoverable = (Integer) ((Value) args[1]).getValue() != 0;
                 machine.panic(message, recoverable);
                 return null;
             }));
 
-            setAttribute("debug_assert", new NativeFunction(this, "debug_assert", (machine, args) -> {
+            setAttribute("debug_assert", new NativeFunction(this, "debug_assert", 0, (machine, args) -> {
                 for (ScriptObject argument : args) {
                     Boolean value = ((Value) argument).getBoolean(machine);
                     if (value == null) {
@@ -123,7 +123,7 @@ public class Launcher {
                         return null;
                     }
                 }
-                return 0;
+                return NoneValue.INSTANCE;
             }));
         }
     }
