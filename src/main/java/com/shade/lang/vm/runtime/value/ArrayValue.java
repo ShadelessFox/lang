@@ -5,10 +5,12 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
 
-public class ArrayType extends Value implements Index, MutableIndex {
+import java.util.Arrays;
+
+public class ArrayValue extends Value implements Index, MutableIndex {
     private final ScriptObject[] values;
 
-    public ArrayType(ScriptObject[] values) {
+    public ArrayValue(ScriptObject[] values) {
         this.values = values;
         setAttribute("length", Value.from(values.length));
     }
@@ -49,5 +51,14 @@ public class ArrayType extends Value implements Index, MutableIndex {
     @Override
     public Object getValue() {
         return values;
+    }
+
+    public ScriptObject[] getValues() {
+        return values;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(values);
     }
 }

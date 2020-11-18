@@ -63,10 +63,10 @@ public class Class extends ScriptObject {
                     function.getModule(),
                     function.getName(),
                     function.getArgumentsCount(),
+                    new ScriptObject[]{instance},
                     function.getFlags(),
                     function.getPrototype()
                 );
-                boundFunction.addBoundArgument(instance);
 
                 instance.setAttribute(attribute.getKey(), boundFunction);
             }
