@@ -55,17 +55,13 @@ public class RuntimeFunction extends Function {
         return constants;
     }
 
-    public ScriptObject[] getBoundArguments() {
-        return boundArguments;
-    }
-
     public int getLocalsCount() {
         return localsCount;
     }
 
     @Override
     public String toString() {
-        if (getBoundArguments() != null) {
+        if (getBoundArguments().length == 0) {
             return "[Function '" + getName() + "']";
         } else {
             return "[Bound Function '" + getName() + "']";
