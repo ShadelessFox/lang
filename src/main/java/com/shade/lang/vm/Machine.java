@@ -10,7 +10,7 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;

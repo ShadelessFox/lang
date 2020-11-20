@@ -3,7 +3,7 @@ package com.shade.lang.vm.runtime.function;
 import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
 import java.nio.ByteBuffer;

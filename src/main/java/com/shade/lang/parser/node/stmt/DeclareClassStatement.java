@@ -7,7 +7,7 @@ import com.shade.lang.parser.node.context.ClassContext;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 
 import java.util.Collections;

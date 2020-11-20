@@ -1,7 +1,7 @@
 package com.shade.lang.vm.runtime.function;
 
 import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.Module;
+import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.value.Value;
 

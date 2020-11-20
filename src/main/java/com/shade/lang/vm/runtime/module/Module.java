@@ -1,6 +1,7 @@
-package com.shade.lang.vm.runtime;
+package com.shade.lang.vm.runtime.module;
 
 import com.shade.lang.parser.node.stmt.ImportStatement;
+import com.shade.lang.vm.runtime.ScriptObject;
 
 import java.util.ArrayList;
 import java.util.List;
