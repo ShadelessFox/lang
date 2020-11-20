@@ -409,7 +409,7 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Token token = expect(Symbol, Number, True, False, None, String, StringPart, New, ParenL);
+        Token token = expect(Symbol, Number, True, False, None, String, StringPart, New, ParenL, BracketL);
         Region start = token.getRegion();
 
         if (token.getKind() == Symbol) {
@@ -481,6 +481,22 @@ public class Parser {
             Expression expression = parseExpression();
             Region end = expect(ParenR).getRegion();
             return parsePrimaryExpression(new CompoundExpression(expression, start.until(end)));
+        }
+
+        if (token.getKind() == BracketL) {
+            List<Expression> elements = new ArrayList<>();
+
+            if (!matches(BracketR)) {
+                elements.add(parseExpression());
+
+                while (!matches(BracketR, End)) {
+                    expect(Comma);
+                    elements.add(parseExpression());
+                }
+            }
+
+            Region end = expect(BracketR).getRegion();
+            return parsePrimaryExpression(new ArrayExpression(elements, start.until(end)));
         }
 
         throw new AssertionError("Unreachable");

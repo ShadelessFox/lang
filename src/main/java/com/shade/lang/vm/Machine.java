@@ -101,6 +101,8 @@ public class Machine {
             }
         }
 
+        module.setAttribute("<builtin>", modules.get("builtin"));
+
         return module;
     }
 
