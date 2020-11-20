@@ -27,4 +27,8 @@ public abstract class ScriptObject {
     public boolean isImmutable() {
         return immutable;
     }
+
+    public String toDisplayString() {
+        return toString();
+    }
 }

@@ -5,8 +5,6 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
 
-import java.util.Arrays;
-
 public class ArrayValue extends Value implements Index, MutableIndex {
     private final ScriptObject[] values;
 
@@ -59,6 +57,13 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
     @Override
     public String toString() {
-        return Arrays.toString(values);
+        StringBuilder builder = new StringBuilder();
+        builder.append('[');
+        for (int index = 0; ; index++) {
+            builder.append(values[index].toDisplayString());
+            if (index == values.length - 1)
+                return builder.append(']').toString();
+            builder.append(", ");
+        }
     }
 }

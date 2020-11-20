@@ -23,4 +23,9 @@ public class StringValue extends Value {
     public Object getValue() {
         return value;
     }
+
+    @Override
+    public String toDisplayString() {
+        return '\'' + value + '\'';
+    }
 }
