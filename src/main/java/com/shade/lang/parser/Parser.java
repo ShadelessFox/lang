@@ -400,7 +400,7 @@ public class Parser {
 
     private Expression parseUnaryExpression() throws ScriptException {
         Region start = token.getRegion();
-        Token operator = consume(Not, Add, Sub);
+        Token operator = consume(Not, Add, Sub, Try);
         if (operator != null) {
             Expression rhs = parsePrimaryExpression();
             return new UnaryExpression(rhs, operator.getKind(), start.until(rhs.getRegion()));

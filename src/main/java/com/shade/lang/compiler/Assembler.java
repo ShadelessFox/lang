@@ -88,6 +88,8 @@ public class Assembler {
                 return String.format("'%s'", ((String) constant).chars()
                     .mapToObj(x -> x <= 27 ? String.format("\\x%02x", x) : String.valueOf((char) x))
                     .collect(Collectors.joining()));
+            } else if (constant == Void.TYPE) {
+                return "none";
             } else {
                 return constant.toString();
             }

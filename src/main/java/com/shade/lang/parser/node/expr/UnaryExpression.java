@@ -33,6 +33,15 @@ public class UnaryExpression extends Expression {
             case Not:
                 assembler.imm8(Opcode.NOT);
                 break;
+            case Try:
+                assembler.imm8(Opcode.DUP);
+                assembler.imm8(Opcode.PUSH_CONST);
+                assembler.imm32(assembler.addConstant(Void.TYPE));
+                assembler.imm8(Opcode.CMP_EQ);
+                Assembler.Label end = assembler.jump(Opcode.JUMP_IF_FALSE);
+                assembler.imm8(Opcode.RET);
+                assembler.bind(end);
+                break;
             default:
                 throw new AssertionError("Unsupported unary operator: " + operator);
         }
