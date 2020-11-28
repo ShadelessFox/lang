@@ -65,13 +65,7 @@ public abstract class SimpleTransformer implements Transformer {
 
     @Override
     public Expression transform(CompoundExpression expression) {
-        Expression inner = expression.getExpression().transform(this);
-
-        if (inner != expression.getExpression()) {
-            return new CompoundExpression(inner, expression.getRegion());
-        }
-
-        return expression;
+        return expression.getExpression().transform(this);
     }
 
     @Override
@@ -177,11 +171,12 @@ public abstract class SimpleTransformer implements Transformer {
 
     @Override
     public Statement transform(BranchStatement statement) {
+        Expression condition = statement.getCondition().transform(this);
         BlockStatement pass = (BlockStatement) statement.getPass().transform(this);
         BlockStatement fail = statement.getFail() != null ? (BlockStatement) statement.getFail().transform(this) : null;
 
-        if (pass != statement.getPass() || fail != statement.getFail()) {
-            return new BranchStatement(statement.getCondition(), pass, fail, statement.getRegion());
+        if (condition != statement.getCondition() || pass != statement.getPass() || fail != statement.getFail()) {
+            return new BranchStatement(condition, pass, fail, statement.getRegion());
         }
 
         return statement;

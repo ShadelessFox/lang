@@ -2,10 +2,7 @@ package com.shade.lang.optimizer.transformers;
 
 import com.shade.lang.optimizer.SimpleTransformer;
 import com.shade.lang.parser.node.Expression;
-import com.shade.lang.parser.node.expr.BinaryExpression;
-import com.shade.lang.parser.node.expr.LoadConstantExpression;
-import com.shade.lang.parser.node.expr.LogicalExpression;
-import com.shade.lang.parser.node.expr.UnaryExpression;
+import com.shade.lang.parser.node.expr.*;
 import com.shade.lang.parser.token.TokenKind;
 
 public class ConstantFoldingTransformer extends SimpleTransformer {
@@ -32,6 +29,18 @@ public class ConstantFoldingTransformer extends SimpleTransformer {
                         return new LoadConstantExpression<>(lhsValue.floatValue() * rhsValue.floatValue(), transformed.getRegion());
                     case Div:
                         return new LoadConstantExpression<>(lhsValue.floatValue() / rhsValue.floatValue(), transformed.getRegion());
+                    case Eq:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() == rhsValue.floatValue(), transformed.getRegion());
+                    case NotEq:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() != rhsValue.floatValue(), transformed.getRegion());
+                    case Less:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() < rhsValue.floatValue(), transformed.getRegion());
+                    case LessEq:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() <= rhsValue.floatValue(), transformed.getRegion());
+                    case Greater:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() > rhsValue.floatValue(), transformed.getRegion());
+                    case GreaterEq:
+                        return new LoadConstantExpression<>(lhsValue.floatValue() >= rhsValue.floatValue(), transformed.getRegion());
                 }
             } else {
                 switch (transformed.getOperator()) {
@@ -43,7 +52,31 @@ public class ConstantFoldingTransformer extends SimpleTransformer {
                         return new LoadConstantExpression<>(lhsValue.intValue() * rhsValue.intValue(), transformed.getRegion());
                     case Div:
                         return new LoadConstantExpression<>(lhsValue.intValue() / rhsValue.intValue(), transformed.getRegion());
+                    case Eq:
+                        return new LoadConstantExpression<>(lhsValue.intValue() == rhsValue.intValue(), transformed.getRegion());
+                    case NotEq:
+                        return new LoadConstantExpression<>(lhsValue.intValue() != rhsValue.intValue(), transformed.getRegion());
+                    case Less:
+                        return new LoadConstantExpression<>(lhsValue.intValue() < rhsValue.intValue(), transformed.getRegion());
+                    case LessEq:
+                        return new LoadConstantExpression<>(lhsValue.intValue() <= rhsValue.intValue(), transformed.getRegion());
+                    case Greater:
+                        return new LoadConstantExpression<>(lhsValue.intValue() > rhsValue.intValue(), transformed.getRegion());
+                    case GreaterEq:
+                        return new LoadConstantExpression<>(lhsValue.intValue() >= rhsValue.intValue(), transformed.getRegion());
                 }
+            }
+        }
+
+        if (isConst(transformed.getLhs(), Boolean.class) && isConst(transformed.getRhs(), Boolean.class)) {
+            boolean lhsValue = asConst(transformed.getLhs());
+            boolean rhsValue = asConst(transformed.getRhs());
+
+            switch (transformed.getOperator()) {
+                case Eq:
+                    return new LoadConstantExpression<>(lhsValue == rhsValue, transformed.getRegion());
+                case NotEq:
+                    return new LoadConstantExpression<>(lhsValue != rhsValue, transformed.getRegion());
             }
         }
 
