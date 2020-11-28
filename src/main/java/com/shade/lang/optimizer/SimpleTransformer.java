@@ -38,6 +38,20 @@ public abstract class SimpleTransformer implements Transformer {
     }
 
     @Override
+    public Expression transform(ArrayExpression expression) {
+        List<Expression> elements = expression.getElements()
+            .stream()
+            .map(x -> x.transform(this))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+        if (!elements.equals(expression.getElements())) {
+            return new ArrayExpression(elements, expression.getRegion());
+        }
+
+        return expression;
+    }
+    @Override
     public Expression transform(BinaryExpression expression) {
         Expression lhs = expression.getLhs().transform(this);
         Expression rhs = expression.getRhs().transform(this);

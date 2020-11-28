@@ -10,6 +10,8 @@ public interface Transformer {
 
     Expression transform(Expression expression);
 
+    Expression transform(ArrayExpression expression);
+
     Expression transform(BinaryExpression expression);
 
     Expression transform(CallExpression expression);
