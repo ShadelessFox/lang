@@ -50,7 +50,7 @@ public abstract class Function extends ScriptObject {
             for (int index = argc - argumentsCount; index >= 0; index--) {
                 variadicValues[index] = stack.pop();
             }
-            values[argumentsCount - 1] = Value.from(variadicValues);
+            values[argumentsCount - 1 + boundArguments.length] = Value.from(variadicValues);
         }
 
         for (int index = argumentsCount - (variadic ? 2 : 1); index >= 0; index--) {

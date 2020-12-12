@@ -1,8 +1,10 @@
 package com.shade.lang.vm.runtime.value;
 
 import com.shade.lang.vm.Machine;
+import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.extension.Index;
 
-public class StringValue extends Value {
+public class StringValue extends Value implements Index {
     private final String value;
 
     public StringValue(String value) {
@@ -11,7 +13,7 @@ public class StringValue extends Value {
 
     @Override
     public Value add(Machine machine, Value other) {
-        return new StringValue(value + other.getValue());
+        return new StringValue(value + other);
     }
 
     @Override
@@ -22,6 +24,23 @@ public class StringValue extends Value {
     @Override
     public Object getValue() {
         return value;
+    }
+
+    @Override
+    public ScriptObject getIndex(Machine machine, ScriptObject index) {
+        if (!(index instanceof IntegerValue)) {
+            machine.panic("Expected index to be integer");
+            return null;
+        }
+
+        int idx = ((IntegerValue) index).getValue();
+
+        if (idx >= value.length()) {
+            machine.panic("Index out of range (index is " + idx + ", size is " + value.length() + ")", true);
+            return null;
+        }
+
+        return Value.from(String.valueOf(value.charAt(idx)));
     }
 
     @Override

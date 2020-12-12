@@ -474,7 +474,7 @@ public class Parser {
 
             List<Expression> arguments = new ArrayList<>();
             Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
-            return new NewExpression(callee, arguments, token.getRegion().until(region));
+            return parsePrimaryExpression(new NewExpression(callee, arguments, token.getRegion().until(region)));
         }
 
         if (token.getKind() == ParenL) {

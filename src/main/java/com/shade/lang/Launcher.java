@@ -15,7 +15,7 @@ public class Launcher {
             machine.load(provider.create(machine));
         }
 
-        machine.load(Paths.get("src/main/resources/sandbox.ash"));
+        machine.load("sandbox");
 
         if (!machine.isHalted()) {
             machine.call("sandbox", "main");

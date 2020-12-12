@@ -17,6 +17,8 @@ public abstract class Value extends ScriptObject {
             return NoneValue.INSTANCE;
         } else if (value instanceof Integer) {
             return new IntegerValue((int) value);
+        } else if (value instanceof Long) {
+            return new IntegerValue((int) (long) value);
         } else if (value instanceof Float) {
             return new FloatValue((float) value);
         } else if (value instanceof String) {

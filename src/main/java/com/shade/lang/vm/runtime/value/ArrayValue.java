@@ -5,6 +5,8 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
 
+import java.util.Arrays;
+
 public class ArrayValue extends Value implements Index, MutableIndex {
     private final ScriptObject[] values;
 
@@ -53,6 +55,14 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
     public ScriptObject[] getValues() {
         return values;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArrayValue value1 = (ArrayValue) o;
+        return Arrays.equals(values, value1.values);
     }
 
     @Override

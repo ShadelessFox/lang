@@ -8,6 +8,7 @@ import com.shade.lang.vm.runtime.value.ArrayValue;
 import com.shade.lang.vm.runtime.value.NoneValue;
 import com.shade.lang.vm.runtime.value.Value;
 
+import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,6 +42,18 @@ public class BuiltinCore extends NativeModule implements NativeModuleProvider {
     @FunctionHandler(name = "to_array")
     public static Object toArray(Machine machine, ScriptObject... args) {
         return new ArrayValue(args);
+    }
+
+    @FunctionHandler(name = "add")
+    public static Object addItem(Machine machine, ScriptObject array, ScriptObject value) {
+        if (!(array instanceof ArrayValue)) {
+            machine.panic("Cannot add item to non-array", true);
+            return null;
+        }
+        ScriptObject[] src = ((ArrayValue) array).getValues();
+        ScriptObject[] dst = Arrays.copyOf(src, src.length + 1);
+        dst[src.length] = value;
+        return new ArrayValue(dst);
     }
 
     @FunctionHandler
