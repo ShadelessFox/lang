@@ -9,6 +9,7 @@ public class StringValue extends Value implements Index {
 
     public StringValue(String value) {
         this.value = value;
+        setAttribute("length", Value.from(value.length()));
     }
 
     @Override

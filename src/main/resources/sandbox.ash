@@ -542,6 +542,17 @@ def test_unwrap_operator() {
     assert helper(1, 2, 3) == 6;
 }
 
+def test_parse_json() {
+    import json;
+
+    let result = json.parse('[{"id":1,"first_name":"Hermie","last_name":"Groomebridge"}]');
+    assert result.length == 1;
+    assert result[0].length == 3;
+    assert result[0][0] == ['id', '1'];
+    assert result[0][1] == ['first_name', 'Hermie'];
+    assert result[0][2] == ['last_name', 'Groomebridge'];
+}
+
 def main() {
     import test;
 
@@ -565,6 +576,7 @@ def main() {
     test.pass('Variadic arguments count', test_variadic_call);
     test.pass('Iterator class', test_iterator);
     test.pass('Unwrap operator', test_unwrap_operator);
+    test.pass('Parse json', test_parse_json);
     test.fail('No such attribute', def () { std.println(none.hello); });
     test.fail('No such global', def () { std.println(hello); });
     test.fail('Index accessing', def () { none[0]; });
