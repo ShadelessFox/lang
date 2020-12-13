@@ -36,7 +36,9 @@ public class RuntimeFunction extends Function {
         ScriptObject[] slots = new ScriptObject[localsCount];
         System.arraycopy(arguments, 0, slots, 0, arguments.length);
 
-        machine.getCallStack().push(new Machine.Frame(this, chunk.array(), constants, slots));
+        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, slots);
+        machine.profilerBeginFrame(frame);
+        machine.getCallStack().push(frame);
     }
 
     public ByteBuffer getChunk() {

@@ -1,5 +1,6 @@
 package com.shade.lang.vm.runtime;
 
+import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
@@ -34,7 +35,7 @@ public class Class extends ScriptObject {
 
                 RuntimeFunction boundFunction = new RuntimeFunction(
                     function.getModule(),
-                    function.getName(),
+                    getFunctionName(function),
                     function.getFlags(),
                     function.getChunk(),
                     function.getConstants(),
@@ -61,7 +62,7 @@ public class Class extends ScriptObject {
 
                 NativeFunction boundFunction = new NativeFunction(
                     function.getModule(),
-                    function.getName(),
+                    getFunctionName(function),
                     function.getArgumentsCount(),
                     new ScriptObject[]{instance},
                     function.getFlags(),
@@ -73,6 +74,10 @@ public class Class extends ScriptObject {
         }
 
         return instance;
+    }
+
+    private String getFunctionName(Function function) {
+        return name + "::" + function.getName();
     }
 
     private void populateInheritedAttributes(Class child) {

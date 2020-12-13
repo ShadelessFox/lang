@@ -10,13 +10,13 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
-import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
+import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.value.Value;
 
 import java.io.BufferedReader;
@@ -35,10 +35,15 @@ public class Machine {
     public static final int MAX_STACK_DEPTH = 8192;
     public static final int MAX_CODE_SIZE = 16384;
 
+    public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
+    public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
+
     private final List<Path> searchRoots = new ArrayList<>();
     private final Map<String, Module> modules = new HashMap<>();
     private final Stack<ScriptObject> operandStack = new Stack<>();
     private final Stack<Frame> callStack = new Stack<>();
+    private final Map<Frame, List<Long>> profiler = new LinkedHashMap<>();
+    private final Map<Frame, Long> profilerCache = new IdentityHashMap<>();
 
     private PrintStream out = System.out;
     private PrintStream err = System.err;
@@ -375,7 +380,7 @@ public class Machine {
                     break;
                 }
                 case RET: {
-                    callStack.pop();
+                    profilerEndFrame(callStack.pop());
                     if (callStack.empty()) {
                         return;
                     }
@@ -502,6 +507,33 @@ public class Machine {
         this.status = status;
     }
 
+    public Map<Frame, List<Long>> getProfilerSamples() {
+        return profiler;
+    }
+
+    public void profilerBeginFrame(Frame frame) {
+        if (ENABLE_PROFILING) {
+            profilerCache.put(frame, System.nanoTime());
+        }
+    }
+
+    public void profilerEndFrame(Frame frame) {
+        if (!ENABLE_PROFILING) {
+            return;
+        }
+
+        long time = System.nanoTime();
+
+        if (!profilerCache.containsKey(frame)) {
+            System.out.println("Invalid record for frame " + frame);
+            return;
+        }
+
+        profiler
+            .computeIfAbsent(frame, x -> new ArrayList<>())
+            .add(time - profilerCache.remove(frame));
+    }
+
     public Stack<ScriptObject> getOperandStack() {
         return operandStack;
     }
@@ -605,16 +637,12 @@ public class Machine {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Frame frame = (Frame) o;
-            return pc == frame.pc &&
-                Objects.equals(function, frame.function) &&
-                Arrays.equals(chunk, frame.chunk);
+            return function.equals(frame.function);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(function, pc);
-            result = 31 * result + Arrays.hashCode(chunk);
-            return result;
+            return Objects.hash(function);
         }
 
         @Override
