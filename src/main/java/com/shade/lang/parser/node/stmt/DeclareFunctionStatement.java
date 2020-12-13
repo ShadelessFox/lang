@@ -102,11 +102,11 @@ public class DeclareFunctionStatement extends Statement {
             LOG.info(writer.toString());
         }
 
-        if (Machine.ENABLE_LOGGING && assembler.getGuards().length > 0) {
+        if (Machine.ENABLE_LOGGING && functionContext.getGuards().length > 0) {
             StringWriter writer = new StringWriter();
 
             writer.write("Guards of function '" + name + "':\n");
-            for (Assembler.Guard guard : assembler.getGuards()) {
+            for (Assembler.Guard guard : functionContext.getGuards()) {
                 writer.write(String.format("  %4d..%-4d -> %4d", guard.getStart(), guard.getEnd(), guard.getOffset()));
                 if (guard.getSlot() >= 0) {
                     writer.write(" @ " + guard.getSlot());
@@ -123,7 +123,7 @@ public class DeclareFunctionStatement extends Statement {
             assembler.build(),
             assembler.getConstants(),
             assembler.getTraceLines(),
-            assembler.getGuards(),
+            functionContext.getGuards(),
             arguments.size(),
             boundArguments.size(),
             totalSlots.get()

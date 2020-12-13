@@ -14,7 +14,6 @@ public class Assembler {
     private final ByteBuffer buffer;
     private final List<Label> labels;
     private final List<Object> constants;
-    private final List<Guard> guards;
     private final Map<Integer, Region.Span> traceLines;
     private final Map<Region.Span, Integer> debugLines;
 
@@ -22,7 +21,6 @@ public class Assembler {
         this.buffer = ByteBuffer.allocate(capacity);
         this.labels = new ArrayList<>();
         this.constants = new ArrayList<>();
-        this.guards = new ArrayList<>();
         this.traceLines = new LinkedHashMap<>();
         this.debugLines = new LinkedHashMap<>();
     }
@@ -187,14 +185,6 @@ public class Assembler {
 
     public void addDebugLine(Region.Span span, String note) {
         debugLines.put(span, buffer.position());
-    }
-
-    public Guard[] getGuards() {
-        return guards.toArray(new Guard[0]);
-    }
-
-    public void addGuard(int start, int end, int offset, int slot) {
-        guards.add(new Guard(start, end, offset, slot));
     }
 
     public int getPosition() {

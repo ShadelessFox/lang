@@ -5,6 +5,7 @@ import com.shade.lang.compiler.Opcode;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
+import com.shade.lang.parser.node.context.FunctionContext;
 import com.shade.lang.parser.token.Region;
 
 public class TryStatement extends Statement {
@@ -29,17 +30,28 @@ public class TryStatement extends Statement {
         int regionStart = assembler.getPosition();
         body.compile(context, assembler);
         int regionEnd = assembler.getPosition();
+
         Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
+
         int offset = assembler.getPosition();
         int slot = -1;
+
         try (Context recoverContext = context.enter()) {
             if (name != null) {
                 slot = recoverContext.addSlot(name);
             }
             recover.compile(recoverContext, assembler);
         }
+
         assembler.bind(end);
-        assembler.addGuard(regionStart, regionEnd, offset, slot);
+
+        FunctionContext functionContext = context.unwrap(FunctionContext.class);
+
+        if (slot >= 0) {
+            functionContext.addGuard(regionStart, regionEnd, offset, slot);
+        } else {
+            functionContext.addGuard(regionStart, regionEnd, offset);
+        }
     }
 
     public BlockStatement getBody() {
