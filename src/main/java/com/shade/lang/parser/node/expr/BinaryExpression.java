@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
@@ -28,43 +28,43 @@ public class BinaryExpression extends Expression {
         switch (operator) {
             case Add:
             case AddAssign:
-                assembler.imm8(Opcode.ADD);
+                assembler.emit(Operation.ADD);
                 break;
             case Sub:
             case SubAssign:
-                assembler.imm8(Opcode.SUB);
+                assembler.emit(Operation.SUB);
                 break;
             case Mul:
             case MulAssign:
-                assembler.imm8(Opcode.MUL);
+                assembler.emit(Operation.MUL);
                 break;
             case Div:
             case DivAssign:
-                assembler.imm8(Opcode.DIV);
+                assembler.emit(Operation.DIV);
                 break;
             case Eq:
-                assembler.imm8(Opcode.CMP_EQ);
+                assembler.emit(Operation.CMP_EQ);
                 break;
             case NotEq:
-                assembler.imm8(Opcode.CMP_NE);
+                assembler.emit(Operation.CMP_NE);
                 break;
             case Less:
-                assembler.imm8(Opcode.CMP_LT);
+                assembler.emit(Operation.CMP_LT);
                 break;
             case LessEq:
-                assembler.imm8(Opcode.CMP_LE);
+                assembler.emit(Operation.CMP_LE);
                 break;
             case Greater:
-                assembler.imm8(Opcode.CMP_GT);
+                assembler.emit(Operation.CMP_GT);
                 break;
             case GreaterEq:
-                assembler.imm8(Opcode.CMP_GE);
+                assembler.emit(Operation.CMP_GE);
                 break;
             default:
                 throw new AssertionError("Unsupported binary operator: " + operator);
         }
 
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.addLocation(getRegion().getBegin());
     }
 
     public Expression getLhs() {

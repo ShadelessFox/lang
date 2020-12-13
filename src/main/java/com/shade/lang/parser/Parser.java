@@ -9,10 +9,14 @@ import com.shade.lang.parser.token.Region;
 import com.shade.lang.parser.token.Token;
 import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
+import com.shade.lang.vm.runtime.value.NoneValue;
 
 import java.lang.String;
 import java.util.*;
 
+import static com.shade.lang.parser.token.TokenKind.Class;
+import static com.shade.lang.parser.token.TokenKind.Number;
+import static com.shade.lang.parser.token.TokenKind.String;
 import static com.shade.lang.parser.token.TokenKind.*;
 
 public class Parser {
@@ -234,7 +238,7 @@ public class Parser {
     private AssertStatement parseAssertStatement() throws ScriptException {
         Region start = expect(Assert).getRegion();
         Expression condition = parseExpression();
-        String message = null;
+        String message = "";
         if (consume(Comma) != null) {
             message = expect(String).getStringValue();
         }
@@ -429,7 +433,7 @@ public class Parser {
         }
 
         if (token.getKind() == None) {
-            return parsePrimaryExpression(new LoadConstantExpression<>(Void.TYPE, start));
+            return parsePrimaryExpression(new LoadConstantExpression<>(NoneValue.INSTANCE, start));
         }
 
         if (token.getKind() == String) {

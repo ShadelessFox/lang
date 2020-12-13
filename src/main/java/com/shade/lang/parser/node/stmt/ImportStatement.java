@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -24,10 +25,8 @@ public class ImportStatement extends Statement {
         if (global) {
             context.getModule().getImports().add(this);
         } else {
-            assembler.imm8(Opcode.IMPORT);
-            assembler.imm32(assembler.addConstant(name));
-            assembler.imm8(context.addSlot(alias == null ? name : alias));
-            assembler.addTraceLine(getRegion().getBegin());
+            assembler.emit(Operation.IMPORT, Operand.constant(name), Operand.imm8(context.addSlot(alias == null ? name : alias)));
+            assembler.addLocation(getRegion().getBegin());
         }
     }
 

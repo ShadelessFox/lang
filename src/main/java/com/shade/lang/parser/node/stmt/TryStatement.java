@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -27,13 +27,13 @@ public class TryStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        int regionStart = assembler.getPosition();
+        int regionStart = assembler.getOffset(assembler.getPosition());
         body.compile(context, assembler);
-        int regionEnd = assembler.getPosition();
+        int regionEnd = assembler.getOffset(assembler.getPosition());
 
-        Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
+        Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
 
-        int offset = assembler.getPosition();
+        int offset = assembler.getOffset(assembler.getPosition());
         int slot = -1;
 
         try (Context recoverContext = context.enter()) {

@@ -1,11 +1,10 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Node;
-import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.parser.token.TokenKind;
@@ -39,7 +38,7 @@ public class LogicalExpression extends Expression {
         passLabels.forEach(assembler::bind);
         pass.compile(context, assembler);
 
-        Assembler.Label end = assembler.jump(Opcode.JUMP);
+        Assembler.Label end = assembler.jump(Operation.JUMP);
 
         failLabels.forEach(assembler::bind);
         if (fail != null) {
@@ -59,20 +58,20 @@ public class LogicalExpression extends Expression {
 
             switch (logical.operator) {
                 case And:
-                    failLabels.add(assembler.jump(Opcode.JUMP_IF_FALSE));
-                    assembler.addTraceLine(getRegion().getBegin());
+                    failLabels.add(assembler.jump(Operation.JUMP_IF_FALSE));
+                    assembler.addLocation(getRegion().getBegin());
                     break;
                 case Or:
-                    passLabels.add(assembler.jump(Opcode.JUMP_IF_TRUE));
-                    assembler.addTraceLine(getRegion().getBegin());
+                    passLabels.add(assembler.jump(Operation.JUMP_IF_TRUE));
+                    assembler.addLocation(getRegion().getBegin());
                     break;
             }
 
             compile(context, assembler, logical.rhs, pass, fail, passLabels, failLabels, false);
 
             if (root) {
-                failLabels.add(assembler.jump(Opcode.JUMP_IF_FALSE));
-                assembler.addTraceLine(getRegion().getBegin());
+                failLabels.add(assembler.jump(Operation.JUMP_IF_FALSE));
+                assembler.addLocation(getRegion().getBegin());
             }
         } else {
             node.compile(context, assembler);

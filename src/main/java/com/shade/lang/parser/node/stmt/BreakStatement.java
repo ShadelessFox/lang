@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.Context;
@@ -26,6 +26,6 @@ public class BreakStatement extends Statement {
             throw new ScriptException("Cannot use 'break' outside loop statement", getRegion());
         }
 
-        loopContext.addCanceller(assembler.jump(Opcode.JUMP), LoopContext.CancelType.Break);
+        loopContext.addCanceller(assembler.jump(Operation.JUMP), LoopContext.CancelType.Break);
     }
 }

@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -20,12 +21,9 @@ public class DeclareVariableStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Declare local");
-
         if (!context.hasSlot(name)) {
             value.compile(context, assembler);
-            assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(context.addSlot(name));
+            assembler.emit(Operation.SET_LOCAL, Operand.imm8(context.addSlot(name)));
         } else {
             throw new ScriptException("Local variable '" + name + "' already declared", getRegion());
         }

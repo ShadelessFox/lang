@@ -1,239 +1,486 @@
 package com.shade.lang.compiler;
 
 import com.shade.lang.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.shade.lang.compiler.Opcode.*;
+import java.util.stream.IntStream;
 
 public class Assembler {
-    private final ByteBuffer buffer;
-    private final List<Label> labels;
-    private final List<Object> constants;
-    private final Map<Integer, Region.Span> traceLines;
-    private final Map<Region.Span, Integer> debugLines;
+    /*
+     * List of emitted instructions.
+     */
+    private final List<Instruction> instructions = new ArrayList<>();
 
-    public Assembler(int capacity) {
-        this.buffer = ByteBuffer.allocate(capacity);
-        this.labels = new ArrayList<>();
-        this.constants = new ArrayList<>();
-        this.traceLines = new LinkedHashMap<>();
-        this.debugLines = new LinkedHashMap<>();
+    /*
+     * List of instructions' constants.
+     */
+    private final List<Object> constants = new ArrayList<>();
+
+    /*
+     * Set of unresolved jump labels. Labels
+     * are used to keep track of all emitted
+     * jump instructions and resolve them
+     * with relative offsets upon bind.
+     */
+    private final Set<Label> labels = new HashSet<>();
+
+    /*
+     * Map of instruction's offsets to its location
+     * inside code's source file.
+     */
+    private final Map<Integer, Region.Span> locations = new HashMap<>();
+
+    /*
+     * Current imaginable stack size. This
+     * value is updated every time a new
+     * instruction is emitted.
+     */
+    private int currentStackSize;
+
+    /*
+     * Max peak of imaginable stack size.
+     * This value is updated every time
+     * when currentStackSize is greater
+     * than current peak.
+     */
+    private int maxStackSize;
+
+    /**
+     * Appends given operation with supplied operands to internal buffer.
+     * <p>
+     * This method makes sure that given list of {@code operands}
+     * is applicable to {@code operation}.
+     * For example, this method checks the affect of push/pop on the
+     * virtual operand stack. If {@link Operation#isJump()} returns
+     * {@code true} for the given {@code operation}, then
+     * current state is pushed onto internal jump stack. Note that
+     * only forward jumps (e.g. the relative offset is positive) are
+     * checked, backward jumps (loops, etc.) are not checked.
+     *
+     * @param operation the operation a.k.a. opcode of the instruction
+     * @param operands  the list of operands suitable for given {@code operation}
+     * @return emitted instruction with specified operation and list of operands
+     */
+    public Instruction emit(@NotNull Operation operation, @NotNull Operand... operands) {
+        if (operation.getOperands().length != operands.length) {
+            throw new IllegalArgumentException("Operation '" + operation + "' expects " + operation.getOperands().length + " operand(-s)");
+        }
+
+        for (int index = 0; index < operation.getOperands().length; index++) {
+            if (operation.getOperands()[index] != operands[index].getType()) {
+                throw new IllegalArgumentException("Operand at index " + index + " expected to be of type " + operation.getOperands()[index]);
+            }
+        }
+
+        int stackPopAffect = operation.getStackPop(operands);
+        int stackPushAffect = operation.getStackPush(operands);
+
+        if (currentStackSize - stackPopAffect < 0) {
+            throw new IllegalStateException("Reached negative stack size on operand '" + operation + "': required " + stackPopAffect + " element(-s) on the stack but " + currentStackSize + " is available");
+        }
+
+        currentStackSize -= stackPopAffect;
+        currentStackSize += stackPushAffect;
+
+        Instruction instruction;
+
+        if (operation.isJump()) {
+            instruction = new JumpInstruction(operation);
+        } else {
+            instruction = new Instruction(operation, operands);
+        }
+
+        instructions.add(instruction);
+
+        if (currentStackSize > maxStackSize) {
+            maxStackSize = currentStackSize;
+        }
+
+        return instruction;
     }
 
-    public void imm8(int imm) {
-        buffer.put((byte) (imm & 0xff));
-    }
+    /**
+     * Appends unresolved jump operation to internal stack.
+     * Returns label that refers to emitted jump instruction
+     * in order to resolve its operand when label will be
+     * bound using method {@link Assembler#bind(Label)}.
+     * This is useful for forward jumps where resulting offset
+     * is unknown.
+     *
+     * @param operation jump operation to be emitted
+     * @return unresolved label that must be bound using {@link Assembler#bind(Label)}
+     * @throws IllegalArgumentException if provided {@code operation} is not a jump operation
+     * @see Assembler#bind(Label)
+     * @see Operation#isJump()
+     */
+    public Label jump(@NotNull Operation operation) {
+        if (!operation.isJump()) {
+            throw new IllegalArgumentException("Operation expected to be a jump");
+        }
 
-    public void imm16(int imm) {
-        buffer.putShort((short) (imm & 0xffff));
-    }
+        JumpInstruction instruction = (JumpInstruction) emit(operation, Operand.imm16(0xffff));
 
-    public void imm32(int imm) {
-        buffer.putInt(imm);
-    }
-
-    public void imm64(long imm) {
-        buffer.putLong(imm);
-    }
-
-    public Label jump(byte opcode) {
-        imm8(opcode);
-        Label label = new Label(buffer.position());
+        Label label = new Label(instruction, currentStackSize);
         labels.add(label);
-        buffer.putInt(0xcafebabe);
+
         return label;
     }
 
-    public void bind(Label label) {
-        bind(label, buffer.position());
-    }
-
-    public void bind(Label label, int offset) {
+    /**
+     * Binds referred instruction to offset between
+     * this instruction and current assembler's position.
+     * After label is bound and thus resolved, it cannot
+     * be bound again.
+     * <p>
+     * Note that jump offset is limited to {@code 2^16 (65535)} bytes.
+     *
+     * @param label label returned from {@link #jump(Operation)}
+     *              to be bound and resolved
+     * @throws IllegalArgumentException if label is already resolved,
+     *                                  or it was created by another assembler
+     * @throws IllegalStateException    if resolved jump offset is too big
+     *                                  or it was already resolved
+     */
+    public void bind(@Nullable Label label) {
         if (label == null) {
             return;
         }
 
         if (!labels.remove(label)) {
-            throw new IllegalArgumentException("Invalid label");
+            throw new IllegalArgumentException("Cannot bind orphan label");
         }
 
-        buffer.putInt(label.position, offset - label.position);
+        JumpInstruction jump = label.instruction;
+
+        if (jump.isResolved()) {
+            throw new IllegalStateException("Jump already resolved");
+        }
+
+        int offset = instructions
+            .stream()
+            .skip(instructions.indexOf(jump))
+            .mapToInt(Instruction::getSize)
+            .sum();
+
+        // Decrement offset by instruction size because
+        // jump will happen after instruction is read.
+
+        offset -= jump.getSize();
+
+        if (offset > 0xffff) {
+            throw new IllegalStateException("Jump offset is too big (max 65535)");
+        }
+
+        currentStackSize = label.stack;
+
+        jump.resolve((short) (offset & 0xffff));
     }
 
-    public ByteBuffer build() {
+    /**
+     * Binds referred instruction to offset
+     * specified by {@code position} that lays
+     * between assembler's start and end.
+     * After label is bound and thus resolved, it cannot
+     * be bound again.
+     * <p>
+     * Note that jump offset is limited to {@code 2^16 (65535)} bytes.
+     *
+     * @param label    label returned from {@link #jump(Operation)}
+     *                 to be bound and resolved
+     * @param position position that is returned from {@link Assembler#getPosition()}.
+     *                 This is an index of the destination instruction inside internal buffer.
+     * @throws IllegalArgumentException if label is already resolved,
+     *                                  or it was created by another assembler,
+     *                                  or position is invalid
+     * @throws IllegalStateException    if resolved jump offset is too big
+     *                                  or it was already resolved
+     */
+    public void bind(@Nullable Label label, int position) {
+        if (label == null) {
+            return;
+        }
+
+        if (instructions.size() < position) {
+            throw new IllegalArgumentException("Invalid position value: " + position);
+        }
+
+        if (!labels.remove(label)) {
+            throw new IllegalArgumentException("Cannot bind orphan label");
+        }
+
+        JumpInstruction jump = label.instruction;
+
+        if (jump.isResolved()) {
+            throw new IllegalStateException("Jump already resolved");
+        }
+
+        int offset = instructions
+            .stream()
+            .limit(instructions.indexOf(jump) + 1)
+            .skip(position)
+            .mapToInt(Instruction::getSize)
+            .sum();
+
+        if (offset > 0xffff) {
+            throw new IllegalStateException("Jump offset is too big (max 65535)");
+        }
+
+        currentStackSize = label.stack;
+
+        // Because we're limited to the index of already
+        // emitted instructions, position will always point
+        // past current position, so offset must be negated.
+
+        jump.resolve((short) -(offset & 0xffff));
+    }
+
+    /**
+     * Assembles (encodes) all instructions into one long {@link ByteBuffer}.
+     *
+     * @return byte buffer with encoded instructions
+     * @throws IllegalStateException if not all jumps were resolved
+     * @see Instruction#emit(Assembler, ByteBuffer)
+     * @see Operand#emit(Assembler, ByteBuffer)
+     */
+    public ByteBuffer assemble() {
+        if (!labels.isEmpty()) {
+            throw new IllegalStateException("Not all jumps were resolved");
+        }
+
+        ByteBuffer buffer = ByteBuffer
+            .allocate(instructions
+                .stream()
+                .mapToInt(Instruction::getSize)
+                .sum());
+
+        for (Instruction instruction : instructions) {
+            instruction.emit(this, buffer);
+        }
+
         return (ByteBuffer) ByteBuffer
             .allocate(buffer.position())
             .put(buffer.array(), 0, buffer.position())
             .position(0);
     }
 
-    public void dump(PrintWriter stream) {
-        final ByteBuffer buffer = build();
-        final Map<Integer, Integer> labels = new HashMap<>();
+    /**
+     * Prints human-friendly assembly dump with
+     * instructions' mnemonics, operands and jump
+     * labels to the standard output.
+     */
+    public void print(PrintWriter writer) {
+        Map<Integer, Integer> labels = new HashMap<>();
 
-        final Supplier<String> formatConstant = () -> {
-            Object constant = constants.get(buffer.getInt());
+        boolean isLabelsPresent = instructions.stream()
+            .anyMatch(x -> x.getOperation().isJump());
 
-            if (constant == null) {
-                return null;
+        int instructionMaxName = instructions.stream()
+            .mapToInt(x -> x.getOperation().toString().length())
+            .max()
+            .orElse(0);
+
+        int instructionMaxSize = instructions
+            .stream()
+            .mapToInt(Instruction::getSize)
+            .max()
+            .orElse(0) * 3 - 1;
+
+        int instructionOffset = 0;
+
+        for (Instruction instruction : instructions) {
+            ByteBuffer buffer = ByteBuffer.allocate(instruction.getSize());
+            instruction.emit(this, buffer);
+
+            StringBuilder builder = new StringBuilder();
+
+            if (isLabelsPresent) {
+                if (labels.containsKey(instructionOffset)) {
+                    builder.append(String.format("\033[" + 37 + "m#L%02d\033[0m ", labels.get(instructionOffset)));
+                } else {
+                    builder.append("     ");
+                }
             }
-            if (constant instanceof String) {
-                return String.format("'%s'", ((String) constant).chars()
-                    .mapToObj(x -> x <= 27 ? String.format("\\x%02x", x) : String.valueOf((char) x))
-                    .collect(Collectors.joining()));
-            } else if (constant == Void.TYPE) {
-                return "none";
-            } else {
-                return constant.toString();
-            }
-        };
 
-        final Supplier<String> formatLabel = () -> {
-            int offset = buffer.position() + buffer.getInt();
-            if (!labels.containsKey(offset)) {
-                labels.put(offset, labels.size());
-            }
-            return String.format("%04x    (#L%d)", offset, labels.get(offset));
-        };
+            builder.append(String.format(
+                "%08x \033[37m%-" + instructionMaxSize + "s\033[0m %-" + instructionMaxName + "s %s",
+                instructionOffset,
+                IntStream.range(0, buffer.capacity())
+                    .mapToObj(x -> String.format("%02x", buffer.get(x)))
+                    .collect(Collectors.joining(" ")),
+                instruction.getOperation(),
+                Arrays.stream(instruction.getOperands())
+                    .map(Operand::toDisplayString)
+                    .collect(Collectors.joining(" "))
+            ));
 
-        final Supplier<String> line = () -> {
-            int offset = buffer.position() - 1;
-            Integer label = labels.get(offset);
-            if (label != null) {
-                return String.format("#L%-2d %04x", label, offset);
-            } else {
-                return String.format("     %04x", offset);
-            }
-        };
+            instructionOffset += instruction.getSize();
 
-        while (buffer.remaining() >= 0) {
-            if (!buffer.hasRemaining())
-                break;
-
-            switch (buffer.get()) {
-                // @formatter:off
-                case PUSH_CONST:    stream.printf("%s: PUSH_CONST    %s%n", line.get(), formatConstant.get()); break;
-                case GET_GLOBAL:    stream.printf("%s: GET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
-                case SET_GLOBAL:    stream.printf("%s: SET_GLOBAL    %s%n", line.get(), formatConstant.get()); break;
-                case GET_LOCAL:     stream.printf("%s: GET_LOCAL     %d%n", line.get(), buffer.get()); break;
-                case SET_LOCAL:     stream.printf("%s: SET_LOCAL     %d%n", line.get(), buffer.get()); break;
-                case GET_ATTRIBUTE: stream.printf("%s: GET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
-                case SET_ATTRIBUTE: stream.printf("%s: SET_ATTRIBUTE %s%n", line.get(), formatConstant.get()); break;
-                case GET_INDEX:     stream.printf("%s: GET_INDEX%n", line.get()); break;
-                case SET_INDEX:     stream.printf("%s: SET_INDEX%n", line.get()); break;
-                case ADD:           stream.printf("%s: ADD%n", line.get()); break;
-                case SUB:           stream.printf("%s: SUB%n", line.get()); break;
-                case MUL:           stream.printf("%s: MUL%n", line.get()); break;
-                case DIV:           stream.printf("%s: DIV%n", line.get()); break;
-                case NOT:           stream.printf("%s: NOT%n", line.get()); break;
-                case AND:           stream.printf("%s: AND%n", line.get()); break;
-                case OR:            stream.printf("%s: OR%n", line.get()); break;
-                case XOR:           stream.printf("%s: XOR%n", line.get()); break;
-                case SHL:           stream.printf("%s: SHL%n", line.get()); break;
-                case SHR:           stream.printf("%s: SHR%n", line.get()); break;
-                case JUMP:          stream.printf("%s: JUMP          %s%n", line.get(), formatLabel.get()); break;
-                case JUMP_IF_TRUE:  stream.printf("%s: JUMP_IF_TRUE  %s%n", line.get(), formatLabel.get()); break;
-                case JUMP_IF_FALSE: stream.printf("%s: JUMP_IF_FALSE %s%n", line.get(), formatLabel.get()); break;
-                case CMP_EQ:        stream.printf("%s: CMP_EQ%n", line.get()); break;
-                case CMP_NE:        stream.printf("%s: CMP_NE%n", line.get()); break;
-                case CMP_LT:        stream.printf("%s: CMP_LT%n", line.get()); break;
-                case CMP_LE:        stream.printf("%s: CMP_LE%n", line.get()); break;
-                case CMP_GT:        stream.printf("%s: CMP_GT%n", line.get()); break;
-                case CMP_GE:        stream.printf("%s: CMP_GE%n", line.get()); break;
-                case ASSERT:        stream.printf("%s: ASSERT        %s %s%n", line.get(), formatConstant.get(), formatConstant.get()); break;
-                case IMPORT:        stream.printf("%s: IMPORT        %s %d%n", line.get(), formatConstant.get(), buffer.get()); break;
-                case NEW:           stream.printf("%s: NEW%n", line.get()); break;
-                case CALL:          stream.printf("%s: CALL          %d%n", line.get(), buffer.get()); break;
-                case RET:           stream.printf("%s: RET%n", line.get()); break;
-                case POP:           stream.printf("%s: POP%n", line.get()); break;
-                case DUP:           stream.printf("%s: DUP%n", line.get()); break;
-                case DUP_AT:        stream.printf("%s: DUP_AT        %d%n", line.get(), buffer.get()); break;
-                case BIND:          stream.printf("%s: BIND          %d%n", line.get(), buffer.get()); break;
-                default: throw new RuntimeException(String.format("Unknown opcode: %x", buffer.get(buffer.position() - 1)));
-                    // @formatter:on
+            if (instruction.getOperation().isJump()) {
+                final int value = instructionOffset + instruction.getOperands()[0].getImm16();
+                labels.putIfAbsent(value, labels.size() + 1);
+                builder.append(String.format(" \033[37m(#L%02d)\033[0m", labels.get(value)));
             }
+
+            writer.println(builder.toString());
         }
     }
 
-    public Object[] getConstants() {
-        return constants.toArray(new Object[0]);
+    /**
+     * Associates current instruction with specified
+     * {@code line} and {@code column}
+     * position inside source file that can be used
+     * for analysis purposes.
+     *
+     * @param span span inside source file
+     */
+    public void addLocation(@NotNull Region.Span span) {
+        locations.put(instructions.size(), span);
     }
 
-    public int addConstant(Object value) {
-        if (!constants.contains(value)) {
-            constants.add(value);
+    /**
+     * Obtains zero-based index of supplied constant.
+     * Stores constant if no such constant was saved before.
+     *
+     * @param constant constant to get index of
+     * @return index of supplied constant
+     */
+    public int getConstantIndex(@NotNull Object constant) {
+        if (!constants.contains(constant)) {
+            constants.add(constant);
         }
-        return constants.indexOf(value);
+        return constants.indexOf(constant);
     }
 
-    public Map<Integer, Region.Span> getTraceLines() {
-        return traceLines;
+    /**
+     * Returns unmodifiable list of emitted
+     * instructions of this assembler.
+     *
+     * @return list of instructions
+     */
+    public List<Instruction> getInstructions() {
+        return Collections.unmodifiableList(instructions);
     }
 
-    public void addTraceLine(Region.Span span) {
-        traceLines.put(buffer.position(), span);
+    /**
+     * Returns unmodifiable list of loaded
+     * constant values of this assembler.
+     *
+     * @return list of constants
+     */
+    public List<Object> getConstants() {
+        return Collections.unmodifiableList(constants);
     }
 
-    public Map<Region.Span, Integer> getDebugLines() {
-        return debugLines;
+    /**
+     * Returns mappings of instruction indices
+     * to its location inside source file.
+     *
+     * @return instruction source file mappings
+     */
+    public Map<Integer, Region.Span> getLocations() {
+        return locations;
     }
 
-    public void addDebugLine(Region.Span span, String note) {
-        debugLines.put(span, buffer.position());
+    /**
+     * Returns the current stack size. This value
+     * is updated every time a new instruction is
+     * emitted. It cannot be negative.
+     *
+     * @return current size of internal stack pointer
+     */
+    public int getCurrentStackSize() {
+        return currentStackSize;
     }
 
+    /**
+     * Returns the max peak of stack size. This value
+     * is updated every time when {@code currentStackSize}
+     * is greater than current peak. This could be useful
+     * if the execution frame must know exact amount of
+     * stack elements it requires.
+     *
+     * @return max peak size of internal stack pointer
+     */
+    public int getMaxStackSize() {
+        return maxStackSize;
+    }
+
+    /**
+     * Returns current position inside internal instruction buffer.
+     *
+     * @return current position inside instruction buffer
+     */
     public int getPosition() {
-        return buffer.position();
+        return instructions.size();
     }
 
-    public int getRemaining() {
-        return buffer.remaining();
+    /**
+     * Returns byte offset for instruction at desired position.
+     *
+     * @param position position of desired instruction
+     * @return byte offset for instruction
+     * @throws IllegalArgumentException IF position is invalid
+     */
+    public int getOffset(int position) {
+        if (instructions.size() < position) {
+            throw new IllegalArgumentException("Invalid position value: " + position);
+        }
+
+        return instructions
+            .stream()
+            .limit(position + 1)
+            .mapToInt(Instruction::getSize)
+            .sum();
     }
 
+    /**
+     * This class is used to store reference to the
+     * jump instruction with some additional information
+     * that is useful for stack analysis. It cannot be
+     * constructed directly, use {@link Assembler#jump(Operation)}.
+     */
     public static class Label {
-        private final int position;
+        private final JumpInstruction instruction;
+        private final int stack;
 
-        private Label(int position) {
-            this.position = position;
+        private Label(@NotNull JumpInstruction instruction, int stack) {
+            this.instruction = instruction;
+            this.stack = stack;
         }
     }
 
-    public static class Guard {
-        private final int start;
-        private final int end;
-        private final int offset;
-        private final int slot;
+    private static class JumpInstruction extends Instruction {
+        private boolean resolved;
 
-        public Guard(int start, int end, int offset, int slot) {
-            this.start = start;
-            this.end = end;
-            this.offset = offset;
-            this.slot = slot;
+        public JumpInstruction(@NotNull Operation operation) {
+            super(operation, new Operand[]{Operand.imm16(0xffff)});
         }
 
-        public int getStart() {
-            return start;
+        @Override
+        public void emit(@NotNull Assembler assembler, @NotNull ByteBuffer buffer) {
+            if (!resolved) {
+                throw new IllegalStateException("Jump offset is not resolved");
+            }
+            super.emit(assembler, buffer);
         }
 
-        public int getEnd() {
-            return end;
+        public void resolve(short offset) {
+            getOperands()[0] = Operand.imm16(offset);
+            resolved = true;
         }
 
-        public int getOffset() {
-            return offset;
+        public boolean isResolved() {
+            return resolved;
         }
 
-        public int getSlot() {
-            return slot;
-        }
-
-        public boolean hasSlot() {
-            return slot >= 0;
+        @Override
+        public boolean equals(Object o) {
+            return this == o;
         }
     }
 }

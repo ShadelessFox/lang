@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -21,26 +21,24 @@ public class LoopStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Loop");
-
         Assembler.Label end = null;
-        int offset = assembler.getPosition();
+        int start = assembler.getPosition();
 
         if (condition != null) {
             condition.compile(context, assembler);
-            end = assembler.jump(Opcode.JUMP_IF_FALSE);
-            assembler.addTraceLine(getRegion().getBegin());
+            end = assembler.jump(Operation.JUMP_IF_FALSE);
+            assembler.addLocation(getRegion().getBegin());
         }
 
         LoopContext loopContext = new LoopContext(context);
         body.compile(loopContext, assembler);
 
-        assembler.bind(assembler.jump(Opcode.JUMP), offset);
+        assembler.bind(assembler.jump(Operation.JUMP), start);
 
         for (LoopContext.Canceller canceller : loopContext.getCancellers()) {
             switch (canceller.getType()) {
                 case Continue:
-                    assembler.bind(canceller.getLabel(), offset);
+                    assembler.bind(canceller.getLabel(), start);
                     break;
                 case Break:
                     assembler.bind(canceller.getLabel());

@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
@@ -23,29 +24,26 @@ public class NewExpression extends Expression {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         callee.compile(context, assembler);
-        assembler.imm8(Opcode.NEW);
-
-        assembler.imm8(Opcode.DUP);
+        assembler.emit(Operation.NEW);
+        assembler.emit(Operation.DUP);
 
         for (Expression argument : arguments) {
             argument.compile(context, assembler);
         }
 
         if (arguments.isEmpty()) {
-            assembler.imm8(Opcode.DUP);
+            assembler.emit(Operation.DUP);
         } else {
-            assembler.imm8(Opcode.DUP_AT);
-            assembler.imm8(-arguments.size() - 1);
+            assembler.emit(Operation.DUP_AT, Operand.imm8(-arguments.size() - 1));
         }
 
-        assembler.imm8(Opcode.GET_ATTRIBUTE);
-        assembler.imm32(assembler.addConstant("<init>"));
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.emit(Operation.GET_ATTRIBUTE, Operand.constant("<init>"));
+        assembler.addLocation(getRegion().getBegin());
 
-        assembler.imm8(Opcode.CALL);
-        assembler.imm8(arguments.size() + 1);
-        assembler.addTraceLine(getRegion().getBegin());
-        assembler.imm8(Opcode.POP);
+        assembler.emit(Operation.CALL, Operand.imm8(arguments.size() + 1));
+        assembler.addLocation(getRegion().getBegin());
+
+        assembler.emit(Operation.POP);
     }
 
     @Override

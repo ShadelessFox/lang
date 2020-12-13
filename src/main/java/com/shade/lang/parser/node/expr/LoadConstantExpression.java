@@ -1,10 +1,12 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
+import com.shade.lang.vm.runtime.value.NoneValue;
 
 import java.util.Objects;
 
@@ -18,9 +20,8 @@ public class LoadConstantExpression<T> extends Expression {
 
     @Override
     public void compile(Context context, Assembler assembler) {
-        if (value instanceof String || value instanceof Number || value instanceof Boolean || value == Void.TYPE) {
-            assembler.imm8(Opcode.PUSH_CONST);
-            assembler.imm32(assembler.addConstant(value));
+        if (value instanceof String || value instanceof Number || value instanceof Boolean || value instanceof NoneValue) {
+            assembler.emit(Operation.PUSH, Operand.constant(value));
             return;
         }
 

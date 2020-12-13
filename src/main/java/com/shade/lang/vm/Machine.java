@@ -1,6 +1,6 @@
 package com.shade.lang.vm;
 
-import com.shade.lang.compiler.Assembler;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.optimizer.Optimizer;
 import com.shade.lang.parser.Parser;
 import com.shade.lang.parser.ScriptException;
@@ -14,6 +14,7 @@ import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
 import com.shade.lang.vm.runtime.function.Function;
+import com.shade.lang.vm.runtime.function.Guard;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 import com.shade.lang.vm.runtime.module.Module;
@@ -31,11 +32,10 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.shade.lang.compiler.Opcode.*;
+import static com.shade.lang.compiler.OperationCode.*;
 
 public class Machine {
     public static final int MAX_STACK_DEPTH = 8192;
-    public static final int MAX_CODE_SIZE = 16384;
 
     public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
     public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
@@ -197,19 +197,18 @@ public class Machine {
             final byte opcode = frame.nextImm8();
 
             if (ENABLE_LOGGING) {
-                StringBuilder buffer = new StringBuilder();
-                buffer.append("Dispatching (PC: ").append(frame.pc - 1).append(")\n");
-                buffer.append("Frame:  ").append(frame.getFunction().getModule().getName()).append('/').append(frame.getFunction().getName()).append('\n');
-                buffer.append("Opcode: ").append(opcode).append(" (").append(Operation.values()[opcode - 1]).append(")\n");
-                buffer.append("Stack:  ").append(operandStack);
-                LOG.info(buffer.toString());
+                LOG.info("Dispatching (PC: " + (frame.pc - 1) + ")\n" +
+                    "Frame:  " + frame.getFunction().getModule().getName() + '/' + frame.getFunction().getName() + '\n' +
+                    "Opcode: " + opcode + " (" + Operation.values()[opcode - 1] + ")\n" +
+                    "Stack:  " + operandStack);
             }
 
             switch (opcode) {
+                case OP_PUSH: {
                     operandStack.push(Value.from(frame.nextConstant()));
                     break;
                 }
-                case GET_GLOBAL: {
+                case OP_GET_GLOBAL: {
                     Module module = frame.getFunction().getModule();
                     String name = (String) frame.nextConstant();
                     ScriptObject value = module.getAttribute(name);
@@ -220,20 +219,20 @@ public class Machine {
                     operandStack.push(value);
                     break;
                 }
-                case SET_GLOBAL: {
+                case OP_SET_GLOBAL: {
                     Module module = frame.getFunction().getModule();
                     module.setAttribute((String) frame.nextConstant(), operandStack.pop());
                     break;
                 }
-                case GET_LOCAL: {
+                case OP_GET_LOCAL: {
                     operandStack.push(frame.locals[frame.nextImm8()]);
                     break;
                 }
-                case SET_LOCAL: {
+                case OP_SET_LOCAL: {
                     frame.locals[frame.nextImm8()] = operandStack.pop();
                     break;
                 }
-                case GET_ATTRIBUTE: {
+                case OP_GET_ATTRIBUTE: {
                     String name = (String) frame.nextConstant();
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
@@ -244,7 +243,7 @@ public class Machine {
                     operandStack.push(object);
                     break;
                 }
-                case SET_ATTRIBUTE: {
+                case OP_SET_ATTRIBUTE: {
                     ScriptObject value = operandStack.pop();
                     ScriptObject target = operandStack.pop();
                     String name = (String) frame.nextConstant();
@@ -255,7 +254,7 @@ public class Machine {
                     target.setAttribute(name, value);
                     break;
                 }
-                case GET_INDEX: {
+                case OP_GET_INDEX: {
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof Index)) {
@@ -268,7 +267,7 @@ public class Machine {
                     }
                     break;
                 }
-                case SET_INDEX: {
+                case OP_SET_INDEX: {
                     ScriptObject value = operandStack.pop();
                     ScriptObject index = operandStack.pop();
                     ScriptObject object = operandStack.pop();
@@ -283,7 +282,7 @@ public class Machine {
                     ((MutableIndex) object).setIndex(this, index, value);
                     break;
                 }
-                case ADD: {
+                case OP_ADD: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Value result = a.add(this, b);
@@ -292,7 +291,7 @@ public class Machine {
                     }
                     break;
                 }
-                case SUB: {
+                case OP_SUB: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Value result = a.sub(this, b);
@@ -301,7 +300,7 @@ public class Machine {
                     }
                     break;
                 }
-                case MUL: {
+                case OP_MUL: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Value result = a.mul(this, b);
@@ -310,7 +309,7 @@ public class Machine {
                     }
                     break;
                 }
-                case DIV: {
+                case OP_DIV: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Value result = a.div(this, b);
@@ -319,39 +318,40 @@ public class Machine {
                     }
                     break;
                 }
-                case JUMP: {
-                    frame.pc += frame.nextImm32();
+                case OP_JUMP: {
+                    short offset = frame.nextImm16();
+                    frame.pc += offset;
                     break;
                 }
-                case JUMP_IF_TRUE: {
+                case OP_JUMP_IF_TRUE: {
                     Value value = (Value) operandStack.pop();
-                    int offset = frame.nextImm32();
+                    short offset = frame.nextImm16();
                     if (value.getBoolean(this) == Boolean.TRUE) {
-                        frame.pc += offset - 4;
+                        frame.pc += offset;
                     }
                     break;
                 }
-                case JUMP_IF_FALSE: {
+                case OP_JUMP_IF_FALSE: {
                     Value value = (Value) operandStack.pop();
-                    int offset = frame.nextImm32();
+                    int offset = frame.nextImm16();
                     if (value.getBoolean(this) == Boolean.FALSE) {
-                        frame.pc += offset - 4;
+                        frame.pc += offset;
                     }
                     break;
                 }
-                case CMP_EQ: {
+                case OP_CMP_EQ: {
                     ScriptObject b = operandStack.pop();
                     ScriptObject a = operandStack.pop();
                     operandStack.push(Value.from(a.equals(b)));
                     break;
                 }
-                case CMP_NE: {
+                case OP_CMP_NE: {
                     ScriptObject b = operandStack.pop();
                     ScriptObject a = operandStack.pop();
                     operandStack.push(Value.from(!a.equals(b)));
                     break;
                 }
-                case CMP_LT: {
+                case OP_CMP_LT: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
@@ -360,7 +360,7 @@ public class Machine {
                     }
                     break;
                 }
-                case CMP_LE: {
+                case OP_CMP_LE: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
@@ -369,7 +369,7 @@ public class Machine {
                     }
                     break;
                 }
-                case CMP_GT: {
+                case OP_CMP_GT: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
@@ -378,7 +378,7 @@ public class Machine {
                     }
                     break;
                 }
-                case CMP_GE: {
+                case OP_CMP_GE: {
                     Value b = (Value) operandStack.pop();
                     Value a = (Value) operandStack.pop();
                     Integer result = a.compare(this, b);
@@ -387,7 +387,7 @@ public class Machine {
                     }
                     break;
                 }
-                case CALL: {
+                case OP_CALL: {
                     byte argc = frame.nextImm8();
                     Object object = operandStack.pop();
                     if (!(object instanceof Function)) {
@@ -398,37 +398,37 @@ public class Machine {
                     function.invoke(this, argc);
                     break;
                 }
-                case RET: {
+                case OP_RETURN: {
                     profilerEndFrame(callStack.pop());
                     if (callStack.empty()) {
                         return;
                     }
                     break;
                 }
-                case POP: {
+                case OP_POP: {
                     operandStack.pop();
                     break;
                 }
-                case DUP: {
+                case OP_DUP: {
                     operandStack.push(operandStack.peek());
                     break;
                 }
-                case DUP_AT: {
+                case OP_DUP_AT: {
                     operandStack.push(operandStack.get(operandStack.size() + frame.nextImm8()));
                     break;
                 }
-                case BIND: {
+                case OP_BIND: {
                     ScriptObject value = operandStack.pop();
                     RuntimeFunction function = (RuntimeFunction) operandStack.pop();
                     function.getBoundArguments()[frame.nextImm8()] = value;
                     break;
                 }
-                case NOT: {
+                case OP_NOT: {
                     Value value = (Value) operandStack.pop();
                     operandStack.push(Value.from(value.getBoolean(this) == Boolean.FALSE));
                     break;
                 }
-                case ASSERT: {
+                case OP_ASSERT: {
                     Value value = (Value) operandStack.pop();
                     String source = (String) frame.nextConstant();
                     String message = (String) frame.nextConstant();
@@ -441,7 +441,7 @@ public class Machine {
                     }
                     break;
                 }
-                case IMPORT: {
+                case OP_IMPORT: {
                     String name = (String) frame.nextConstant();
                     byte slot = frame.nextImm8();
                     Module module = load(name);
@@ -456,7 +456,7 @@ public class Machine {
                     }
                     break;
                 }
-                case NEW: {
+                case OP_NEW: {
                     ScriptObject object = operandStack.pop();
                     if (!(object instanceof Class)) {
                         panic("Cannot instantiate a non-class value", true);
@@ -489,7 +489,7 @@ public class Machine {
 
                 LOG.info("Checking for suitable guards in '" + function.getName() + "'...");
 
-                for (Assembler.Guard guard : function.getGuards()) {
+                for (Guard guard : function.getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
                         LOG.info("Got suitable guard, recovering");
 
@@ -616,11 +616,15 @@ public class Machine {
         }
 
         private Object nextConstant() {
-            return constants[nextImm32()];
+            return constants[nextImm16()];
         }
 
         private int nextImm32() {
             return (chunk[pc++] & 0xff) << 24 | (chunk[pc++] & 0xff) << 16 | (chunk[pc++] & 0xff) << 8 | (chunk[pc++] & 0xff);
+        }
+
+        private short nextImm16() {
+            return (short) ((chunk[pc++] & 0xff) << 8 | (chunk[pc++] & 0xff));
         }
 
         private byte nextImm8() {

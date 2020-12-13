@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -61,20 +62,18 @@ public class SuperStatement extends Statement {
             getRegion()
         );
 
-        assembler.imm8(Opcode.GET_LOCAL);
-        assembler.imm8(0);
+        assembler.emit(Operation.GET_LOCAL, Operand.imm8(0));
 
         for (Expression argument : arguments) {
             argument.compile(context, assembler);
         }
 
         constructor.compile(context, assembler);
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.addLocation(getRegion().getBegin());
 
-        assembler.imm8(Opcode.CALL);
-        assembler.imm8(arguments.size() + 1);
-        assembler.addTraceLine(getRegion().getBegin());
-        assembler.imm8(Opcode.POP);
+        assembler.emit(Operation.CALL, Operand.imm8(arguments.size() + 1));
+        assembler.addLocation(getRegion().getBegin());
+        assembler.emit(Operation.POP);
     }
 
     @Override

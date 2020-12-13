@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
@@ -23,8 +23,8 @@ public class LoadIndexExpression extends Expression {
     public void compile(Context context, Assembler assembler) throws ScriptException {
         owner.compile(context, assembler);
         index.compile(context, assembler);
-        assembler.imm8(Opcode.GET_INDEX);
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.emit(Operation.GET_INDEX);
+        assembler.addLocation(getRegion().getBegin());
     }
 
     @Override

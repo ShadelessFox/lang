@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.token.Region;
@@ -19,14 +20,12 @@ public class LoadSymbolExpression extends Expression {
     @Override
     public void compile(Context context, Assembler assembler) {
         if (context.hasSlot(name)) {
-            assembler.imm8(Opcode.GET_LOCAL);
-            assembler.imm8(context.addSlot(name));
+            assembler.emit(Operation.GET_LOCAL, Operand.imm8(context.addSlot(name)));
         } else {
-            assembler.imm8(Opcode.GET_GLOBAL);
-            assembler.imm32(assembler.addConstant(name));
+            assembler.emit(Operation.GET_GLOBAL, Operand.constant(name));
         }
 
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.addLocation(getRegion().getBegin());
     }
 
     @Override

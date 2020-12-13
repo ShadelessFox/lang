@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -22,12 +23,10 @@ public class AssignAttributeStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Assign attribute");
         target.compile(context, assembler);
         value.compile(context, assembler);
-        assembler.imm8(Opcode.SET_ATTRIBUTE);
-        assembler.imm32(assembler.addConstant(name));
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.emit(Operation.SET_ATTRIBUTE, Operand.constant(name));
+        assembler.addLocation(getRegion().getBegin());
     }
 
     public String getName() {

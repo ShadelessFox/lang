@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -25,9 +25,8 @@ public class ReturnStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Return");
         value.compile(context, assembler);
-        assembler.imm8(Opcode.RET);
+        assembler.emit(Operation.RETURN);
     }
 
     @Override

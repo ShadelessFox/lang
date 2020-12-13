@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
@@ -22,9 +23,8 @@ public class LoadAttributeExpression extends Expression {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         owner.compile(context, assembler);
-        assembler.imm8(Opcode.GET_ATTRIBUTE);
-        assembler.imm32(assembler.addConstant(name));
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.emit(Operation.GET_ATTRIBUTE, Operand.constant(name));
+        assembler.addLocation(getRegion().getBegin());
     }
 
     @Override

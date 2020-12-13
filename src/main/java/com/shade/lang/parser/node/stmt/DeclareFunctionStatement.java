@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Statement;
 import com.shade.lang.parser.node.context.ClassContext;
@@ -10,7 +11,9 @@ import com.shade.lang.parser.node.context.FunctionContext;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.Function;
+import com.shade.lang.vm.runtime.function.Guard;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
+import com.shade.lang.vm.runtime.value.NoneValue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -80,33 +83,29 @@ public class DeclareFunctionStatement extends Statement {
             functionContext.addSlot(argument);
         }
 
-        assembler = new Assembler(Machine.MAX_CODE_SIZE);
-        assembler.addTraceLine(getRegion().getBegin());
-        assembler.addDebugLine(body.getRegion().getBegin(), "Function entry");
+        assembler = new Assembler();
+        assembler.addLocation(getRegion().getBegin());
 
         body.compile(functionContext, assembler);
 
-        assembler.addDebugLine(getRegion().getEnd(), "Function end");
-
         if (!body.isControlFlowReturned()) {
-            assembler.imm8(Opcode.PUSH_CONST);
-            assembler.imm32(assembler.addConstant(Void.TYPE));
-            assembler.imm8(Opcode.RET);
+            assembler.emit(Operation.PUSH, Operand.constant(NoneValue.INSTANCE));
+            assembler.emit(Operation.RETURN);
         }
 
         if (Machine.ENABLE_LOGGING) {
             StringWriter writer = new StringWriter();
 
             writer.write("Assembly dump for function '" + name + "':\n");
-            assembler.dump(new PrintWriter(writer));
+            assembler.print(new PrintWriter(writer));
             LOG.info(writer.toString());
         }
 
-        if (Machine.ENABLE_LOGGING && functionContext.getGuards().length > 0) {
+        if (Machine.ENABLE_LOGGING && !functionContext.getGuards().isEmpty()) {
             StringWriter writer = new StringWriter();
 
             writer.write("Guards of function '" + name + "':\n");
-            for (Assembler.Guard guard : functionContext.getGuards()) {
+            for (Guard guard : functionContext.getGuards()) {
                 writer.write(String.format("  %4d..%-4d -> %4d", guard.getStart(), guard.getEnd(), guard.getOffset()));
                 if (guard.getSlot() >= 0) {
                     writer.write(" @ " + guard.getSlot());
@@ -120,10 +119,10 @@ public class DeclareFunctionStatement extends Statement {
             context.getModule(),
             name,
             variadic ? Function.FLAG_VARIADIC : 0,
-            assembler.build(),
-            assembler.getConstants(),
-            assembler.getTraceLines(),
-            functionContext.getGuards(),
+            assembler.assemble(),
+            assembler.getConstants().toArray(new Object[0]),
+            assembler.getLocations(),
+            functionContext.getGuards().toArray(new Guard[0]),
             arguments.size(),
             boundArguments.size(),
             totalSlots.get()

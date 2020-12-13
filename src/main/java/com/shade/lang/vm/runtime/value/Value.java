@@ -13,8 +13,6 @@ public abstract class Value extends ScriptObject {
     public static Value from(Object value) {
         if (value == null) {
             return null;
-        } else if (value == Void.TYPE) {
-            return NoneValue.INSTANCE;
         } else if (value instanceof Integer) {
             return new IntegerValue((int) value);
         } else if (value instanceof Long) {
@@ -27,6 +25,8 @@ public abstract class Value extends ScriptObject {
             return new BooleanValue((Boolean) value);
         } else if (value instanceof ScriptObject[]) {
             return new ArrayValue((ScriptObject[]) value);
+        } else if (value instanceof Value) {
+            return (Value) value;
         }
         throw new IllegalArgumentException("Unsupported value: " + value.getClass());
     }

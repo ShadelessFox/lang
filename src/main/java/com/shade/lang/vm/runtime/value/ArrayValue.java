@@ -67,11 +67,15 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
     @Override
     public String toString() {
+        int max = values.length - 1;
+        if (max == -1) {
+            return "[]";
+        }
         StringBuilder builder = new StringBuilder();
         builder.append('[');
         for (int index = 0; ; index++) {
             builder.append(values[index].toDisplayString());
-            if (index == values.length - 1)
+            if (index == max)
                 return builder.append(']').toString();
             builder.append(", ");
         }

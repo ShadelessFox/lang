@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.expr;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.context.Context;
@@ -29,10 +30,8 @@ public class CallExpression extends Expression {
 
         callee.compile(context, assembler);
 
-        assembler.imm8(Opcode.CALL);
-        assembler.imm8((byte) arguments.size());
-
-        assembler.addTraceLine(getRegion().getBegin());
+        assembler.emit(Operation.CALL, Operand.imm8(arguments.size()));
+        assembler.addLocation(getRegion().getBegin());
     }
 
     @Override

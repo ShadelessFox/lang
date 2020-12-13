@@ -1,7 +1,8 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operand;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -20,15 +21,12 @@ public class AssignSymbolStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Assign symbol");
         value.compile(context, assembler);
 
         if (context.hasSlot(name)) {
-            assembler.imm8(Opcode.SET_LOCAL);
-            assembler.imm8(context.addSlot(name));
+            assembler.emit(Operation.SET_LOCAL, Operand.imm8(context.addSlot(name)));
         } else {
-            assembler.imm8(Opcode.SET_GLOBAL);
-            assembler.imm32(assembler.addConstant(name));
+            assembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
         }
     }
 

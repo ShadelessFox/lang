@@ -1,7 +1,7 @@
 package com.shade.lang.parser.node.stmt;
 
 import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.Opcode;
+import com.shade.lang.compiler.Operation;
 import com.shade.lang.parser.ScriptException;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Statement;
@@ -33,8 +33,6 @@ public class BranchStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        assembler.addDebugLine(getRegion().getBegin(), "Branch");
-
         if (condition instanceof LogicalExpression) {
             LogicalExpression expression = (LogicalExpression) condition;
             expression.setPass(pass);
@@ -42,10 +40,10 @@ public class BranchStatement extends Statement {
             expression.compile(context, assembler);
         } else {
             condition.compile(context, assembler);
-            Assembler.Label alt = assembler.jump(Opcode.JUMP_IF_FALSE);
-            assembler.addTraceLine(getRegion().getBegin());
+            Assembler.Label alt = assembler.jump(Operation.JUMP_IF_FALSE);
+            assembler.addLocation(getRegion().getBegin());
             pass.compile(context, assembler);
-            Assembler.Label end = pass.isControlFlowReturned() ? null : assembler.jump(Opcode.JUMP);
+            Assembler.Label end = pass.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
             assembler.bind(alt);
             if (fail != null) {
                 fail.compile(context, assembler);

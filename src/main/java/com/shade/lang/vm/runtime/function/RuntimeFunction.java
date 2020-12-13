@@ -1,10 +1,9 @@
 package com.shade.lang.vm.runtime.function;
 
-import com.shade.lang.compiler.Assembler;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.module.Module;
 import com.shade.lang.vm.runtime.ScriptObject;
+import com.shade.lang.vm.runtime.module.Module;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -13,10 +12,10 @@ public class RuntimeFunction extends Function {
     private final ByteBuffer chunk;
     private final Object[] constants;
     private final Map<Integer, Region.Span> lines;
-    private final Assembler.Guard[] guards;
+    private final Guard[] guards;
     private final int localsCount;
 
-    public RuntimeFunction(Module module, String name, int flags, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Assembler.Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
+    public RuntimeFunction(Module module, String name, int flags, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
         super(module, name, argumentsCount, new ScriptObject[boundArgumentsCount], flags);
         this.chunk = chunk;
         this.constants = constants;
@@ -49,7 +48,7 @@ public class RuntimeFunction extends Function {
         return lines;
     }
 
-    public Assembler.Guard[] getGuards() {
+    public Guard[] getGuards() {
         return guards;
     }
 

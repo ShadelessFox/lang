@@ -1,13 +1,15 @@
 package com.shade.lang.parser.node.context;
 
-import com.shade.lang.compiler.Assembler;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.vm.runtime.function.Guard;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 public class FunctionContext extends Context {
-    private final List<Assembler.Guard> guards;
+    private final List<Guard> guards;
 
     public FunctionContext(Context parent) {
         super(parent);
@@ -15,18 +17,19 @@ public class FunctionContext extends Context {
         this.guards = new ArrayList<>();
     }
 
-    public Assembler.Guard[] getGuards() {
-        return guards.toArray(new Assembler.Guard[0]);
+    public List<Guard> getGuards() {
+        return Collections.unmodifiableList(guards);
     }
 
     public void addGuard(int start, int end, int offset, int slot) {
-        guards.add(new Assembler.Guard(start, end, offset, slot));
+        guards.add(new Guard(start, end, offset, slot));
     }
 
     public void addGuard(int start, int end, int offset) {
-        guards.add(new Assembler.Guard(start, end, offset, -1));
+        guards.add(new Guard(start, end, offset, -1));
     }
 
+    @NotNull
     @Override
     public Iterator<Scope> iterator() {
         return new Iterator<Scope>() {
