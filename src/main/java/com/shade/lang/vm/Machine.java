@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.shade.lang.compiler.Opcode.*;
 
@@ -37,6 +39,8 @@ public class Machine {
 
     public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
     public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
+
+    private static final Logger LOG = Logger.getLogger(Machine.class.getName());
 
     private final List<Path> searchRoots = new ArrayList<>();
     private final Map<String, Module> modules = new HashMap<>();
@@ -50,6 +54,10 @@ public class Machine {
 
     private boolean halted;
     private int status;
+
+    static {
+        LOG.setLevel(Machine.ENABLE_LOGGING ? null : Level.OFF);
+    }
 
     public Module load(Path path) {
         String source = path.toAbsolutePath().toString();
@@ -65,6 +73,8 @@ public class Machine {
 
         Module module = new Module(name, source);
         Context context = new Context(module);
+
+        LOG.info("Loading module from '" + path + "'");
 
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             Parser parser = new Parser(new Tokenizer(reader));
@@ -460,14 +470,20 @@ public class Machine {
         StringBuilder builder = new StringBuilder();
         builder.append("Panicking: ").append(message).append('\n');
 
+        LOG.info("Panicking with message '" + message + "' in " + callStack.peek());
+
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
 
             if (recoverable && currentFrame.getFunction() instanceof RuntimeFunction) {
                 RuntimeFunction function = (RuntimeFunction) currentFrame.getFunction();
 
+                LOG.info("Checking for suitable guards in '" + function.getName() + "'...");
+
                 for (Assembler.Guard guard : function.getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
+                        LOG.info("Got suitable guard, recovering");
+
                         if (guard.hasSlot()) {
                             currentFrame.locals[guard.getSlot()] = Value.from(message);
                         }
@@ -505,6 +521,7 @@ public class Machine {
     public void halt(int status) {
         this.halted = true;
         this.status = status;
+        LOG.info("Halting with status " + status);
     }
 
     public Map<Frame, List<Long>> getProfilerSamples() {
@@ -525,7 +542,7 @@ public class Machine {
         long time = System.nanoTime();
 
         if (!profilerCache.containsKey(frame)) {
-            System.out.println("Invalid record for frame " + frame);
+            LOG.warning("Invalid record for frame " + frame);
             return;
         }
 

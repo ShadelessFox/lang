@@ -32,7 +32,7 @@ public class Launcher {
     }
 
     private static void printProfileResults(Machine machine) {
-        System.out.println("--- Profile Results ---");
+        machine.getOut().println("--- Profile Results ---");
 
         for (Map.Entry<Machine.Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
             Function function = entry.getKey().getFunction();
@@ -51,7 +51,7 @@ public class Launcher {
                     avg += sample;
                 }
 
-                System.out.printf("- %s/%s%n  [ samples: %d, min: %.2fms, max: %.2fms, avg: %.2fms ]%n",
+                machine.getOut().printf("- %s/%s%n  [ samples: %d, min: %.2fms, max: %.2fms, avg: %.2fms ]%n",
                     function.getModule().getName(),
                     function.getName(),
                     entry.getValue().size(),

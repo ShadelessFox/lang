@@ -5,12 +5,21 @@ import com.shade.lang.optimizer.transformers.DeadCodeEliminationTransformer;
 import com.shade.lang.parser.node.Expression;
 import com.shade.lang.parser.node.Node;
 import com.shade.lang.parser.node.Statement;
+import com.shade.lang.vm.Machine;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class Optimizer {
+    private static final Logger LOG = Logger.getLogger(Optimizer.class.getName());
+
+    static {
+        LOG.setLevel(Machine.ENABLE_LOGGING ? null : Level.OFF);
+    }
+
     private static final Transformer[] transformers = new Transformer[]{
         new ConstantFoldingTransformer(),
         new DeadCodeEliminationTransformer()
@@ -24,6 +33,8 @@ public final class Optimizer {
             return node;
         }
 
+        LOG.info("Running optimization transformers of level " + level + " or lower with " + passes + " pass(-es)");
+
         List<Transformer> transformers = Stream.of(Optimizer.transformers)
             .filter(x -> x.getLevel() <= level)
             .collect(Collectors.toList());
@@ -33,7 +44,11 @@ public final class Optimizer {
         for (int pass = 0; pass < passes; pass++) {
             Node optimized = result;
 
+            LOG.info("Optimization pass #" + pass);
+
             for (Transformer transformer : transformers) {
+                LOG.info("Optimizing using " + transformer + " transformer");
+
                 if (node instanceof Statement) {
                     optimized = transformer.transform((Statement) optimized);
                 } else {
@@ -42,6 +57,7 @@ public final class Optimizer {
             }
 
             if (optimized == result) {
+                LOG.info("Nothing more to optimize");
                 break;
             }
 

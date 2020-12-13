@@ -12,13 +12,18 @@ import com.shade.lang.vm.Machine;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 public class DeclareFunctionStatement extends Statement {
+    private static final Logger LOG = Logger.getLogger(DeclareFunctionStatement.class.getName());
+
     private final String name;
     private final List<String> arguments;
     private final List<String> boundArguments;
@@ -87,6 +92,28 @@ public class DeclareFunctionStatement extends Statement {
             assembler.imm8(Opcode.PUSH_CONST);
             assembler.imm32(assembler.addConstant(Void.TYPE));
             assembler.imm8(Opcode.RET);
+        }
+
+        if (Machine.ENABLE_LOGGING) {
+            StringWriter writer = new StringWriter();
+
+            writer.write("Assembly dump for function '" + name + "':\n");
+            assembler.dump(new PrintWriter(writer));
+            LOG.info(writer.toString());
+        }
+
+        if (Machine.ENABLE_LOGGING && assembler.getGuards().length > 0) {
+            StringWriter writer = new StringWriter();
+
+            writer.write("Guards of function '" + name + "':\n");
+            for (Assembler.Guard guard : assembler.getGuards()) {
+                writer.write(String.format("  %4d..%-4d -> %4d", guard.getStart(), guard.getEnd(), guard.getOffset()));
+                if (guard.getSlot() >= 0) {
+                    writer.write(" @ " + guard.getSlot());
+                }
+                writer.write('\n');
+            }
+            LOG.info(writer.toString());
         }
 
         RuntimeFunction function = new RuntimeFunction(

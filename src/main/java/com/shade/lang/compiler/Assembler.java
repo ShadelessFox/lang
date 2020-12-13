@@ -2,7 +2,7 @@ package com.shade.lang.compiler;
 
 import com.shade.lang.parser.token.Region;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Supplier;
@@ -74,7 +74,7 @@ public class Assembler {
             .position(0);
     }
 
-    public void dump(PrintStream stream) {
+    public void dump(PrintWriter stream) {
         final ByteBuffer buffer = build();
         final Map<Integer, Integer> labels = new HashMap<>();
 
