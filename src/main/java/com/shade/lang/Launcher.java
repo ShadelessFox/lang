@@ -6,6 +6,7 @@ import com.shade.lang.vm.runtime.module.NativeModuleProvider;
 
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -36,28 +37,18 @@ public class Launcher {
 
         for (Map.Entry<Machine.Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
             Function function = entry.getKey().getFunction();
-            if (entry.getValue().size() > 0) {
-                long min = Long.MAX_VALUE;
-                long max = 0;
-                long avg = 0;
+            List<Long> samples = entry.getValue();
 
-                for (long sample : entry.getValue()) {
-                    if (sample < min) {
-                        min = sample;
-                    }
-                    if (sample > max) {
-                        max = sample;
-                    }
-                    avg += sample;
-                }
+            if (samples.size() > 0) {
+                LongSummaryStatistics summary = samples.stream().mapToLong(x -> x).summaryStatistics();
 
                 machine.getOut().printf("- %s/%s%n  [ samples: %d, min: %.2fms, max: %.2fms, avg: %.2fms ]%n",
                     function.getModule().getName(),
                     function.getName(),
-                    entry.getValue().size(),
-                    min / 1e6D,
-                    max / 1e6D,
-                    avg / entry.getValue().size() / 1e6D);
+                    samples.size(),
+                    summary.getMin() / 1e6D,
+                    summary.getMax() / 1e6D,
+                    summary.getAverage() / 1e6D);
             }
         }
     }
