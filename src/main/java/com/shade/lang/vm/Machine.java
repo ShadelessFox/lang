@@ -194,9 +194,18 @@ public class Machine {
             }
 
             final Frame frame = callStack.peek();
+            final byte opcode = frame.nextImm8();
 
-            switch (frame.nextImm8()) {
-                case PUSH_CONST: {
+            if (ENABLE_LOGGING) {
+                StringBuilder buffer = new StringBuilder();
+                buffer.append("Dispatching (PC: ").append(frame.pc - 1).append(")\n");
+                buffer.append("Frame:  ").append(frame.getFunction().getModule().getName()).append('/').append(frame.getFunction().getName()).append('\n');
+                buffer.append("Opcode: ").append(opcode).append(" (").append(Operation.values()[opcode - 1]).append(")\n");
+                buffer.append("Stack:  ").append(operandStack);
+                LOG.info(buffer.toString());
+            }
+
+            switch (opcode) {
                     operandStack.push(Value.from(frame.nextConstant()));
                     break;
                 }
