@@ -9,8 +9,11 @@ import com.shade.lang.parser.node.context.LoopContext;
 import com.shade.lang.parser.token.Region;
 
 public class BreakStatement extends Statement {
-    public BreakStatement(Region region) {
+    private final String name;
+
+    public BreakStatement(String name, Region region) {
         super(region);
+        this.name = name;
     }
 
     @Override
@@ -26,6 +29,10 @@ public class BreakStatement extends Statement {
             throw new ScriptException("Cannot use 'break' outside loop statement", getRegion());
         }
 
-        loopContext.addCanceller(assembler.jump(Operation.JUMP), LoopContext.CancelType.Break);
+        loopContext.addCanceller(this, assembler.jump(Operation.JUMP), LoopContext.CancelType.Break, name);
+    }
+
+    public String getName() {
+        return name;
     }
 }

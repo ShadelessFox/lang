@@ -255,7 +255,7 @@ public abstract class SimpleTransformer implements Transformer {
         BlockStatement body = (BlockStatement) statement.getBody().transform(this);
 
         if (condition != statement.getCondition() || body != statement.getBody()) {
-            return new LoopStatement(condition, body, statement.getRegion());
+            return new LoopStatement(condition, body, statement.getName(), statement.getRegion());
         }
 
         return statement;

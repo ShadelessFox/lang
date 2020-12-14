@@ -137,13 +137,16 @@ public class Parser {
 
     private LoopStatement parseLoopStatement() throws ScriptException {
         Region start = expect(Loop).getRegion();
-        Token mode = consume(While);
         Expression condition = null;
-        if (mode != null && !matches(BraceL)) {
+        if (consume(While) != null) {
             condition = parseExpression();
         }
+        String name = null;
+        if (consume(Colon) != null) {
+            name = expect(Symbol).getStringValue();
+        }
         BlockStatement body = parseBlockStatement();
-        return new LoopStatement(condition, body, start.until(body.getRegion()));
+        return new LoopStatement(condition, body, name, start.until(body.getRegion()));
     }
 
     private BlockStatement parseRangeStatement() throws ScriptException {
@@ -189,6 +192,7 @@ public class Parser {
                     ),
                     region
                 ),
+                null,
                 region
             )
         ), region);
@@ -196,14 +200,16 @@ public class Parser {
 
     private ContinueStatement parseContinueStatement() throws ScriptException {
         Region start = expect(Continue).getRegion();
+        Token name = consume(Symbol);
         Region end = expect(Semicolon).getRegion();
-        return new ContinueStatement(start.until(end));
+        return new ContinueStatement(name == null ? null : name.getStringValue(), start.until(end));
     }
 
     private BreakStatement parseBreakStatement() throws ScriptException {
         Region start = expect(Break).getRegion();
+        Token name = consume(Symbol);
         Region end = expect(Semicolon).getRegion();
-        return new BreakStatement(start.until(end));
+        return new BreakStatement(name == null ? null : name.getStringValue(), start.until(end));
     }
 
     private SuperStatement parseSuperStatement() throws ScriptException {

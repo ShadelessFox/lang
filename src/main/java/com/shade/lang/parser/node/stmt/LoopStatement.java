@@ -12,11 +12,13 @@ import com.shade.lang.parser.token.Region;
 public class LoopStatement extends Statement {
     private final Expression condition;
     private final BlockStatement body;
+    private final String name;
 
-    public LoopStatement(Expression condition, BlockStatement body, Region region) {
+    public LoopStatement(Expression condition, BlockStatement body, String name, Region region) {
         super(region);
         this.condition = condition;
         this.body = body;
+        this.name = name;
     }
 
     @Override
@@ -30,7 +32,7 @@ public class LoopStatement extends Statement {
             assembler.addLocation(getRegion().getBegin());
         }
 
-        LoopContext loopContext = new LoopContext(context);
+        LoopContext loopContext = new LoopContext(context, name);
         body.compile(loopContext, assembler);
 
         assembler.bind(assembler.jump(Operation.JUMP), start);
@@ -55,5 +57,9 @@ public class LoopStatement extends Statement {
 
     public BlockStatement getBody() {
         return body;
+    }
+
+    public String getName() {
+        return name;
     }
 }

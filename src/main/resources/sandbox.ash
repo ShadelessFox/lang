@@ -306,8 +306,6 @@ def test_loops() {
         assert false, 'unreachable';
     }
 
-    result = 0;
-
     assert factorial_iterative(0) == 1;
     assert factorial_iterative(1) == 1;
     assert factorial_iterative(2) == 2;
@@ -319,6 +317,23 @@ def test_loops() {
     assert factorial_iterative(8) == 40320;
     assert factorial_iterative(9) == 362880;
     assert factorial_iterative(10) == 3628800;
+
+    result = 0;
+
+    loop : outer {
+        result += 2;
+
+        loop {
+            result *= 2;
+
+            break outer;
+            assert false, 'unreachable';
+        }
+
+        assert false, 'unreachable';
+    }
+
+    assert result == 4;
 }
 
 def test_local_import() {

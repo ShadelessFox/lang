@@ -9,8 +9,11 @@ import com.shade.lang.parser.node.context.LoopContext;
 import com.shade.lang.parser.token.Region;
 
 public class ContinueStatement extends Statement {
-    public ContinueStatement(Region region) {
+    private final String name;
+
+    public ContinueStatement(String name, Region region) {
         super(region);
+        this.name = name;
     }
 
     @Override
@@ -26,6 +29,10 @@ public class ContinueStatement extends Statement {
             throw new ScriptException("Cannot use 'continue' outside loop statement", getRegion());
         }
 
-        loopContext.addCanceller(assembler.jump(Operation.JUMP), LoopContext.CancelType.Continue);
+        loopContext.addCanceller(this, assembler.jump(Operation.JUMP), LoopContext.CancelType.Continue, name);
+    }
+
+    public String getName() {
+        return name;
     }
 }
