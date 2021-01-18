@@ -387,6 +387,23 @@ public class Assembler {
     }
 
     /**
+     * Returns computed mappings of instruction
+     * offsets to its location inside source file.
+     * <p>
+     * Unlike {@link #getLocations()}, this method
+     * computes byte offset of an instruction instead
+     * of its index.
+     *
+     * @return instruction source file mappings.
+     */
+    public Map<Integer, Region.Span> getComputedLocations() {
+        return locations.entrySet().stream().collect(Collectors.toMap(
+            e -> getOffset(e.getKey()),
+            Map.Entry::getValue
+        ));
+    }
+
+    /**
      * Returns the current stack size. This value
      * is updated every time a new instruction is
      * emitted. It cannot be negative.

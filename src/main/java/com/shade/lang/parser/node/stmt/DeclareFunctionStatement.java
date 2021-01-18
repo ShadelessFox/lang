@@ -121,7 +121,7 @@ public class DeclareFunctionStatement extends Statement {
             variadic ? Function.FLAG_VARIADIC : 0,
             assembler.assemble(),
             assembler.getConstants().toArray(new Object[0]),
-            assembler.getLocations(),
+            assembler.getComputedLocations(),
             functionContext.getGuards().toArray(new Guard[0]),
             arguments.size(),
             boundArguments.size(),
