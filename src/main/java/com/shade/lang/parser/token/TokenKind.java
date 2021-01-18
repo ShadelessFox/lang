@@ -61,6 +61,7 @@ public enum TokenKind {
     Or("or", 1, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL | TokenFlag.KEYWORD),
     And("and", 2, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.LOGICAL | TokenFlag.KEYWORD),
 
+    Is("is", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.KEYWORD),
     Eq("==", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     NotEq("!=", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),
     Less("<", 3, TokenFlag.QUOTED | TokenFlag.BINARY | TokenFlag.RELATIONAL),

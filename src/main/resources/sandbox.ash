@@ -568,6 +568,29 @@ def test_parse_json() {
     assert result[0][2] == ['last_name', 'Groomebridge'];
 }
 
+def test_instance_of() {
+    let s = new Self();
+    assert s is Self;
+    assert not (s is Foo);
+    assert not (s is Bar);
+    assert not (s is Multi);
+    let f = new Foo(1);
+    assert f is Foo;
+    assert f is Self;
+    assert not (f is Bar);
+    assert not (f is Multi);
+    let b = new Bar(2);
+    assert b is Foo;
+    assert b is Bar;
+    assert b is Self;
+    assert not (b is Multi);
+    let m = new Multi(1, 2);
+    assert m is Multi;
+    assert m is Foo;
+    assert m is Bar;
+    assert m is Self;
+}
+
 def main() {
     import test;
 
@@ -592,6 +615,7 @@ def main() {
     test.pass('Iterator class', test_iterator);
     test.pass('Unwrap operator', test_unwrap_operator);
     test.pass('Parse json', test_parse_json);
+    test.pass('Instance of', test_instance_of);
     test.fail('No such attribute', def () { std.println(none.hello); });
     test.fail('No such global', def () { std.println(hello); });
     test.fail('Index accessing', def () { none[0]; });

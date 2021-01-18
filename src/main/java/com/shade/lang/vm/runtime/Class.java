@@ -1,5 +1,6 @@
 package com.shade.lang.vm.runtime;
 
+import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.vm.runtime.function.Function;
 import com.shade.lang.vm.runtime.function.NativeFunction;
 import com.shade.lang.vm.runtime.function.RuntimeFunction;
@@ -74,6 +75,24 @@ public class Class extends ScriptObject {
         }
 
         return instance;
+    }
+
+    public boolean isDerivedFrom(@NotNull Class cls) {
+        if (this == cls) {
+            return true;
+        }
+
+        for (Class base : bases) {
+            if (base.isDerivedFrom(cls)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isInstance(@NotNull Instance instance) {
+        return instance.getBase().isDerivedFrom(this);
     }
 
     private String getFunctionName(Function function) {

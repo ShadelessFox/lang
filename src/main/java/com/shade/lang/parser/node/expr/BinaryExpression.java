@@ -60,6 +60,9 @@ public class BinaryExpression extends Expression {
             case GreaterEq:
                 assembler.emit(Operation.CMP_GE);
                 break;
+            case Is:
+                assembler.emit(Operation.INSTANCE_OF);
+                break;
             default:
                 throw new AssertionError("Unsupported binary operator: " + operator);
         }

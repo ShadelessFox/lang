@@ -10,6 +10,7 @@ import com.shade.lang.parser.node.context.Context;
 import com.shade.lang.parser.node.stmt.ImportStatement;
 import com.shade.lang.parser.token.Region;
 import com.shade.lang.vm.runtime.Class;
+import com.shade.lang.vm.runtime.Instance;
 import com.shade.lang.vm.runtime.ScriptObject;
 import com.shade.lang.vm.runtime.extension.Index;
 import com.shade.lang.vm.runtime.extension.MutableIndex;
@@ -468,6 +469,20 @@ public class Machine {
                     }
                     Class clazz = (Class) object;
                     operandStack.push(clazz.instantiate());
+                    break;
+                }
+                case OP_INSTANCE_OF: {
+                    final ScriptObject clazz = operandStack.pop();
+                    final ScriptObject object = operandStack.pop();
+                    if (!(object instanceof Instance)) {
+                        panic("Left operand of an 'is' operator must be class instance", true);
+                        break;
+                    }
+                    if (!(clazz instanceof Class)) {
+                        panic("Right operand of an 'is' operator must be class", true);
+                        break;
+                    }
+                    operandStack.push(Value.from(((Class) clazz).isInstance((Instance) object)));
                     break;
                 }
                 default:
