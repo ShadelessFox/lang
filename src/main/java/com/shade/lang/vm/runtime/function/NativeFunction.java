@@ -27,7 +27,7 @@ public class NativeFunction extends Function {
             return;
         }
 
-        Machine.Frame frame = new Machine.Frame(this, null, null, null);
+        Machine.Frame frame = new Machine.Frame(this, null, null, null, machine.getOperandStack().size());
         machine.profilerBeginFrame(frame);
         machine.getCallStack().push(frame);
 

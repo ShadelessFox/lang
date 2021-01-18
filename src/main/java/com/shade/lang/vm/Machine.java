@@ -484,6 +484,10 @@ public class Machine {
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
 
+            while (currentFrame.getStackPointer() < getOperandStack().size()) {
+                getOperandStack().pop();
+            }
+
             if (recoverable && currentFrame.getFunction() instanceof RuntimeFunction) {
                 RuntimeFunction function = (RuntimeFunction) currentFrame.getFunction();
 
@@ -605,13 +609,15 @@ public class Machine {
         private final byte[] chunk;
         private final Object[] constants;
         private final ScriptObject[] locals;
+        private final int sp;
         private int pc;
 
-        public Frame(Function function, byte[] chunk, Object[] constants, ScriptObject[] locals) {
+        public Frame(Function function, byte[] chunk, Object[] constants, ScriptObject[] locals, int sp) {
             this.function = function;
             this.chunk = chunk;
             this.constants = constants;
             this.locals = locals;
+            this.sp = sp;
             this.pc = 0;
         }
 
@@ -645,6 +651,10 @@ public class Machine {
 
         public ScriptObject[] getLocals() {
             return locals;
+        }
+
+        public int getStackPointer() {
+            return sp;
         }
 
         public String getSourceLocation() {
@@ -686,7 +696,7 @@ public class Machine {
         private final ScriptException exception;
 
         public ParserFrame(String source, ScriptException exception) {
-            super(null, null, null, null);
+            super(null, null, null, null, 0);
             this.source = source;
             this.exception = exception;
         }
