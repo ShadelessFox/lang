@@ -399,7 +399,11 @@ public class Machine {
                     break;
                 }
                 case OP_RETURN: {
-                    profilerEndFrame(callStack.pop());
+                    final Frame oldFrame = callStack.pop();
+                    while (oldFrame.sp < operandStack.size() - 1) {
+                        operandStack.removeElementAt(operandStack.size() - 2);
+                    }
+                    profilerEndFrame(oldFrame);
                     if (callStack.empty()) {
                         return;
                     }
@@ -484,8 +488,8 @@ public class Machine {
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
 
-            while (currentFrame.getStackPointer() < getOperandStack().size()) {
-                getOperandStack().pop();
+            while (currentFrame.sp < operandStack.size()) {
+                operandStack.pop();
             }
 
             if (recoverable && currentFrame.getFunction() instanceof RuntimeFunction) {
@@ -651,10 +655,6 @@ public class Machine {
 
         public ScriptObject[] getLocals() {
             return locals;
-        }
-
-        public int getStackPointer() {
-            return sp;
         }
 
         public String getSourceLocation() {
