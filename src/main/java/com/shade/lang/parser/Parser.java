@@ -9,6 +9,7 @@ import com.shade.lang.parser.token.Region;
 import com.shade.lang.parser.token.Token;
 import com.shade.lang.parser.token.TokenFlag;
 import com.shade.lang.parser.token.TokenKind;
+import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.vm.runtime.value.NoneValue;
 
 import java.lang.String;
@@ -308,7 +309,7 @@ public class Parser {
         return new DeclareFunctionStatement(name, arguments, body, variadic, start.until(body.getRegion()));
     }
 
-    private boolean parseFunctionArgumentsList(Collection<String> output)throws ScriptException {
+    private boolean parseFunctionArgumentsList(Collection<String> output) throws ScriptException {
         expect(ParenL);
 
         if (!matches(ParenR)) {
@@ -471,17 +472,7 @@ public class Parser {
         }
 
         if (token.getKind() == New) {
-            Expression callee = null;
-
-            do {
-                Token name = expect(Symbol);
-                if (callee == null) {
-                    callee = new LoadSymbolExpression(name.getStringValue(), name.getRegion());
-                } else {
-                    callee = new LoadAttributeExpression(callee, name.getStringValue(), callee.getRegion().until(name.getRegion()));
-                }
-            } while (consume(Dot) != null);
-
+            Expression callee = parseQualifiedIdentifier();
             List<Expression> arguments = new ArrayList<>();
             Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
             return parsePrimaryExpression(new NewExpression(callee, arguments, token.getRegion().until(region)));
@@ -531,6 +522,22 @@ public class Parser {
         List<Expression> arguments = new ArrayList<>();
         Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
         return parsePrimaryExpression(new CallExpression(lhs, arguments, lhs.getRegion().until(region)));
+    }
+
+    @NotNull
+    private Expression parseQualifiedIdentifier() throws ScriptException {
+        Expression expression = null;
+
+        do {
+            Token symbol = expect(Symbol);
+            if (expression == null) {
+                expression = new LoadSymbolExpression(symbol.getStringValue(), symbol.getRegion());
+            } else {
+                expression = new LoadAttributeExpression(expression, symbol.getStringValue(), expression.getRegion().until(symbol.getRegion()));
+            }
+        } while (consume(Dot) != null);
+
+        return expression;
     }
 
     private <T> Region list(TokenKind opening, TokenKind closing, TokenKind separator, Collection<T> output, Supplier<T> supplier) throws ScriptException {
