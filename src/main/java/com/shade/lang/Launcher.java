@@ -1,8 +1,8 @@
 package com.shade.lang;
 
-import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.function.Function;
-import com.shade.lang.vm.runtime.module.NativeModuleProvider;
+import com.shade.lang.runtime.Machine;
+import com.shade.lang.runtime.objects.function.Function;
+import com.shade.lang.runtime.objects.module.NativeModuleProvider;
 
 import java.nio.file.Paths;
 import java.util.List;
