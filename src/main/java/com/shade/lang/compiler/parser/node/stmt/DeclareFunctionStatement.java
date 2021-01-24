@@ -56,6 +56,14 @@ public class DeclareFunctionStatement extends Statement {
     public void compile(Context context, Assembler assembler) throws ScriptException {
         final Assembler parentAssembler = assembler;
 
+        for (int index = 0; index < boundArguments.size(); index++) {
+            String argument = boundArguments.get(index);
+            if (!context.hasSlot(argument)) {
+                throw new ScriptException("Cannot capture non-existing variable '" + argument + "'", getRegion());
+            }
+            boundArgumentsMapping.put(index, context.addSlot(argument));
+        }
+
         assembler = new Assembler();
         assembler.addLocation(getRegion().getBegin());
 

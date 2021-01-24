@@ -1,6 +1,7 @@
 package com.shade.lang.runtime.objects.module.builtin;
 
 import com.shade.lang.runtime.Machine;
+import com.shade.lang.runtime.frames.Frame;
 import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.module.NativeModule;
 import com.shade.lang.runtime.objects.module.NativeModuleProvider;
@@ -58,8 +59,8 @@ public class BuiltinCore extends NativeModule implements NativeModuleProvider {
 
     @FunctionHandler
     public static Object debug(Machine machine, ScriptObject... args) {
-        Machine.Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
-        machine.getErr().print("[" + frame.getSourceLocation() + "] ");
+        Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
+        machine.getErr().print("[" + frame + "] ");
         machine.getErr().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
         return NoneValue.INSTANCE;
     }

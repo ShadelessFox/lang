@@ -8,6 +8,7 @@ import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.Tokenizer;
 import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.runtime.frames.*;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.Class;
 import com.shade.lang.runtime.objects.Instance;
@@ -19,8 +20,8 @@ import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.function.NativeFunction;
 import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.module.Module;
+import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.runtime.objects.value.Value;
-import com.shade.lang.util.Pair;
 import com.shade.lang.util.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -88,7 +89,7 @@ public class Machine {
 
             return load(module);
         } catch (ScriptException e) {
-            callStack.push(new ParserFrame(source, e));
+            callStack.push(new ParserFrame(module, source, e, operandStack.size()));
             panic(e.getMessage());
             return null;
         } catch (IOException e) {
@@ -105,8 +106,14 @@ public class Machine {
         module.setAttribute("<builtin>", modules.get("builtin"));
 
         if (module.getChunk() != null) {
-            callStack.push(new ChunkFrame(module, module.getChunk()));
-            execute();
+            callStack.push(new ModuleFrame(module, operandStack.size()));
+
+            if (callStack.size() == 1) {
+                // Execute module chunk if there's no more frames
+                // because by calling `call` later we will push
+                // new frame and module's frame will never execute
+                execute();
+            }
         }
 
         return module;
@@ -134,6 +141,8 @@ public class Machine {
                 return load(result);
             }
         }
+
+        panic("Cannot find module named '" + name + "'", true);
 
         return null;
     }
@@ -185,23 +194,31 @@ public class Machine {
             }
 
             final Frame frame = callStack.peek();
-            final byte opcode = frame.nextImm8();
+            final byte opcode = frame.getNextImm8();
 
             if (ENABLE_LOGGING) {
-                LOG.info("Dispatching (PC: " + (frame.pc - 1) + ")\n" +
-                    "Frame:  " + frame.getModule().getName() + '/' + (frame.getFunction() == null ? "<unknown source>" : frame.getFunction().getName()) + '\n' +
-                    "Opcode: " + opcode + " (" + Operation.values()[opcode - 1] + ")\n" +
-                    "Stack:  " + operandStack);
+                final StringBuilder sb = new StringBuilder();
+                sb.append("Dispatching (PC: ").append(frame.pc - 1).append(")\n");
+                sb.append("Frame:  ").append(frame.getModule().getName());
+                if (frame instanceof RuntimeFrame) {
+                    sb.append('/').append(((RuntimeFrame) frame).getFunction().getName());
+                } else if (frame instanceof NativeFrame) {
+                    sb.append('/').append(((NativeFrame) frame).getFunction().getName());
+                }
+                sb.append('\n');
+                sb.append("Opcode: ").append(opcode).append(" (").append(Operation.values()[opcode - 1]).append(")\n");
+                sb.append("Stack:  ").append(operandStack);
+                LOG.info(sb.toString());
             }
 
             switch (opcode) {
                 case OP_PUSH: {
-                    operandStack.push(Value.from(frame.nextConstant()));
+                    operandStack.push(Value.from(frame.getNextConstant()));
                     break;
                 }
                 case OP_GET_GLOBAL: {
                     Module module = frame.getModule();
-                    String name = (String) frame.nextConstant();
+                    String name = (String) frame.getNextConstant();
                     ScriptObject value = module.getAttribute(name);
                     if (value == null) {
                         panic("Module '" + module.getName() + "' has no such global '" + name + "'", true);
@@ -212,19 +229,19 @@ public class Machine {
                 }
                 case OP_SET_GLOBAL: {
                     Module module = frame.getModule();
-                    module.setAttribute((String) frame.nextConstant(), operandStack.pop());
+                    module.setAttribute((String) frame.getNextConstant(), operandStack.pop());
                     break;
                 }
                 case OP_GET_LOCAL: {
-                    operandStack.push(frame.locals[frame.nextImm8()]);
+                    operandStack.push(frame.getLocals()[frame.getNextImm8()]);
                     break;
                 }
                 case OP_SET_LOCAL: {
-                    frame.locals[frame.nextImm8()] = operandStack.pop();
+                    frame.getLocals()[frame.getNextImm8()] = operandStack.pop();
                     break;
                 }
                 case OP_GET_ATTRIBUTE: {
-                    String name = (String) frame.nextConstant();
+                    String name = (String) frame.getNextConstant();
                     ScriptObject target = operandStack.pop();
                     ScriptObject object = target.getAttribute(name);
                     if (object == null) {
@@ -237,7 +254,7 @@ public class Machine {
                 case OP_SET_ATTRIBUTE: {
                     ScriptObject value = operandStack.pop();
                     ScriptObject target = operandStack.pop();
-                    String name = (String) frame.nextConstant();
+                    String name = (String) frame.getNextConstant();
                     if (target.isImmutable()) {
                         panic("Cannot assign attribute to immutable object '" + target + "'", true);
                         break;
@@ -310,13 +327,13 @@ public class Machine {
                     break;
                 }
                 case OP_JUMP: {
-                    short offset = frame.nextImm16();
+                    short offset = frame.getNextImm16();
                     frame.pc += offset;
                     break;
                 }
                 case OP_JUMP_IF_TRUE: {
                     Value value = (Value) operandStack.pop();
-                    short offset = frame.nextImm16();
+                    short offset = frame.getNextImm16();
                     if (value.getBoolean(this) == Boolean.TRUE) {
                         frame.pc += offset;
                     }
@@ -324,7 +341,7 @@ public class Machine {
                 }
                 case OP_JUMP_IF_FALSE: {
                     Value value = (Value) operandStack.pop();
-                    int offset = frame.nextImm16();
+                    int offset = frame.getNextImm16();
                     if (value.getBoolean(this) == Boolean.FALSE) {
                         frame.pc += offset;
                     }
@@ -379,7 +396,7 @@ public class Machine {
                     break;
                 }
                 case OP_CALL: {
-                    byte argc = frame.nextImm8();
+                    byte argc = frame.getNextImm8();
                     Object object = operandStack.pop();
                     if (!(object instanceof Function)) {
                         panic("Object '" + object + "' is not callable", true);
@@ -391,7 +408,7 @@ public class Machine {
                 }
                 case OP_RETURN: {
                     final Frame oldFrame = callStack.pop();
-                    while (oldFrame.sp < operandStack.size() - 1) {
+                    while (oldFrame.getStackSize() < operandStack.size() - 1) {
                         operandStack.removeElementAt(operandStack.size() - 2);
                     }
                     profilerEndFrame(oldFrame);
@@ -409,13 +426,13 @@ public class Machine {
                     break;
                 }
                 case OP_DUP_AT: {
-                    operandStack.push(operandStack.get(operandStack.size() + frame.nextImm8()));
+                    operandStack.push(operandStack.get(operandStack.size() + frame.getNextImm8()));
                     break;
                 }
                 case OP_BIND: {
                     ScriptObject value = operandStack.pop();
                     RuntimeFunction function = (RuntimeFunction) operandStack.pop();
-                    function.getBoundArguments()[frame.nextImm8()] = value;
+                    function.getBoundArguments()[frame.getNextImm8()] = value;
                     break;
                 }
                 case OP_NOT: {
@@ -425,20 +442,20 @@ public class Machine {
                 }
                 case OP_ASSERT: {
                     Value value = (Value) operandStack.pop();
-                    String source = (String) frame.nextConstant();
-                    String message = (String) frame.nextConstant();
+                    String source = (String) frame.getNextConstant();
+                    Object message = frame.getNextConstant();
                     if (value.getBoolean(this) == Boolean.FALSE) {
-                        if (message != null) {
-                            panic("Assertion failed '" + source + "': " + message, true);
-                        } else {
+                        if (message == NoneValue.INSTANCE) {
                             panic("Assertion failed '" + source + "'", true);
+                        } else {
+                            panic("Assertion failed '" + source + "': " + message, true);
                         }
                     }
                     break;
                 }
                 case OP_IMPORT: {
-                    final String name = (String) frame.nextConstant();
-                    final byte slot = frame.nextImm8();
+                    final String name = (String) frame.getNextConstant();
+                    final byte slot = frame.getNextImm8();
                     final Module module = load(name);
                     if (module != null) {
                         if (module == frame.getModule()) {
@@ -446,12 +463,10 @@ public class Machine {
                             break;
                         }
                         if (slot != Operand.UNDEFINED) {
-                            frame.locals[slot] = module;
+                            frame.getLocals()[slot] = module;
                         } else {
                             operandStack.push(module);
                         }
-                    } else {
-                        panic("Cannot find module named '" + name + "'", true);
                     }
                     break;
                 }
@@ -480,27 +495,13 @@ public class Machine {
                     break;
                 }
                 case OP_MAKE_FUNCTION: {
-                    final String name = (String) frame.nextConstant();
-                    final Chunk chunk = (Chunk) frame.nextConstant();
-
-                    final RuntimeFunction function = new RuntimeFunction(
-                        frame.getModule(),
-                        name,
-                        chunk.getFlags(),
-                        chunk.getCode(),
-                        chunk.getConstants(),
-                        chunk.getLocations(),
-                        chunk.getGuards(),
-                        chunk.getArguments(),
-                        chunk.getBoundArguments(),
-                        chunk.getLocals()
-                    );
-
-                    operandStack.push(function);
+                    final String name = (String) frame.getNextConstant();
+                    final Chunk chunk = (Chunk) frame.getNextConstant();
+                    operandStack.push(new RuntimeFunction(frame.getModule(), name, chunk));
                     break;
                 }
                 default:
-                    panic(String.format("Not implemented opcode: %#04x", frame.code[frame.pc - 1]));
+                    panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]));
             }
         }
     }
@@ -517,21 +518,21 @@ public class Machine {
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
 
-            while (currentFrame.sp < operandStack.size()) {
+            while (currentFrame.getStackSize() < operandStack.size()) {
                 operandStack.pop();
             }
 
-            if (recoverable && currentFrame.getFunction() instanceof RuntimeFunction) {
-                RuntimeFunction function = (RuntimeFunction) currentFrame.getFunction();
+            if (recoverable && currentFrame instanceof RuntimeFrame) {
+                RuntimeFunction function = ((RuntimeFrame) currentFrame).getFunction();
 
                 LOG.info("Checking for suitable guards in '" + function.getName() + "'...");
 
-                for (Guard guard : function.getGuards()) {
+                for (Guard guard : function.getChunk().getGuards()) {
                     if (currentFrame.pc > guard.getStart() && currentFrame.pc <= guard.getEnd()) {
                         LOG.info("Got suitable guard, recovering");
 
                         if (guard.hasSlot()) {
-                            currentFrame.locals[guard.getSlot()] = Value.from(message);
+                            currentFrame.getLocals()[guard.getSlot()] = Value.from(message);
                         }
 
                         currentFrame.pc = guard.getOffset();
@@ -635,130 +636,6 @@ public class Machine {
 
     public List<Path> getSearchRoots() {
         return searchRoots;
-    }
-
-    public static class Frame {
-        private final Module module;
-        private final Function function;
-        private final byte[] code;
-        private final Object[] constants;
-        private final ScriptObject[] locals;
-        private final int sp;
-        protected int pc;
-
-        public Frame(Module module, Function function, byte[] code, Object[] constants, ScriptObject[] locals, int sp) {
-            this.module = module;
-            this.function = function;
-            this.code = code;
-            this.constants = constants;
-            this.locals = locals;
-            this.sp = sp;
-            this.pc = 0;
-        }
-
-        private Object nextConstant() {
-            return constants[nextImm16()];
-        }
-
-        private int nextImm32() {
-            return (code[pc++] & 0xff) << 24 | (code[pc++] & 0xff) << 16 | (code[pc++] & 0xff) << 8 | (code[pc++] & 0xff);
-        }
-
-        private short nextImm16() {
-            return (short) ((code[pc++] & 0xff) << 8 | (code[pc++] & 0xff));
-        }
-
-        private byte nextImm8() {
-            return code[pc++];
-        }
-
-        public Module getModule() {
-            return module;
-        }
-
-        public Function getFunction() {
-            return function;
-        }
-
-        public byte[] getCode() {
-            return code;
-        }
-
-        public Object[] getConstants() {
-            return constants;
-        }
-
-        public ScriptObject[] getLocals() {
-            return locals;
-        }
-
-        public String getSourceLocation() {
-            if (function instanceof RuntimeFunction) {
-                final Pair<Short, Short> line = ((RuntimeFunction) function).getLocations().get(pc);
-                if (line != null) {
-                    return getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond();
-                } else {
-                    return getModule().getSource() + ':' + '+' + pc;
-                }
-            } else if (function instanceof NativeFunction) {
-                return "Native function";
-            } else {
-                return "Unknown source";
-            }
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Frame frame = (Frame) o;
-            return function.equals(frame.function);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(function);
-        }
-
-        @Override
-        public String toString() {
-            return function.getModule().getName() + '/' + function.getName() + '(' + getSourceLocation() + ')';
-        }
-    }
-
-    private static class ParserFrame extends Frame {
-        private final String source;
-        private final ScriptException exception;
-
-        public ParserFrame(@NotNull String source, @NotNull ScriptException exception) {
-            super(null, null, null, null, null, 0);
-            this.source = source;
-            this.exception = exception;
-        }
-
-        @Override
-        public String toString() {
-            return source + "(" + exception.getRegion().getBegin() + ")";
-        }
-    }
-
-    private static class ChunkFrame extends Frame {
-        private final Chunk chunk;
-
-        public ChunkFrame(@NotNull Module module, @NotNull Chunk chunk) {
-            super(module, null, chunk.getCode(), chunk.getConstants(), null, 0);
-            this.chunk = chunk;
-        }
-
-        @Override
-        public String toString() {
-            final Pair<Short, Short> line = chunk.getLocations().get(pc);
-            if (line != null) {
-                return getModule().getName() + '(' + getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond() + ')';
-            } else {
-                return getModule().getName() + '(' + getModule().getSource() + ':' + '+' + pc + ')';
-            }
-        }
     }
 
     private static class ImportFileVisitor extends SimpleFileVisitor<Path> {

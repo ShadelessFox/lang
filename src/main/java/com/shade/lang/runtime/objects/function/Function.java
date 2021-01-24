@@ -2,8 +2,8 @@ package com.shade.lang.runtime.objects.function;
 
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
-import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.ScriptObject;
+import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.Value;
 
 import java.util.Stack;
@@ -15,13 +15,13 @@ public abstract class Function extends ScriptObject {
     protected final ScriptObject[] boundArguments;
     protected final byte flags;
 
-    public Function(Module module, String name, int argumentsCount, ScriptObject[] boundArguments, int flags) {
+    public Function(Module module, String name, int argumentsCount, ScriptObject[] boundArguments, byte flags) {
         super(true);
         this.module = module;
         this.name = name;
         this.argumentsCount = argumentsCount;
         this.boundArguments = boundArguments != null ? boundArguments : new ScriptObject[0];
-        this.flags = (byte) (flags & 0xff);
+        this.flags = flags;
     }
 
     public abstract void invoke(Machine machine, int argc);

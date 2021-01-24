@@ -1,6 +1,9 @@
 package com.shade.lang;
 
 import com.shade.lang.runtime.Machine;
+import com.shade.lang.runtime.frames.Frame;
+import com.shade.lang.runtime.frames.NativeFrame;
+import com.shade.lang.runtime.frames.RuntimeFrame;
 import com.shade.lang.runtime.objects.function.Function;
 import com.shade.lang.runtime.objects.module.NativeModuleProvider;
 
@@ -35,8 +38,18 @@ public class Launcher {
     private static void printProfileResults(Machine machine) {
         machine.getOut().println("--- Profile Results ---");
 
-        for (Map.Entry<Machine.Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
-            Function function = entry.getKey().getFunction();
+        for (Map.Entry<Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
+            final Frame frame = entry.getKey();
+            final Function function;
+
+            if (frame instanceof RuntimeFrame) {
+                function = ((RuntimeFrame) frame).getFunction();
+            } else if (frame instanceof NativeFrame) {
+                function = ((NativeFrame) frame).getFunction();
+            } else {
+                continue;
+            }
+
             List<Long> samples = entry.getValue();
 
             if (samples.size() > 0) {
