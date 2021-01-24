@@ -1,5 +1,7 @@
 package com.shade.lang.runtime.objects.function;
 
+import com.shade.lang.compiler.assembler.Operand;
+
 public class Guard {
     private final int start;
     private final int end;
@@ -30,6 +32,6 @@ public class Guard {
     }
 
     public boolean hasSlot() {
-        return slot >= 0;
+        return slot != Operand.UNDEFINED;
     }
 }

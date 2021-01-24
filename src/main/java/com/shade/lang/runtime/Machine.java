@@ -1,5 +1,6 @@
 package com.shade.lang.runtime;
 
+import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.optimizer.Optimizer;
 import com.shade.lang.compiler.parser.Parser;
@@ -7,8 +8,7 @@ import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.Tokenizer;
 import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.context.Context;
-import com.shade.lang.compiler.parser.node.stmt.ImportStatement;
-import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.Class;
 import com.shade.lang.runtime.objects.Instance;
 import com.shade.lang.runtime.objects.ScriptObject;
@@ -20,6 +20,8 @@ import com.shade.lang.runtime.objects.function.NativeFunction;
 import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.Value;
+import com.shade.lang.util.Pair;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -81,7 +83,7 @@ public class Machine {
             Parser parser = new Parser(new Tokenizer(reader));
 
             Node node = parser.parse(source, Parser.Mode.Unit);
-            node = Optimizer.optimize(node, Integer.MAX_VALUE, Integer.getInteger("ash.optlevel", 0));
+            node = Optimizer.optimize(node, Integer.getInteger("ash.opt.level", Integer.MAX_VALUE), Integer.getInteger("ash.opt.passes", 0));
             node.compile(context, null);
 
             return load(module);
@@ -94,30 +96,18 @@ public class Machine {
         }
     }
 
-    public Module load(Module module) throws ScriptException {
-        Objects.requireNonNull(module);
-
-        if (modules.containsKey(module.getName())) {
-            throw new RuntimeException("Module already loaded: " + module.getName());
-        }
-
-        modules.put(module.getName(), module);
-
-        for (ImportStatement statement : module.getImports()) {
-            String name = statement.getName();
-            String alias = statement.getAlias() == null ? name : statement.getAlias();
-            Module loaded = load(name);
-            if (loaded != null) {
-                if (loaded == module) {
-                    throw new ScriptException("Cannot import itself", statement.getRegion());
-                }
-                module.setAttribute(alias, loaded);
-            } else {
-                throw new ScriptException("Cannot find module named '" + name + "'", statement.getRegion());
-            }
+    @NotNull
+    public Module load(@NotNull Module module) {
+        if (modules.put(module.getName(), module) != null) {
+            throw new IllegalArgumentException("Module already loaded: " + module.getName());
         }
 
         module.setAttribute("<builtin>", modules.get("builtin"));
+
+        if (module.getChunk() != null) {
+            callStack.push(new ChunkFrame(module, module.getChunk()));
+            execute();
+        }
 
         return module;
     }
@@ -199,7 +189,7 @@ public class Machine {
 
             if (ENABLE_LOGGING) {
                 LOG.info("Dispatching (PC: " + (frame.pc - 1) + ")\n" +
-                    "Frame:  " + frame.getFunction().getModule().getName() + '/' + frame.getFunction().getName() + '\n' +
+                    "Frame:  " + frame.getModule().getName() + '/' + (frame.getFunction() == null ? "<unknown source>" : frame.getFunction().getName()) + '\n' +
                     "Opcode: " + opcode + " (" + Operation.values()[opcode - 1] + ")\n" +
                     "Stack:  " + operandStack);
             }
@@ -210,7 +200,7 @@ public class Machine {
                     break;
                 }
                 case OP_GET_GLOBAL: {
-                    Module module = frame.getFunction().getModule();
+                    Module module = frame.getModule();
                     String name = (String) frame.nextConstant();
                     ScriptObject value = module.getAttribute(name);
                     if (value == null) {
@@ -221,7 +211,7 @@ public class Machine {
                     break;
                 }
                 case OP_SET_GLOBAL: {
-                    Module module = frame.getFunction().getModule();
+                    Module module = frame.getModule();
                     module.setAttribute((String) frame.nextConstant(), operandStack.pop());
                     break;
                 }
@@ -447,15 +437,19 @@ public class Machine {
                     break;
                 }
                 case OP_IMPORT: {
-                    String name = (String) frame.nextConstant();
-                    byte slot = frame.nextImm8();
-                    Module module = load(name);
+                    final String name = (String) frame.nextConstant();
+                    final byte slot = frame.nextImm8();
+                    final Module module = load(name);
                     if (module != null) {
-                        if (module == frame.getFunction().getModule()) {
+                        if (module == frame.getModule()) {
                             panic("Cannot import itself", true);
                             break;
                         }
-                        frame.locals[slot] = module;
+                        if (slot != Operand.UNDEFINED) {
+                            frame.locals[slot] = module;
+                        } else {
+                            operandStack.push(module);
+                        }
                     } else {
                         panic("Cannot find module named '" + name + "'", true);
                     }
@@ -485,8 +479,28 @@ public class Machine {
                     operandStack.push(Value.from(((Class) clazz).isInstance((Instance) object)));
                     break;
                 }
+                case OP_MAKE_FUNCTION: {
+                    final String name = (String) frame.nextConstant();
+                    final Chunk chunk = (Chunk) frame.nextConstant();
+
+                    final RuntimeFunction function = new RuntimeFunction(
+                        frame.getModule(),
+                        name,
+                        chunk.getFlags(),
+                        chunk.getCode(),
+                        chunk.getConstants(),
+                        chunk.getLocations(),
+                        chunk.getGuards(),
+                        chunk.getArguments(),
+                        chunk.getBoundArguments(),
+                        chunk.getLocals()
+                    );
+
+                    operandStack.push(function);
+                    break;
+                }
                 default:
-                    panic(String.format("Not implemented opcode: %#04x", frame.chunk[frame.pc - 1]));
+                    panic(String.format("Not implemented opcode: %#04x", frame.code[frame.pc - 1]));
             }
         }
     }
@@ -624,16 +638,18 @@ public class Machine {
     }
 
     public static class Frame {
+        private final Module module;
         private final Function function;
-        private final byte[] chunk;
+        private final byte[] code;
         private final Object[] constants;
         private final ScriptObject[] locals;
         private final int sp;
-        private int pc;
+        protected int pc;
 
-        public Frame(Function function, byte[] chunk, Object[] constants, ScriptObject[] locals, int sp) {
+        public Frame(Module module, Function function, byte[] code, Object[] constants, ScriptObject[] locals, int sp) {
+            this.module = module;
             this.function = function;
-            this.chunk = chunk;
+            this.code = code;
             this.constants = constants;
             this.locals = locals;
             this.sp = sp;
@@ -645,23 +661,27 @@ public class Machine {
         }
 
         private int nextImm32() {
-            return (chunk[pc++] & 0xff) << 24 | (chunk[pc++] & 0xff) << 16 | (chunk[pc++] & 0xff) << 8 | (chunk[pc++] & 0xff);
+            return (code[pc++] & 0xff) << 24 | (code[pc++] & 0xff) << 16 | (code[pc++] & 0xff) << 8 | (code[pc++] & 0xff);
         }
 
         private short nextImm16() {
-            return (short) ((chunk[pc++] & 0xff) << 8 | (chunk[pc++] & 0xff));
+            return (short) ((code[pc++] & 0xff) << 8 | (code[pc++] & 0xff));
         }
 
         private byte nextImm8() {
-            return chunk[pc++];
+            return code[pc++];
+        }
+
+        public Module getModule() {
+            return module;
         }
 
         public Function getFunction() {
             return function;
         }
 
-        public byte[] getChunk() {
-            return chunk;
+        public byte[] getCode() {
+            return code;
         }
 
         public Object[] getConstants() {
@@ -674,11 +694,11 @@ public class Machine {
 
         public String getSourceLocation() {
             if (function instanceof RuntimeFunction) {
-                Map<Integer, Region.Span> lines = ((RuntimeFunction) function).getLines();
-                if (lines.containsKey(pc)) {
-                    return function.getModule().getSource() + ':' + lines.get(pc);
+                final Pair<Short, Short> line = ((RuntimeFunction) function).getLocations().get(pc);
+                if (line != null) {
+                    return getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond();
                 } else {
-                    return function.getModule().getSource() + ':' + '+' + pc;
+                    return getModule().getSource() + ':' + '+' + pc;
                 }
             } else if (function instanceof NativeFunction) {
                 return "Native function";
@@ -710,8 +730,8 @@ public class Machine {
         private final String source;
         private final ScriptException exception;
 
-        public ParserFrame(String source, ScriptException exception) {
-            super(null, null, null, null, 0);
+        public ParserFrame(@NotNull String source, @NotNull ScriptException exception) {
+            super(null, null, null, null, null, 0);
             this.source = source;
             this.exception = exception;
         }
@@ -722,28 +742,22 @@ public class Machine {
         }
     }
 
-    private static class FileVisitor extends SimpleFileVisitor<Path> {
-        private final Path rootPath;
-        private final Path filePath;
-        private Path result;
+    private static class ChunkFrame extends Frame {
+        private final Chunk chunk;
 
-        public FileVisitor(Path rootPath, Path filePath) {
-            this.rootPath = rootPath;
-            this.filePath = filePath;
+        public ChunkFrame(@NotNull Module module, @NotNull Chunk chunk) {
+            super(module, null, chunk.getCode(), chunk.getConstants(), null, 0);
+            this.chunk = chunk;
         }
 
         @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-            if (rootPath.relativize(file).equals(filePath)) {
-                result = file;
-                return FileVisitResult.TERMINATE;
+        public String toString() {
+            final Pair<Short, Short> line = chunk.getLocations().get(pc);
+            if (line != null) {
+                return getModule().getName() + '(' + getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond() + ')';
+            } else {
+                return getModule().getName() + '(' + getModule().getSource() + ':' + '+' + pc + ')';
             }
-
-            return FileVisitResult.CONTINUE;
-        }
-
-        public Path getResult() {
-            return result;
         }
     }
 

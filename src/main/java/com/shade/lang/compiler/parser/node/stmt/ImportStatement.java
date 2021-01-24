@@ -22,10 +22,14 @@ public class ImportStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        final String alias = this.alias == null ? this.name : this.alias;
+
         if (global) {
-            context.getModule().getImports().add(this);
+            assembler.emit(Operation.IMPORT, Operand.constant(name), Operand.imm8(Operand.UNDEFINED));
+            assembler.addLocation(getRegion().getBegin());
+            assembler.emit(Operation.SET_GLOBAL, Operand.constant(alias));
         } else {
-            assembler.emit(Operation.IMPORT, Operand.constant(name), Operand.imm8(context.addSlot(alias == null ? name : alias)));
+            assembler.emit(Operation.IMPORT, Operand.constant(name), Operand.imm8(context.addSlot(alias)));
             assembler.addLocation(getRegion().getBegin());
         }
     }

@@ -5,14 +5,12 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
-import com.shade.lang.compiler.parser.node.context.ClassContext;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.Machine;
-import com.shade.lang.runtime.objects.function.Function;
+import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
-import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.value.NoneValue;
 
 import java.io.PrintWriter;
@@ -56,35 +54,27 @@ public class DeclareFunctionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        if (context instanceof ClassContext && arguments.isEmpty()) {
-            throw new ScriptException("Class functions must have at least one argument", getRegion());
-        }
-
-        for (int index = 0; index < boundArguments.size(); index++) {
-            String argument = boundArguments.get(index);
-            if (!context.hasSlot(argument)) {
-                throw new ScriptException("Cannot capture non-existing variable '" + argument + "'", getRegion());
-            }
-            boundArgumentsMapping.put(index, context.addSlot(argument));
-        }
-
-        AtomicInteger totalSlots = new AtomicInteger();
-
-        FunctionContext functionContext = new FunctionContext(context);
-        functionContext.addListener((name, slot) -> {
-            if (totalSlots.get() < slot + 1) {
-                totalSlots.set(slot + 1);
-            }
-        });
-        for (String argument : boundArguments) {
-            functionContext.addSlot(argument);
-        }
-        for (String argument : arguments) {
-            functionContext.addSlot(argument);
-        }
+        final Assembler parentAssembler = assembler;
 
         assembler = new Assembler();
         assembler.addLocation(getRegion().getBegin());
+
+        final AtomicInteger functionLocalsCount = new AtomicInteger();
+        final FunctionContext functionContext = new FunctionContext(context);
+
+        functionContext.addListener((name, slot) -> {
+            if (functionLocalsCount.get() <= slot) {
+                functionLocalsCount.set(slot + 1);
+            }
+        });
+
+        for (String argument : boundArguments) {
+            functionContext.addSlot(argument);
+        }
+
+        for (String argument : arguments) {
+            functionContext.addSlot(argument);
+        }
 
         body.compile(functionContext, assembler);
 
@@ -93,42 +83,36 @@ public class DeclareFunctionStatement extends Statement {
             assembler.emit(Operation.RETURN);
         }
 
+        byte functionFlags = 0;
+
+        if (context.getParent() == null) {
+            functionFlags |= Chunk.FLAG_MODULE;
+        }
+
+        if (variadic) {
+            functionFlags |= Chunk.FLAG_VARIADIC;
+        }
+
+        final Chunk chunk = new Chunk(
+            assembler.assemble().array(),
+            assembler.getConstants().toArray(),
+            functionContext.getGuards().toArray(new Guard[0]),
+            functionFlags,
+            (byte) arguments.size(),
+            (byte) boundArguments.size(),
+            (byte) functionLocalsCount.get(),
+            assembler.getComputedLocations()
+        );
+
+        parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
+        parentAssembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
+
         if (Machine.ENABLE_LOGGING) {
             StringWriter writer = new StringWriter();
-
-            writer.write("Assembly dump for function '" + name + "':\n");
+            writer.write("Disassembly of function '" + name + "':\n");
             assembler.print(new PrintWriter(writer));
             LOG.info(writer.toString());
         }
-
-        if (Machine.ENABLE_LOGGING && !functionContext.getGuards().isEmpty()) {
-            StringWriter writer = new StringWriter();
-
-            writer.write("Guards of function '" + name + "':\n");
-            for (Guard guard : functionContext.getGuards()) {
-                writer.write(String.format("  %4d..%-4d -> %4d", guard.getStart(), guard.getEnd(), guard.getOffset()));
-                if (guard.getSlot() >= 0) {
-                    writer.write(" @ " + guard.getSlot());
-                }
-                writer.write('\n');
-            }
-            LOG.info(writer.toString());
-        }
-
-        RuntimeFunction function = new RuntimeFunction(
-            context.getModule(),
-            name,
-            variadic ? Function.FLAG_VARIADIC : 0,
-            assembler.assemble(),
-            assembler.getConstants().toArray(new Object[0]),
-            assembler.getComputedLocations(),
-            functionContext.getGuards().toArray(new Guard[0]),
-            arguments.size(),
-            boundArguments.size(),
-            totalSlots.get()
-        );
-
-        context.setAttribute(name, function);
     }
 
     public String getName() {

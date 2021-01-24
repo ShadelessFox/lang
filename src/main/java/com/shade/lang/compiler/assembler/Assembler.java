@@ -1,6 +1,7 @@
 package com.shade.lang.compiler.assembler;
 
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.Pair;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
 
@@ -33,7 +34,7 @@ public class Assembler {
      * Map of instruction's offsets to its location
      * inside code's source file.
      */
-    private final Map<Integer, Region.Span> locations = new HashMap<>();
+    private final Map<Integer, Pair<Short, Short>> locations = new HashMap<>();
 
     /*
      * Current imaginable stack size. This
@@ -339,7 +340,9 @@ public class Assembler {
      * @param span span inside source file
      */
     public void addLocation(@NotNull Region.Span span) {
-        locations.put(instructions.size(), span);
+        final short line = (short) (span.getLine() & 0xffff);
+        final short column = (short) (span.getColumn() & 0xffff);
+        locations.put(instructions.size(), new Pair<>(line, column));
     }
 
     /**
@@ -382,7 +385,7 @@ public class Assembler {
      *
      * @return instruction source file mappings
      */
-    public Map<Integer, Region.Span> getLocations() {
+    public Map<Integer, Pair<Short, Short>> getLocations() {
         return locations;
     }
 
@@ -396,7 +399,7 @@ public class Assembler {
      *
      * @return instruction source file mappings.
      */
-    public Map<Integer, Region.Span> getComputedLocations() {
+    public Map<Integer, Pair<Short, Short>> getComputedLocations() {
         return locations.entrySet().stream().collect(Collectors.toMap(
             e -> getOffset(e.getKey()),
             Map.Entry::getValue
@@ -441,7 +444,7 @@ public class Assembler {
      *
      * @param position position of desired instruction
      * @return byte offset for instruction
-     * @throws IllegalArgumentException IF position is invalid
+     * @throws IllegalArgumentException If position is invalid
      */
     public int getOffset(int position) {
         if (instructions.size() < position) {
@@ -450,7 +453,7 @@ public class Assembler {
 
         return instructions
             .stream()
-            .limit(position + 1)
+            .limit(position)
             .mapToInt(Instruction::getSize)
             .sum();
     }

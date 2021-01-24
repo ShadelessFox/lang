@@ -1,32 +1,42 @@
 package com.shade.lang.runtime.objects.module;
 
-import com.shade.lang.compiler.parser.node.stmt.ImportStatement;
+import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.ScriptObject;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 public class Module extends ScriptObject {
     private final String name;
     private final String source;
-    private final List<ImportStatement> imports;
+    private Chunk chunk;
 
-    public Module(String name, String source) {
+    public Module(@NotNull String name, @NotNull String source) {
         super(true);
         this.name = name;
         this.source = source;
-        this.imports = new ArrayList<>();
     }
 
+    @NotNull
     public String getName() {
         return name;
     }
 
+    @NotNull
     public String getSource() {
         return source;
     }
 
-    public List<ImportStatement> getImports() {
-        return imports;
+    @Nullable
+    public Chunk getChunk() {
+        return chunk;
+    }
+
+    public void setChunk(@Nullable Chunk chunk) {
+        this.chunk = chunk;
+    }
+
+    @Override
+    public String toString() {
+        return "[Module '" + name + "']";
     }
 }

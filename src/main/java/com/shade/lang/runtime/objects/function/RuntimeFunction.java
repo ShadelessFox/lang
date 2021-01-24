@@ -1,21 +1,20 @@
 package com.shade.lang.runtime.objects.function;
 
-import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.module.Module;
+import com.shade.lang.util.Pair;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 public class RuntimeFunction extends Function {
-    private final ByteBuffer chunk;
+    private final byte[] chunk;
     private final Object[] constants;
-    private final Map<Integer, Region.Span> lines;
+    private final Map<Integer, Pair<Short, Short>> lines;
     private final Guard[] guards;
     private final int localsCount;
 
-    public RuntimeFunction(Module module, String name, int flags, ByteBuffer chunk, Object[] constants, Map<Integer, Region.Span> lines, Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
+    public RuntimeFunction(Module module, String name, int flags, byte[] chunk, Object[] constants, Map<Integer, Pair<Short, Short>> lines, Guard[] guards, int argumentsCount, int boundArgumentsCount, int localsCount) {
         super(module, name, argumentsCount, new ScriptObject[boundArgumentsCount], flags);
         this.chunk = chunk;
         this.constants = constants;
@@ -35,16 +34,16 @@ public class RuntimeFunction extends Function {
         ScriptObject[] slots = new ScriptObject[localsCount];
         System.arraycopy(arguments, 0, slots, 0, arguments.length);
 
-        Machine.Frame frame = new Machine.Frame(this, chunk.array(), constants, slots, machine.getOperandStack().size());
+        Machine.Frame frame = new Machine.Frame(module, this, chunk, constants, slots, machine.getOperandStack().size());
         machine.profilerBeginFrame(frame);
         machine.getCallStack().push(frame);
     }
 
-    public ByteBuffer getChunk() {
+    public byte[] getChunk() {
         return chunk;
     }
 
-    public Map<Integer, Region.Span> getLines() {
+    public Map<Integer, Pair<Short, Short>> getLocations() {
         return lines;
     }
 

@@ -1,8 +1,8 @@
 package com.shade.lang.runtime.objects.module;
 
 import com.shade.lang.runtime.Machine;
+import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.ScriptObject;
-import com.shade.lang.runtime.objects.function.Function;
 import com.shade.lang.runtime.objects.function.NativeFunction;
 import com.shade.lang.runtime.objects.module.builtin.BuiltinCore;
 import com.shade.lang.runtime.objects.value.ArrayValue;
@@ -35,7 +35,7 @@ public abstract class NativeModule extends Module {
                 this,
                 name,
                 method.getParameterCount() - 1,
-                method.isVarArgs() ? Function.FLAG_VARIADIC : 0,
+                method.isVarArgs() ? Chunk.FLAG_VARIADIC : 0,
                 wrap(method)
             );
 

@@ -1,6 +1,7 @@
 package com.shade.lang.compiler.parser.node.stmt;
 
 import com.shade.lang.compiler.assembler.Assembler;
+import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
@@ -34,7 +35,7 @@ public class TryStatement extends Statement {
         Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
 
         int offset = assembler.getOffset(assembler.getPosition());
-        int slot = -1;
+        int slot = Operand.UNDEFINED;
 
         try (Context recoverContext = context.enter()) {
             if (name != null) {
@@ -47,7 +48,7 @@ public class TryStatement extends Statement {
 
         FunctionContext functionContext = context.unwrap(FunctionContext.class);
 
-        if (slot >= 0) {
+        if (slot != Operand.UNDEFINED) {
             functionContext.addGuard(regionStart, regionEnd, offset, slot);
         } else {
             functionContext.addGuard(regionStart, regionEnd, offset);

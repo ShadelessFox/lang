@@ -40,7 +40,7 @@ public class Class extends ScriptObject {
                     function.getFlags(),
                     function.getChunk(),
                     function.getConstants(),
-                    function.getLines(),
+                    function.getLocations(),
                     function.getGuards(),
                     function.getArgumentsCount() - 1,
                     1,

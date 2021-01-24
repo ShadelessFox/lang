@@ -49,9 +49,11 @@ public enum Operation {
     CMP_GE(OperationCode.OP_CMP_GE, new OperandType[]{}, 2, 1),
 
     ASSERT(OperationCode.OP_ASSERT, new OperandType[]{OperandType.CONSTANT, OperandType.CONSTANT}, 1, 0),
-    IMPORT(OperationCode.OP_IMPORT, new OperandType[]{OperandType.CONSTANT, OperandType.IMM_8}, 0, 0),
+    IMPORT(OperationCode.OP_IMPORT, new OperandType[]{OperandType.CONSTANT, OperandType.IMM_8}, ops -> 0, ops -> ops[1].getImm8() < 0 ? 1 : 0),
     NEW(OperationCode.OP_NEW, new OperandType[]{}, 1, 1),
-    INSTANCE_OF(OperationCode.OP_INSTANCE_OF, new OperandType[]{}, 2, 1);
+    INSTANCE_OF(OperationCode.OP_INSTANCE_OF, new OperandType[]{}, 2, 1),
+
+    MAKE_FUNCTION(OperationCode.OP_MAKE_FUNCTION, new OperandType[]{OperandType.CONSTANT, OperandType.CONSTANT}, 0, 1);
 
     private final byte opcode;
     private final OperandType[] operands;

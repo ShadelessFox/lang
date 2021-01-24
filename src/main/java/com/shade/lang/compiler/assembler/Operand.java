@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
  * This class represents typed value of an {@link Instruction}.
  */
 public class Operand {
+    public static final int UNDEFINED = -1;
+
     private final OperandType type;
     private final Object value;
 

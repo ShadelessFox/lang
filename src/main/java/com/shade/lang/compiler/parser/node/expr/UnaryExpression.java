@@ -28,7 +28,7 @@ public class UnaryExpression extends Expression {
             case Add:
                 break;
             case Sub:
-                assembler.emit(Operation.PUSH, Operand.constant(-1));
+                assembler.emit(Operation.PUSH, Operand.constant(Operand.UNDEFINED));
                 assembler.emit(Operation.MUL);
                 break;
             case Not:

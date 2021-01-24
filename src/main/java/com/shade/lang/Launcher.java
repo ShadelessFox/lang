@@ -19,10 +19,10 @@ public class Launcher {
             machine.load(provider.create(machine));
         }
 
-        machine.load("sandbox");
+        machine.load("top_level");
 
         if (!machine.isHalted()) {
-            machine.call("sandbox", "main");
+            machine.call("top_level", "main");
         }
 
         if (Machine.ENABLE_PROFILING) {
