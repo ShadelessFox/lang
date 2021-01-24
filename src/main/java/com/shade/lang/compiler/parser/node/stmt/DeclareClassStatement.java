@@ -3,12 +3,8 @@ package com.shade.lang.compiler.parser.node.stmt;
 import com.shade.lang.compiler.assembler.Assembler;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
-import com.shade.lang.compiler.parser.node.context.ClassContext;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
-import com.shade.lang.runtime.objects.Class;
-import com.shade.lang.runtime.objects.module.Module;
-import com.shade.lang.runtime.objects.ScriptObject;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,51 +24,7 @@ public class DeclareClassStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        Module module = context.getModule();
-
-        Class[] resolvedBases = new Class[bases.size()];
-
-        for (int index = 0; index < bases.size(); index++) {
-            String base = bases.get(index);
-            ScriptObject object = module.getAttribute(base);
-
-            if (object == null) {
-                throw new ScriptException("Cannot find base class named '" + base + "'", getRegion());
-            }
-
-            if (!(object instanceof Class)) {
-                throw new ScriptException("Cannot inherit from non-class '" + base + "'", getRegion());
-            }
-
-            resolvedBases[index] = (Class) object;
-        }
-
-        Class clazz = new Class(name, resolvedBases);
-        ClassContext clazzContext = new ClassContext(context, clazz);
-
-        boolean foundConstructor = false;
-
-        for (Statement member : members) {
-            if (member instanceof DeclareFunctionStatement) {
-                DeclareFunctionStatement function = (DeclareFunctionStatement) member;
-
-                if (function.getName().equals("<init>")) {
-                    if (foundConstructor) {
-                        throw new ScriptException("Constructor already declared", member.getRegion());
-                    }
-
-                    foundConstructor = true;
-                }
-            }
-
-            member.compile(clazzContext, null);
-        }
-
-        if (!foundConstructor) {
-            throw new ScriptException("Constructor must be defined", getRegion());
-        }
-
-        context.setAttribute(name, clazz);
+        throw new ScriptException("Not implemented", getRegion());
     }
 
     public String getName() {
