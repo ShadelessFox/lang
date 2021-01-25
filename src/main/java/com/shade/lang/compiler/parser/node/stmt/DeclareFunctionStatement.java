@@ -5,6 +5,7 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.context.ClassContext;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
 import com.shade.lang.compiler.parser.token.Region;
@@ -112,8 +113,14 @@ public class DeclareFunctionStatement extends Statement {
             assembler.getComputedLocations()
         );
 
-        parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
-        parentAssembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
+        if (context.unwrap(ClassContext.class) == null) {
+            parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
+            parentAssembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
+        } else {
+            parentAssembler.emit(Operation.GET_LOCAL, Operand.imm8(context.addSlot("<instance>")));
+            parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
+            parentAssembler.emit(Operation.SET_ATTRIBUTE, Operand.constant(name));
+        }
 
         if (Machine.ENABLE_LOGGING) {
             StringWriter writer = new StringWriter();

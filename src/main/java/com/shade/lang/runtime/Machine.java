@@ -501,6 +501,26 @@ public class Machine {
                     operandStack.push(new RuntimeFunction(frame.getModule(), name, chunk));
                     break;
                 }
+                case OP_MAKE_CLASS: {
+                    final String name = (String) frame.getNextConstant();
+                    final Chunk chunk = (Chunk) frame.getNextConstant();
+                    final Class[] bases = new Class[frame.getNextImm8()];
+
+                    for (int index = bases.length - 1; index >= 0; index--) {
+                        final ScriptObject object = operandStack.pop();
+
+                        if (object instanceof Class) {
+                            bases[index] = (Class) object;
+                            continue;
+                        }
+
+                        panic("Object '" + object + "' is not a class object and cannot be used as a parent");
+                        break;
+                    }
+
+                    callStack.push(new ClassFrame(frame.getModule(), new Class(name, bases), chunk, operandStack.size()));
+                    break;
+                }
                 default:
                     panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]));
             }

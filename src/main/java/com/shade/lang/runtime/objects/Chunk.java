@@ -10,6 +10,7 @@ public class Chunk extends ScriptObject {
     // @formatter:off
     public static final byte FLAG_VARIADIC = 1;
     public static final byte FLAG_MODULE   = 1 << 1;
+    public static final byte FLAG_CLASS    = 1 << 2;
     // @formatter:on
 
     private final byte[] code;

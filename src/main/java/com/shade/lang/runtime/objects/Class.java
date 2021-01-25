@@ -8,7 +8,7 @@ public class Class extends ScriptObject {
     private final Class[] bases;
 
     public Class(String name, Class[] bases) {
-        super(true);
+        super(false);
         this.name = name;
         this.bases = bases;
     }

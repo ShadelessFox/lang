@@ -56,6 +56,7 @@ public class OperationCode {
     public static final byte OP_INSTANCE_OF     = 0x26;
 
     public static final byte OP_MAKE_FUNCTION   = 0x27;
+    public static final byte OP_MAKE_CLASS      = 0x28;
     // @formatter:on
 
 }

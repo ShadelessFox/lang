@@ -53,7 +53,8 @@ public enum Operation {
     NEW(OperationCode.OP_NEW, new OperandType[]{}, 1, 1),
     INSTANCE_OF(OperationCode.OP_INSTANCE_OF, new OperandType[]{}, 2, 1),
 
-    MAKE_FUNCTION(OperationCode.OP_MAKE_FUNCTION, new OperandType[]{OperandType.CONSTANT, OperandType.CONSTANT}, 0, 1);
+    MAKE_FUNCTION(OperationCode.OP_MAKE_FUNCTION, new OperandType[]{OperandType.CONSTANT, OperandType.CONSTANT}, 0, 1),
+    MAKE_CLASS(OperationCode.OP_MAKE_CLASS, new OperandType[]{OperandType.CONSTANT, OperandType.CONSTANT, OperandType.IMM_8}, ops -> (int) ops[2].getImm8(), ops -> 1);
 
     private final byte opcode;
     private final OperandType[] operands;

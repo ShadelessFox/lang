@@ -1,7 +1,6 @@
 package com.shade.lang.compiler.parser.node.context;
 
 import com.shade.lang.runtime.objects.module.Module;
-import com.shade.lang.runtime.objects.ScriptObject;
 
 import java.io.Closeable;
 import java.util.*;
@@ -35,7 +34,7 @@ public class Context implements Closeable, Iterable<Context.Scope> {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Context> T unwrap(Class<? extends T> clazz) {
+    public <T extends Context> T unwrap(Class<T> clazz) {
         for (Context context = this; context != null; context = context.parent) {
             if (clazz.isAssignableFrom(context.getClass())) {
                 return (T) context;
@@ -82,18 +81,6 @@ public class Context implements Closeable, Iterable<Context.Scope> {
 
     public void addListener(BiConsumer<String, Integer> listener) {
         listeners.add(listener);
-    }
-
-    public void setAttribute(String name, ScriptObject value) {
-        module.setAttribute(name, value);
-    }
-
-    public ScriptObject getAttribute(String name) {
-        return module.getAttribute(name);
-    }
-
-    public Map<String, ScriptObject> getAttributes() {
-        return module.getAttributes();
     }
 
     public Module getModule() {

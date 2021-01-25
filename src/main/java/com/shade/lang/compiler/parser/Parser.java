@@ -9,8 +9,8 @@ import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.Token;
 import com.shade.lang.compiler.parser.token.TokenFlag;
 import com.shade.lang.compiler.parser.token.TokenKind;
-import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.lang.String;
 import java.util.*;
@@ -334,9 +334,9 @@ public class Parser {
     private DeclareClassStatement parseClassDeclareStatement(Region start) throws ScriptException {
         String name = expect(Symbol).getStringValue();
 
-        List<String> bases = new ArrayList<>();
+        List<Expression> bases = new ArrayList<>();
         if (consume(Colon) != null) {
-            list(new TokenKind[]{Symbol}, Comma, bases, () -> expect(Symbol).getStringValue());
+            list(new TokenKind[]{Symbol}, Comma, bases, this::parseQualifiedIdentifier);
         }
 
         List<Statement> members = new ArrayList<>();
