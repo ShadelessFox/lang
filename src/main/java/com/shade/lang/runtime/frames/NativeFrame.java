@@ -34,6 +34,6 @@ public class NativeFrame extends Frame {
 
     @Override
     public String toString() {
-        return getModule().getSource() + '/' + function.getName() + "(Native Function)";
+        return getModule().getSource() + '/' + function.getName() + " (Native Function)";
     }
 }

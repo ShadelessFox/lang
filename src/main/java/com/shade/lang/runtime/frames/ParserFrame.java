@@ -26,6 +26,6 @@ public class ParserFrame extends Frame {
 
     @Override
     public String toString() {
-        return source + '(' + exception.getRegion().getBegin() + ')';
+        return source + ':' + exception.getRegion().getBegin();
     }
 }

@@ -40,6 +40,7 @@ import static com.shade.lang.compiler.assembler.OperationCode.*;
 
 public class Machine {
     public static final int MAX_STACK_DEPTH = 8192;
+    public static final int MAX_STACK_REPETITIONS = 3;
 
     public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
     public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
@@ -568,15 +569,15 @@ public class Machine {
                 lastFrameRepeated++;
             }
 
-            if (lastFrameRepeated < 3) {
+            if (lastFrameRepeated < MAX_STACK_REPETITIONS) {
                 builder.append("    at ").append(currentFrame).append('\n');
             }
 
             lastFrame = callStack.pop();
         }
 
-        if (lastFrameRepeated > 0) {
-            builder.append("    [repeated ").append(lastFrameRepeated).append(" more time(-s)]").append('\n');
+        if (lastFrameRepeated > MAX_STACK_REPETITIONS) {
+            builder.append("    [repeated ").append(lastFrameRepeated - MAX_STACK_REPETITIONS).append(" more time(-s)]").append('\n');
         }
 
         err.print(builder);
