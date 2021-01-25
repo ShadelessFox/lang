@@ -121,6 +121,19 @@ public class DeclareFunctionStatement extends Statement {
             assembler.print(new PrintWriter(writer));
             LOG.info(writer.toString());
         }
+
+        if (Machine.ENABLE_LOGGING && !functionContext.getGuards().isEmpty()) {
+            StringWriter writer = new StringWriter();
+            writer.write("Guards of function '" + name + "':\n");
+            for (Guard guard : functionContext.getGuards()) {
+                writer.write(String.format("  %4d..%-4d -> %4d", guard.getStart(), guard.getEnd(), guard.getOffset()));
+                if (guard.getSlot() >= 0) {
+                    writer.write(" @ " + guard.getSlot());
+                }
+                writer.write('\n');
+            }
+            LOG.info(writer.toString());
+        }
     }
 
     public String getName() {
