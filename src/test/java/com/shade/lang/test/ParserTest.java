@@ -1,11 +1,11 @@
 package com.shade.lang.test;
 
-import com.shade.lang.parser.Parser;
-import com.shade.lang.parser.ScriptException;
-import com.shade.lang.parser.Tokenizer;
-import com.shade.lang.parser.node.Node;
-import com.shade.lang.parser.node.expr.*;
-import com.shade.lang.parser.token.Region;
+import com.shade.lang.compiler.parser.Parser;
+import com.shade.lang.compiler.parser.ScriptException;
+import com.shade.lang.compiler.parser.Tokenizer;
+import com.shade.lang.compiler.parser.node.Node;
+import com.shade.lang.compiler.parser.node.expr.*;
+import com.shade.lang.compiler.parser.token.Region;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
