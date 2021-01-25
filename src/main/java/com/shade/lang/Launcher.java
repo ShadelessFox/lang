@@ -8,13 +8,10 @@ import com.shade.lang.runtime.objects.function.Function;
 import com.shade.lang.runtime.objects.module.NativeModuleProvider;
 
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.LongSummaryStatistics;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 
 public class Launcher {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Machine machine = new Machine();
         machine.getSearchRoots().add(Paths.get("src/main/resources"));
 
@@ -22,10 +19,11 @@ public class Launcher {
             machine.load(provider.create(machine));
         }
 
-        machine.load("top_level");
+        machine.load("sandbox");
 
         if (!machine.isHalted()) {
-            machine.call("top_level", "main");
+            Object result = machine.call("sandbox", "main");
+            machine.getErr().println("[VM] Execution result: " + result);
         }
 
         if (Machine.ENABLE_PROFILING) {

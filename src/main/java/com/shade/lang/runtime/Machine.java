@@ -17,12 +17,12 @@ import com.shade.lang.runtime.objects.extension.Index;
 import com.shade.lang.runtime.objects.extension.MutableIndex;
 import com.shade.lang.runtime.objects.function.Function;
 import com.shade.lang.runtime.objects.function.Guard;
-import com.shade.lang.runtime.objects.function.NativeFunction;
 import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.runtime.objects.value.Value;
 import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -107,13 +107,7 @@ public class Machine {
 
         if (module.getChunk() != null) {
             callStack.push(new ModuleFrame(module, operandStack.size()));
-
-            if (callStack.size() == 1) {
-                // Execute module chunk if there's no more frames
-                // because by calling `call` later we will push
-                // new frame and module's frame will never execute
-                execute();
-            }
+            execute();
         }
 
         return module;
@@ -147,6 +141,7 @@ public class Machine {
         return null;
     }
 
+    @Nullable
     public Object call(String moduleName, String attributeName, Object... args) {
         Module module = modules.get(moduleName);
 
@@ -175,8 +170,8 @@ public class Machine {
         Function function = (Function) attribute;
         function.invoke(this, args.length);
 
-        if (!(function instanceof NativeFunction)) {
-            execute();
+        if (function instanceof RuntimeFunction) {
+            return execute();
         }
 
         if (halted) {
@@ -186,7 +181,10 @@ public class Machine {
         return operandStack.pop();
     }
 
-    public void execute() {
+    @Nullable
+    private Object execute() {
+        final Frame rootFrame = callStack.isEmpty() ? null : callStack.peek();
+
         while (!halted) {
             if (callStack.size() > MAX_STACK_DEPTH) {
                 panic("Stack overflow");
@@ -412,8 +410,11 @@ public class Machine {
                         operandStack.removeElementAt(operandStack.size() - 2);
                     }
                     profilerEndFrame(oldFrame);
+                    if (oldFrame == rootFrame) {
+                        return operandStack.pop();
+                    }
                     if (callStack.empty()) {
-                        return;
+                        return null;
                     }
                     break;
                 }
@@ -504,6 +505,8 @@ public class Machine {
                     panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]));
             }
         }
+
+        return null;
     }
 
     public void panic(String message, boolean recoverable) {
