@@ -30,7 +30,7 @@ public class Token {
     }
 
     public String getStringValue() {
-        return (String) value;
+        return String.valueOf(value);
     }
 
     public Number getNumberValue() {

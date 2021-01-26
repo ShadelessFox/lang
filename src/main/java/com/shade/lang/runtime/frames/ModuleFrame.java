@@ -14,9 +14,9 @@ public class ModuleFrame extends Frame {
         final Pair<Short, Short> line = getChunk().getLocations().get(pc);
 
         if (line != null) {
-            return getModule().getName() + '(' + getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond() + ')';
+            return getModule().getName() + " (" + getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond() + ')';
         } else {
-            return getModule().getName() + '(' + getModule().getSource() + ':' + '+' + pc + ')';
+            return getModule().getName() + " (" + getModule().getSource() + ":+" + pc + ')';
         }
     }
 }

@@ -67,6 +67,7 @@ public class DeclareClassStatement extends Statement {
         }
 
         parentAssembler.emit(Operation.MAKE_CLASS, Operand.constant(name), Operand.constant(chunk), Operand.imm8(bases.size()));
+        parentAssembler.addLocation(getRegion().getBegin());
         parentAssembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
 
         if (Machine.ENABLE_LOGGING) {

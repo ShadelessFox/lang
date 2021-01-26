@@ -9,7 +9,7 @@ public enum TokenKind {
     Number("number", 0, TokenFlag.DISPLAY),
     String("string", 0, TokenFlag.DISPLAY),
     StringPart("string part", 0, TokenFlag.DISPLAY),
-    End("end of file", 0, TokenFlag.DISPLAY),
+    End("end of file", 0, 0),
 
     /* Keywords */
     True("true", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
