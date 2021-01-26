@@ -210,6 +210,7 @@ public class Machine {
                 LOG.info(sb.toString());
             }
 
+            dispatch:
             switch (opcode) {
                 case OP_PUSH: {
                     operandStack.push(Value.from(frame.getNextConstant()));
@@ -510,13 +511,19 @@ public class Machine {
                     for (int index = bases.length - 1; index >= 0; index--) {
                         final ScriptObject object = operandStack.pop();
 
-                        if (object instanceof Class) {
-                            bases[index] = (Class) object;
-                            continue;
+                        if (!(object instanceof Class)) {
+                            panic("Class '" + name + "' cannot inherit from non-class object '" + object + "'");
+                            break dispatch;
                         }
 
-                        panic("Object '" + object + "' is not a class object and cannot be used as a parent");
-                        break;
+                        for (int nested = bases.length - 1; nested > index; nested--) {
+                            if (object.equals(bases[nested])) {
+                                panic("Class '" + name + "' has duplicated base class '" + ((Class) object).getName() + "'");
+                                break dispatch;
+                            }
+                        }
+
+                        bases[index] = (Class) object;
                     }
 
                     callStack.push(new ClassFrame(frame.getModule(), new Class(name, bases), chunk, operandStack.size()));
