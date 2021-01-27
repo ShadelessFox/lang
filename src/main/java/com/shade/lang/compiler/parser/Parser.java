@@ -96,8 +96,6 @@ public class Parser {
                 return parseRangeStatement();
             case Continue:
                 return parseContinueStatement();
-            case Super:
-                return parseSuperStatement();
             case Break:
                 return parseBreakStatement();
             case BraceL:
@@ -213,32 +211,10 @@ public class Parser {
         return new BreakStatement(name == null ? null : name.getStringValue(), start.until(end));
     }
 
-    private SuperStatement parseSuperStatement() throws ScriptException {
-        Region start = expect(Super).getRegion();
-        String name = null;
-        if (consume(Colon) != null) {
-            name = expect(Symbol).getStringValue();
-        }
-        List<Expression> arguments = new ArrayList<>();
-        list(ParenL, ParenR, Comma, arguments, this::parseExpression);
-        Region end = expect(Semicolon).getRegion();
-        return new SuperStatement(name, arguments, start.until(end));
-    }
-
     private DeclareFunctionStatement parseConstructorDeclareStatement(Region start) throws ScriptException {
         List<String> arguments = new ArrayList<>();
         boolean variadic = parseFunctionArgumentsList(arguments);
-        List<Statement> statements = new ArrayList<>();
-        Region region = list(BraceL, BraceR, null, statements, () -> {
-            if (matches(Super) && !statements.isEmpty() && !(statements.get(statements.size() - 1) instanceof SuperStatement)) {
-                throw new ScriptException("Mixing 'super' and regular statements is not allowed", token.getRegion());
-            }
-            if (matches(Return)) {
-                throw new ScriptException("Cannot return from constructor", token.getRegion());
-            }
-            return parseStatement();
-        });
-        BlockStatement body = new BlockStatement(statements, region);
+        BlockStatement body = parseBlockStatement();
         return new DeclareFunctionStatement("<init>", arguments, body, variadic, start.until(body.getRegion()));
     }
 
@@ -420,7 +396,7 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression() throws ScriptException {
-        Token token = expect(Symbol, Number, True, False, None, String, StringPart, New, ParenL, BracketL);
+        Token token = expect(Symbol, Number, True, False, None, String, StringPart, New, Super, ParenL, BracketL);
         Region start = token.getRegion();
 
         if (token.getKind() == Symbol) {
@@ -476,6 +452,24 @@ public class Parser {
             List<Expression> arguments = new ArrayList<>();
             Region region = list(ParenL, ParenR, Comma, arguments, this::parseExpression);
             return parsePrimaryExpression(new NewExpression(callee, arguments, token.getRegion().until(region)));
+        }
+
+        if (token.getKind() == Super) {
+            Region region = token.getRegion();
+
+            Expression target = null;
+            if (consume(BracketL) != null) {
+                target = parseExpression();
+                region = region.until(expect(BracketR).getRegion());
+            }
+
+            List<Expression> arguments = null;
+            if (matches(ParenL)) {
+                arguments = new ArrayList<>();
+                region = region.until(list(ParenL, ParenR, Comma, arguments, this::parseExpression));
+            }
+
+            return parsePrimaryExpression(new SuperExpression(target, arguments, token.getRegion().until(region)));
         }
 
         if (token.getKind() == ParenL) {
