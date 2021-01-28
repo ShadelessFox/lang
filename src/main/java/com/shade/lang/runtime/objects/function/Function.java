@@ -5,83 +5,98 @@ import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.Value;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 import java.util.Stack;
 
 public abstract class Function extends ScriptObject {
     protected final Module module;
     protected final String name;
-    protected final int argumentsCount;
-    protected final ScriptObject[] boundArguments;
+    protected final byte arity;
     protected final byte flags;
 
-    public Function(Module module, String name, int argumentsCount, ScriptObject[] boundArguments, byte flags) {
+    public Function(@NotNull Module module, @NotNull String name, byte arity, byte flags) {
         super(true);
         this.module = module;
         this.name = name;
-        this.argumentsCount = argumentsCount;
-        this.boundArguments = boundArguments != null ? boundArguments : new ScriptObject[0];
+        this.arity = arity;
         this.flags = flags;
     }
 
-    public abstract void invoke(Machine machine, int argc);
+    public final void invoke(@NotNull Machine machine, int argc) {
+        final ScriptObject[] arguments = prepare(machine, argc);
 
-    protected ScriptObject[] prepare(Machine machine, int argc) {
-        boolean variadic = hasFlag(Chunk.FLAG_VARIADIC);
+        if (arguments == null) {
+            return;
+        }
 
-        if ((!variadic && argumentsCount != argc) || (variadic && argumentsCount - 1 > argc)) {
+        invoke(machine, arguments);
+    }
+
+    protected abstract void invoke(@NotNull Machine machine, @NotNull ScriptObject[] arguments);
+
+    @Nullable
+    protected ScriptObject[] prepare(@NotNull Machine machine, int argc) {
+        final boolean variadic = (flags & Chunk.FLAG_VARIADIC) != 0;
+
+        if (!variadic && argc != arity) {
             machine.panic(String.format(
-                "Function '%s' takes %d%s %s but %d %s provided",
-                getName(),
-                variadic ? argumentsCount - 1 : argumentsCount,
-                variadic ? " or more" : "",
-                argumentsCount != 1 || variadic ? "arguments" : "argument",
-                argc,
-                argc != 1 ? "were" : "was"), true);
+                "Function '%s' accepts exactly %d argument%s but %s %s provided",
+                name, arity, arity != 1 ? "s" : "", argc, argc != 1 ? "were" : "was"
+            ), true);
+
             return null;
         }
 
-        ScriptObject[] values = new ScriptObject[boundArguments.length + argumentsCount];
-        Stack<ScriptObject> stack = machine.getOperandStack();
+        if (variadic && arity - 1 > argc) {
+            machine.panic(String.format(
+                "Function '%s' accepts %d or more arguments but %s %s provided",
+                name, arity - 1, argc, argc != 1 ? "were" : "was"
+            ), true);
+
+            return null;
+        }
+
+        final ScriptObject[] locals = new ScriptObject[arity];
+        final Stack<ScriptObject> stack = machine.getOperandStack();
 
         if (variadic) {
-            ScriptObject[] variadicValues = new ScriptObject[argc - argumentsCount + 1];
-            for (int index = argc - argumentsCount; index >= 0; index--) {
-                variadicValues[index] = stack.pop();
+            final ScriptObject[] variadicLocals = new ScriptObject[argc - arity + 1];
+
+            for (int index = argc - arity; index >= 0; index--) {
+                variadicLocals[index] = stack.pop();
             }
-            values[argumentsCount - 1 + boundArguments.length] = Value.from(variadicValues);
+
+            locals[arity - 1] = Value.from(variadicLocals);
+
+            for (int index = arity - 2; index >= 0; index--) {
+                locals[index] = stack.pop();
+            }
+        } else {
+            for (int index = arity - 1; index >= 0; index--) {
+                locals[index] = stack.pop();
+            }
         }
 
-        for (int index = argumentsCount - (variadic ? 2 : 1); index >= 0; index--) {
-            values[boundArguments.length + index] = stack.pop();
-        }
-
-        System.arraycopy(boundArguments, 0, values, 0, boundArguments.length);
-
-        return values;
+        return locals;
     }
 
+    @NotNull
     public Module getModule() {
         return module;
     }
 
+    @NotNull
     public String getName() {
         return name;
     }
 
-    public int getArgumentsCount() {
-        return argumentsCount;
-    }
-
-    public ScriptObject[] getBoundArguments() {
-        return boundArguments;
+    public int getArity() {
+        return arity;
     }
 
     public byte getFlags() {
         return flags;
-    }
-
-    public boolean hasFlag(int bit) {
-        return (flags & bit) == 1;
     }
 }

@@ -12,22 +12,17 @@ public class RuntimeFunction extends Function {
     private final Chunk chunk;
 
     public RuntimeFunction(@NotNull Module module, @NotNull String name, @NotNull Chunk chunk) {
-        super(module, name, chunk.getArguments(), new ScriptObject[chunk.getBoundArguments()], chunk.getFlags());
+        super(module, name, chunk.getArguments(), chunk.getFlags());
         this.chunk = chunk;
     }
 
     @Override
-    public void invoke(Machine machine, int argc) {
-        ScriptObject[] arguments = prepare(machine, argc);
+    protected void invoke(@NotNull Machine machine, @NotNull ScriptObject[] arguments) {
+        final ScriptObject[] locals = new ScriptObject[chunk.getLocals()];
+        System.arraycopy(arguments, 0, locals, 0, arguments.length);
 
-        if (arguments == null) {
-            return;
-        }
+        final Frame frame = new RuntimeFrame(module, this, locals, machine.getOperandStack().size());
 
-        ScriptObject[] slots = new ScriptObject[chunk.getLocals()];
-        System.arraycopy(arguments, 0, slots, 0, arguments.length);
-
-        Frame frame = new RuntimeFrame(module, this, slots, machine.getOperandStack().size());
         machine.profilerBeginFrame(frame);
         machine.getCallStack().push(frame);
     }
@@ -39,10 +34,6 @@ public class RuntimeFunction extends Function {
 
     @Override
     public String toString() {
-        if (chunk.getBoundArguments() == 0) {
-            return "[Function '" + getName() + "']";
-        } else {
-            return "[Bound Function '" + getName() + "']";
-        }
+        return "[Function '" + name + "']";
     }
 }

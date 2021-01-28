@@ -3,37 +3,27 @@ package com.shade.lang.runtime.objects.function;
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.frames.Frame;
 import com.shade.lang.runtime.frames.NativeFrame;
-import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.ScriptObject;
+import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.Value;
-
-import java.util.function.BiFunction;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 public class NativeFunction extends Function {
-    private final BiFunction<Machine, ScriptObject[], Object> prototype;
+    private final Prototype prototype;
 
-    public NativeFunction(Module module, String name, int argumentsCount, ScriptObject[] boundArguments, byte flags, BiFunction<Machine, ScriptObject[], Object> prototype) {
-        super(module, name, argumentsCount, boundArguments, flags);
+    public NativeFunction(@NotNull Module module, @NotNull String name, byte arity, byte flags, @NotNull Prototype prototype) {
+        super(module, name, arity, flags);
         this.prototype = prototype;
     }
 
-    public NativeFunction(Module module, String name, int argumentsCount, byte flags, BiFunction<Machine, ScriptObject[], Object> prototype) {
-        this(module, name, argumentsCount, null, flags, prototype);
-    }
-
     @Override
-    public void invoke(Machine machine, int argc) {
-        ScriptObject[] arguments = prepare(machine, argc);
-
-        if (arguments == null) {
-            return;
-        }
-
-        Frame frame = new NativeFrame(module, this, machine.getOperandStack().size());
+    public void invoke(@NotNull Machine machine, @NotNull ScriptObject[] arguments) {
+        final Frame frame = new NativeFrame(module, this, machine.getOperandStack().size());
         machine.profilerBeginFrame(frame);
         machine.getCallStack().push(frame);
 
-        Object result = prototype.apply(machine, arguments);
+        Object result = prototype.invoke(machine, arguments);
 
         if (!(result instanceof Value)) {
             result = Value.from(result);
@@ -45,12 +35,18 @@ public class NativeFunction extends Function {
         }
     }
 
-    public BiFunction<Machine, ScriptObject[], Object> getPrototype() {
+    @NotNull
+    public Prototype getPrototype() {
         return prototype;
     }
 
     @Override
     public String toString() {
-        return "[Native Function '" + getName() + "']";
+        return "[Native Function '" + name + "']";
+    }
+
+    public interface Prototype {
+        @Nullable
+        Object invoke(@NotNull Machine machine, @NotNull ScriptObject... arguments);
     }
 }

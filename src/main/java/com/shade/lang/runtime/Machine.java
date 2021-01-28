@@ -15,6 +15,7 @@ import com.shade.lang.runtime.objects.Instance;
 import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.extension.Index;
 import com.shade.lang.runtime.objects.extension.MutableIndex;
+import com.shade.lang.runtime.objects.function.BoundFunction;
 import com.shade.lang.runtime.objects.function.Function;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.function.RuntimeFunction;
@@ -433,8 +434,8 @@ public class Machine {
                     break;
                 }
                 case OP_BIND: {
-                    ScriptObject value = operandStack.pop();
-                    RuntimeFunction function = (RuntimeFunction) operandStack.pop();
+                    final ScriptObject value = operandStack.pop();
+                    final BoundFunction function = (BoundFunction) operandStack.pop();
                     function.getBoundArguments()[frame.getNextImm8()] = value;
                     break;
                 }
@@ -500,7 +501,14 @@ public class Machine {
                 case OP_MAKE_FUNCTION: {
                     final String name = (String) frame.getNextConstant();
                     final Chunk chunk = (Chunk) frame.getNextConstant();
-                    operandStack.push(new RuntimeFunction(frame.getModule(), name, chunk));
+                    final Function function = new RuntimeFunction(frame.getModule(), name, chunk);
+
+                    if (chunk.getBoundArguments() > 0) {
+                        operandStack.push(new BoundFunction(function, new ScriptObject[chunk.getBoundArguments()]));
+                    } else {
+                        operandStack.push(function);
+                    }
+
                     break;
                 }
                 case OP_MAKE_CLASS: {

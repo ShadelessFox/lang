@@ -2,7 +2,6 @@ package com.shade.lang.runtime.objects.module;
 
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
-import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.function.NativeFunction;
 import com.shade.lang.runtime.objects.module.builtin.BuiltinCore;
 import com.shade.lang.runtime.objects.value.ArrayValue;
@@ -13,7 +12,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.function.BiFunction;
 
 public abstract class NativeModule extends Module {
     public NativeModule(String moduleName) {
@@ -34,7 +32,7 @@ public abstract class NativeModule extends Module {
             NativeFunction function = new NativeFunction(
                 this,
                 name,
-                method.getParameterCount() - 1,
+                (byte) (method.getParameterCount() - 1),
                 method.isVarArgs() ? Chunk.FLAG_VARIADIC : 0,
                 wrap(method)
             );
@@ -43,7 +41,7 @@ public abstract class NativeModule extends Module {
         }
     }
 
-    protected static BiFunction<Machine, ScriptObject[], Object> wrap(Method method) {
+    protected static NativeFunction.Prototype wrap(Method method) {
         return (machine, args) -> {
             try {
                 Object[] objects = new Object[args.length + 1];
