@@ -307,7 +307,10 @@ public class Parser {
 
     private ReturnStatement parseReturnStatement() throws ScriptException {
         Region start = expect(Return).getRegion();
-        Expression value = parseExpression();
+        Expression value = null;
+        if (!matches(Semicolon)) {
+            value = parseExpression();
+        }
         Token end = expect(Semicolon);
         return new ReturnStatement(value, start.until(end.getRegion()));
     }
