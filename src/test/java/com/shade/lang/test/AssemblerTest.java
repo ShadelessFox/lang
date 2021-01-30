@@ -1,16 +1,16 @@
 package com.shade.lang.test;
 
-import com.shade.lang.compiler.Assembler;
-import com.shade.lang.compiler.OperationCode;
-import com.shade.lang.parser.ScriptException;
-import com.shade.lang.parser.node.Node;
-import com.shade.lang.parser.node.context.Context;
-import com.shade.lang.parser.node.expr.BinaryExpression;
-import com.shade.lang.parser.node.expr.LoadConstantExpression;
-import com.shade.lang.parser.node.expr.UnaryExpression;
-import com.shade.lang.parser.node.stmt.*;
-import com.shade.lang.parser.token.Region;
-import com.shade.lang.parser.token.TokenKind;
+import com.shade.lang.compiler.assembler.Assembler;
+import com.shade.lang.compiler.assembler.OperationCode;
+import com.shade.lang.compiler.parser.ScriptException;
+import com.shade.lang.compiler.parser.node.Node;
+import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.expr.BinaryExpression;
+import com.shade.lang.compiler.parser.node.expr.LoadConstantExpression;
+import com.shade.lang.compiler.parser.node.expr.UnaryExpression;
+import com.shade.lang.compiler.parser.node.stmt.*;
+import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.compiler.parser.token.TokenKind;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

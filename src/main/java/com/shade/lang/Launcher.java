@@ -1,17 +1,17 @@
 package com.shade.lang;
 
-import com.shade.lang.vm.Machine;
-import com.shade.lang.vm.runtime.function.Function;
-import com.shade.lang.vm.runtime.module.NativeModuleProvider;
+import com.shade.lang.runtime.Machine;
+import com.shade.lang.runtime.frames.Frame;
+import com.shade.lang.runtime.frames.NativeFrame;
+import com.shade.lang.runtime.frames.RuntimeFrame;
+import com.shade.lang.runtime.objects.function.Function;
+import com.shade.lang.runtime.objects.module.NativeModuleProvider;
 
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.LongSummaryStatistics;
-import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.*;
 
 public class Launcher {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Machine machine = new Machine();
         machine.getSearchRoots().add(Paths.get("src/main/resources"));
 
@@ -22,7 +22,8 @@ public class Launcher {
         machine.load("sandbox");
 
         if (!machine.isHalted()) {
-            machine.call("sandbox", "main");
+            Object result = machine.call("sandbox", "main");
+            machine.getErr().println("[VM] Execution result: " + result);
         }
 
         if (Machine.ENABLE_PROFILING) {
@@ -35,8 +36,18 @@ public class Launcher {
     private static void printProfileResults(Machine machine) {
         machine.getOut().println("--- Profile Results ---");
 
-        for (Map.Entry<Machine.Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
-            Function function = entry.getKey().getFunction();
+        for (Map.Entry<Frame, List<Long>> entry : machine.getProfilerSamples().entrySet()) {
+            final Frame frame = entry.getKey();
+            final Function function;
+
+            if (frame instanceof RuntimeFrame) {
+                function = ((RuntimeFrame) frame).getFunction();
+            } else if (frame instanceof NativeFrame) {
+                function = ((NativeFrame) frame).getFunction();
+            } else {
+                continue;
+            }
+
             List<Long> samples = entry.getValue();
 
             if (samples.size() > 0) {

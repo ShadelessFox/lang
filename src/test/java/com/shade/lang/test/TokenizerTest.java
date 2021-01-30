@@ -1,9 +1,9 @@
 package com.shade.lang.test;
 
-import com.shade.lang.parser.ScriptException;
-import com.shade.lang.parser.Tokenizer;
-import com.shade.lang.parser.token.Token;
-import com.shade.lang.parser.token.TokenKind;
+import com.shade.lang.compiler.parser.ScriptException;
+import com.shade.lang.compiler.parser.Tokenizer;
+import com.shade.lang.compiler.parser.token.Token;
+import com.shade.lang.compiler.parser.token.TokenKind;
 import org.junit.Assert;
 import org.junit.Test;
 

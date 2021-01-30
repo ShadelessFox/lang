@@ -26,7 +26,7 @@ class Reader {
 
 class Lexer : Reader {
     constructor(self, buffer) {
-        super(buffer);
+        super[Reader](buffer);
         self.ch = none;
         self.read();
     }

@@ -1,7 +1,7 @@
 package com.shade.lang.test;
 
-import com.shade.lang.parser.node.context.Context;
-import com.shade.lang.vm.runtime.module.Module;
+import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.runtime.objects.module.Module;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;

@@ -1,15 +1,15 @@
 package com.shade.lang.test;
 
-import com.shade.lang.optimizer.Optimizer;
-import com.shade.lang.parser.node.Node;
-import com.shade.lang.parser.node.expr.BinaryExpression;
-import com.shade.lang.parser.node.expr.LoadConstantExpression;
-import com.shade.lang.parser.node.expr.LogicalExpression;
-import com.shade.lang.parser.node.expr.UnaryExpression;
-import com.shade.lang.parser.node.stmt.BlockStatement;
-import com.shade.lang.parser.node.stmt.BranchStatement;
-import com.shade.lang.parser.node.stmt.ReturnStatement;
-import com.shade.lang.parser.token.TokenKind;
+import com.shade.lang.compiler.optimizer.Optimizer;
+import com.shade.lang.compiler.parser.node.Node;
+import com.shade.lang.compiler.parser.node.expr.BinaryExpression;
+import com.shade.lang.compiler.parser.node.expr.LoadConstantExpression;
+import com.shade.lang.compiler.parser.node.expr.LogicalExpression;
+import com.shade.lang.compiler.parser.node.expr.UnaryExpression;
+import com.shade.lang.compiler.parser.node.stmt.BlockStatement;
+import com.shade.lang.compiler.parser.node.stmt.BranchStatement;
+import com.shade.lang.compiler.parser.node.stmt.ReturnStatement;
+import com.shade.lang.compiler.parser.token.TokenKind;
 import org.junit.Assert;
 import org.junit.Test;
 
