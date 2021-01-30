@@ -30,7 +30,7 @@ public class StringValue extends Value implements Index {
     @Override
     public ScriptObject getIndex(Machine machine, ScriptObject index) {
         if (!(index instanceof IntegerValue)) {
-            machine.panic("Expected index to be integer");
+            machine.panic("Expected index to be integer", true);
             return null;
         }
 

@@ -52,7 +52,7 @@ public abstract class NativeModule extends Module {
                 }
                 return method.invoke(null, objects);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                machine.panic("Internal error: " + e);
+                machine.panic("Internal error: " + e, false);
                 return null;
             }
         };

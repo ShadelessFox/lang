@@ -34,14 +34,14 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
     private Integer getIndexValue(Machine machine, ScriptObject index) {
         if (!(index instanceof IntegerValue)) {
-            machine.panic("Expected index to be integer");
+            machine.panic("Expected index to be integer", true);
             return null;
         }
 
         int idx = ((IntegerValue) index).getValue();
 
         if (idx >= values.length) {
-            machine.panic("Index out of range (index is " + idx + ", size is " + values.length + ")");
+            machine.panic("Index out of range (index is " + idx + ", size is " + values.length + ")", true);
             return null;
         }
 

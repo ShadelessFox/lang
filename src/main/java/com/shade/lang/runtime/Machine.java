@@ -90,7 +90,7 @@ public class Machine {
             return load(module);
         } catch (ScriptException e) {
             callStack.push(new ParserFrame(module, source, e, operandStack.size()));
-            panic(e.getMessage());
+            panic(e.getMessage(), false);
             return null;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -187,7 +187,7 @@ public class Machine {
 
         while (!halted) {
             if (callStack.size() > MAX_STACK_DEPTH) {
-                panic("Stack overflow");
+                panic("Stack overflow", false);
                 break;
             }
 
@@ -535,13 +535,13 @@ public class Machine {
                         final ScriptObject object = operandStack.pop();
 
                         if (!(object instanceof Class)) {
-                            panic("Class '" + name + "' cannot inherit from non-class object '" + object + "'");
+                            panic("Class '" + name + "' cannot inherit from non-class object '" + object + "'", false);
                             break dispatch;
                         }
 
                         for (int nested = bases.length - 1; nested > index; nested--) {
                             if (object.equals(bases[nested])) {
-                                panic("Class '" + name + "' has duplicated base class '" + ((Class) object).getName() + "'");
+                                panic("Class '" + name + "' has duplicated base class '" + ((Class) object).getName() + "'", false);
                                 break dispatch;
                             }
                         }
@@ -553,7 +553,7 @@ public class Machine {
                     break;
                 }
                 default:
-                    panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]));
+                    panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]), false);
             }
         }
 
@@ -613,10 +613,6 @@ public class Machine {
         err.print(builder);
 
         halt(-1);
-    }
-
-    public void panic(String message) {
-        panic(message, false);
     }
 
     public void halt(int status) {
