@@ -88,6 +88,8 @@ public class Parser {
                 return parseBranchStatement();
             case Return:
                 return parseReturnStatement();
+            case Throw:
+                return parseThrowStatement();
             case Try:
                 return parseTryStatement();
             case Loop:
@@ -308,6 +310,13 @@ public class Parser {
         Expression value = parseExpression();
         Token end = expect(Semicolon);
         return new ReturnStatement(value, start.until(end.getRegion()));
+    }
+
+    private ThrowStatement parseThrowStatement() throws ScriptException {
+        Region start = expect(Throw).getRegion();
+        Expression value = parseExpression();
+        Token end = expect(Semicolon);
+        return new ThrowStatement(value, start.until(end.getRegion()));
     }
 
     private BlockStatement parseBlockStatement() throws ScriptException {

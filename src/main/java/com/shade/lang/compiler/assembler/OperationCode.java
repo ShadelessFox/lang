@@ -58,6 +58,8 @@ public class OperationCode {
 
     public static final byte OP_MAKE_FUNCTION   = 0x28;
     public static final byte OP_MAKE_CLASS      = 0x29;
+
+    public static final byte OP_THROW           = 0x2A;
     // @formatter:on
 
 }

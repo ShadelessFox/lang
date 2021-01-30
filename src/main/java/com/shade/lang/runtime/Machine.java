@@ -552,6 +552,10 @@ public class Machine {
                     callStack.push(new ClassFrame(frame.getModule(), new Class(name, bases), chunk, operandStack.size()));
                     break;
                 }
+                case OP_THROW: {
+                    panic(operandStack.pop(), true);
+                    break;
+                }
                 default:
                     panic(String.format("Not implemented opcode: %#04x", frame.getChunk().getCode()[frame.pc - 1]), false);
             }
@@ -560,14 +564,18 @@ public class Machine {
         return null;
     }
 
-    public void panic(String message, boolean recoverable) {
+    public void panic(Object payload, boolean recoverable) {
+        panic(Value.from(payload), recoverable);
+    }
+
+    public void panic(ScriptObject payload, boolean recoverable) {
         int lastFrameRepeated = 0;
         Frame lastFrame = null;
 
         StringBuilder builder = new StringBuilder();
-        builder.append("Panicking: ").append(message).append('\n');
+        builder.append("Panicking: ").append(payload).append('\n');
 
-        LOG.info("Panicking with message '" + message + "' in " + callStack.peek());
+        LOG.info("Panicking with payload '" + payload + "' in " + callStack.peek());
 
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
@@ -586,7 +594,7 @@ public class Machine {
                         LOG.info("Got suitable guard, recovering");
 
                         if (guard.hasSlot()) {
-                            currentFrame.getLocals()[guard.getSlot()] = Value.from(message);
+                            currentFrame.getLocals()[guard.getSlot()] = payload;
                         }
 
                         currentFrame.pc = guard.getOffset();

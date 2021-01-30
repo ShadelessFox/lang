@@ -300,6 +300,18 @@ def test_try_finally() {
     })() == 21;
 }
 
+def test_throw() {
+    let value = 0;
+    try {
+        throw 5;
+        assert false, 'unreachable';
+    } recover e {
+        assert e == 5;
+        value = e + 7;
+    }
+    assert value == 12;
+}
+
 def factorial_iterative(x) {
     let product = 1;
     loop while x > 0 {
@@ -660,6 +672,7 @@ def main() {
     test.pass('String interpolation', test_interpolation);
     test.pass('Panic recovery', test_panic_recover);
     test.pass('Try & Finally', test_try_finally);
+    test.pass('Throw & Recover', test_throw);
     test.pass('Loop while & break & continue', test_loops);
     test.pass('Local import', test_local_import);
     test.pass('Anonymous functions & variable capturing', test_lambda_functions);
@@ -671,6 +684,8 @@ def main() {
     test.pass('Unwrap operator', test_unwrap_operator);
     test.pass('Parse json', test_parse_json);
     test.pass('Instance of', test_instance_of);
+    test.fail('Throw value', def () { throw 'hello'; });
+    test.fail('Fail assert', def () { assert false; });
     test.fail('No such attribute', def () { std.println(none.hello); });
     test.fail('No such global', def () { std.println(hello); });
     test.fail('Index accessing', def () { none[0]; });

@@ -23,6 +23,7 @@ public enum TokenKind {
     Not("not", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Import("import", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Assert("assert", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Throw("throw", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Try("try", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Recover("recover", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Finally("finally", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
