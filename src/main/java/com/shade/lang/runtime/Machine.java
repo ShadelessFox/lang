@@ -504,7 +504,7 @@ public class Machine {
                     final Function function = new RuntimeFunction(frame.getModule(), name, chunk);
 
                     if (chunk.getBoundArguments() > 0) {
-                        operandStack.push(new BoundFunction(function, new ScriptObject[chunk.getBoundArguments()]));
+                        operandStack.push(new BoundFunction(function, function.getArity(), new ScriptObject[chunk.getBoundArguments()]));
                     } else {
                         operandStack.push(function);
                     }

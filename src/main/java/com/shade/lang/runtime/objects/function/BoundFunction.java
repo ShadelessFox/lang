@@ -9,8 +9,8 @@ public class BoundFunction extends Function {
     private final Function function;
     private final ScriptObject[] boundArguments;
 
-    public BoundFunction(@NotNull Function function, @NotNull ScriptObject[] boundArguments) {
-        super(function.module, function.name, function.arity, function.flags);
+    public BoundFunction(@NotNull Function function, byte arity, @NotNull ScriptObject[] boundArguments) {
+        super(function.module, function.name, (byte) Math.min(function.arity, arity), function.flags);
         this.function = function;
         this.boundArguments = boundArguments;
     }
@@ -24,7 +24,7 @@ public class BoundFunction extends Function {
             return null;
         }
 
-        final ScriptObject[] boundLocals = new ScriptObject[argc + boundArguments.length];
+        final ScriptObject[] boundLocals = new ScriptObject[locals.length + boundArguments.length];
         System.arraycopy(boundArguments, 0, boundLocals, 0, boundArguments.length);
         System.arraycopy(locals, 0, boundLocals, boundArguments.length, locals.length);
 

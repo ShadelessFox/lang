@@ -92,7 +92,7 @@ public abstract class Function extends ScriptObject {
         return name;
     }
 
-    public int getArity() {
+    public byte getArity() {
         return arity;
     }
 
