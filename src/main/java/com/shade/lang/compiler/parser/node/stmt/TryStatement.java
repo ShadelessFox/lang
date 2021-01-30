@@ -6,63 +6,87 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 public class TryStatement extends Statement {
     private final BlockStatement body;
-    private final BlockStatement recover;
+    private final BlockStatement recoverBody;
+    private final BlockStatement finallyBody;
     private final String name;
 
-    public TryStatement(BlockStatement body, BlockStatement recover, String name, Region region) {
+    public TryStatement(@NotNull BlockStatement body, @Nullable BlockStatement recoverBody, @Nullable String name, @Nullable BlockStatement finallyBody, @NotNull Region region) {
         super(region);
         this.body = body;
-        this.recover = recover;
+        this.recoverBody = recoverBody;
+        this.finallyBody = finallyBody;
         this.name = name;
     }
 
     @Override
     public boolean isControlFlowReturned() {
-        return body.isControlFlowReturned() && recover.isControlFlowReturned();
+        return body.isControlFlowReturned() &&
+            (recoverBody == null || recoverBody.isControlFlowReturned()) &&
+            (finallyBody == null || finallyBody.isControlFlowReturned());
     }
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        final FinallyContext finallyContext = new FinallyContext(context, this);
+
         int regionStart = assembler.getOffset(assembler.getPosition());
-        body.compile(context, assembler);
+        body.compile(finallyContext, assembler);
         int regionEnd = assembler.getOffset(assembler.getPosition());
 
-        Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
+        finallyContext.compile(assembler);
 
-        int offset = assembler.getOffset(assembler.getPosition());
-        int slot = Operand.UNDEFINED;
+        if (recoverBody != null) {
+            Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
 
-        try (Context recoverContext = context.enter()) {
-            if (name != null) {
-                slot = recoverContext.addSlot(name);
+            int offset = assembler.getOffset(assembler.getPosition());
+            int slot = Operand.UNDEFINED;
+
+            try (Context recoverContext = finallyContext.enter()) {
+                if (name != null) {
+                    slot = recoverContext.addSlot(name);
+                }
+                recoverBody.compile(recoverContext, assembler);
+
+                finallyContext.compile(assembler);
             }
-            recover.compile(recoverContext, assembler);
+
+            assembler.bind(end);
+
+            FunctionContext functionContext = context.unwrap(FunctionContext.class);
+
+            if (slot != Operand.UNDEFINED) {
+                functionContext.addGuard(regionStart, regionEnd, offset, slot);
+            } else {
+                functionContext.addGuard(regionStart, regionEnd, offset);
+            }
         }
 
-        assembler.bind(end);
-
-        FunctionContext functionContext = context.unwrap(FunctionContext.class);
-
-        if (slot != Operand.UNDEFINED) {
-            functionContext.addGuard(regionStart, regionEnd, offset, slot);
-        } else {
-            functionContext.addGuard(regionStart, regionEnd, offset);
-        }
     }
 
+    @NotNull
     public BlockStatement getBody() {
         return body;
     }
 
-    public BlockStatement getRecover() {
-        return recover;
+    @Nullable
+    public BlockStatement getRecoverBody() {
+        return recoverBody;
     }
 
+    @Nullable
+    public BlockStatement getFinallyBody() {
+        return finallyBody;
+    }
+
+    @NotNull
     public String getName() {
         return name;
     }

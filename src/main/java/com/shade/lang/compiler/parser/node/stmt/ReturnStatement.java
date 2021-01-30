@@ -6,6 +6,7 @@ import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.token.Region;
 
 import java.util.Objects;
@@ -25,6 +26,11 @@ public class ReturnStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        final FinallyContext finallyContext = context.unwrap(FinallyContext.class);
+        if (finallyContext != null) {
+            finallyContext.compile(assembler);
+        }
+
         value.compile(context, assembler);
         assembler.emit(Operation.RETURN);
     }

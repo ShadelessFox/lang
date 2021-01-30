@@ -25,6 +25,7 @@ public enum TokenKind {
     Assert("assert", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Try("try", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Recover("recover", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
+    Finally("finally", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     For("for", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     Loop("loop", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),
     While("while", 0, TokenFlag.QUOTED | TokenFlag.KEYWORD),

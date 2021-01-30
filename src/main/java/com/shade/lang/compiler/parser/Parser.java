@@ -274,12 +274,33 @@ public class Parser {
     }
 
     private TryStatement parseTryStatement() throws ScriptException {
-        Region start = expect(Try).getRegion();
-        BlockStatement body = parseBlockStatement();
-        expect(Recover);
-        Token name = consume(Symbol);
-        BlockStatement recover = parseBlockStatement();
-        return new TryStatement(body, recover, name == null ? null : name.getStringValue(), start.until(recover.getRegion()));
+        final Region start = expect(Try).getRegion();
+        final BlockStatement body = parseBlockStatement();
+
+        Region region = start;
+
+        String recoverBlockName = null;
+        BlockStatement recoverBlock = null;
+        if (consume(Recover) != null) {
+            final Token name = consume(Symbol);
+            if (name != null) {
+                recoverBlockName = name.getStringValue();
+            }
+            recoverBlock = parseBlockStatement();
+            region = region.until(recoverBlock.getRegion());
+        }
+
+        BlockStatement finallyBlock = null;
+        if (consume(Finally) != null) {
+            finallyBlock = parseBlockStatement();
+            region = region.until(finallyBlock.getRegion());
+        }
+
+        if (recoverBlock == null && finallyBlock == null) {
+            throw new ScriptException("The 'try' statement must contain at least either 'recover' or 'finally' block", region);
+        }
+
+        return new TryStatement(body, recoverBlock, recoverBlockName, finallyBlock, region);
     }
 
     private ReturnStatement parseReturnStatement() throws ScriptException {

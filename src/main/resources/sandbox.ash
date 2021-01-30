@@ -254,6 +254,52 @@ def test_panic_recover() {
     assert status == 1 + 2 + 4 + 5 + 6 + 7 + 8;
 }
 
+def test_try_finally() {
+    assert (def () {
+        try {
+            return 1;
+        } finally {
+            return 2;
+        }
+    })() == 2;
+
+    assert (def () {
+        let value = 0;
+        for i in 0..5 {
+            value += 1;
+            try {
+                continue;
+            } finally {
+                return 'you shall not pass';
+            }
+        }
+        return value;
+    })() == 'you shall not pass';
+
+    assert (def () {
+        let value = 0;
+        try {
+            value += 5;
+        } finally {
+            value += 7;
+        }
+        return value;
+    })() == 12;
+
+    assert (def () {
+        let value = 0;
+        try {
+            value += 5;
+            assert false;
+        } recover {
+            value += 7;
+        } finally {
+            value += 9;
+        }
+        return value;
+    })() == 21;
+}
+
 def factorial_iterative(x) {
     let product = 1;
     loop while x > 0 {
@@ -613,6 +659,7 @@ def main() {
     test.pass('Execute fibonacci', test_fibonacci);
     test.pass('String interpolation', test_interpolation);
     test.pass('Panic recovery', test_panic_recover);
+    test.pass('Try & Finally', test_try_finally);
     test.pass('Loop while & break & continue', test_loops);
     test.pass('Local import', test_local_import);
     test.pass('Anonymous functions & variable capturing', test_lambda_functions);

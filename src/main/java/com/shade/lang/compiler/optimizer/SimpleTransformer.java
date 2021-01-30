@@ -275,10 +275,11 @@ public abstract class SimpleTransformer implements Transformer {
     @Override
     public Statement transform(TryStatement statement) {
         BlockStatement body = (BlockStatement) statement.getBody().transform(this);
-        BlockStatement recover = (BlockStatement) statement.getRecover().transform(this);
+        BlockStatement recoverBody = statement.getRecoverBody() == null ? null : (BlockStatement) statement.getRecoverBody().transform(this);
+        BlockStatement finallyBody = statement.getRecoverBody() == null ? null : (BlockStatement) statement.getRecoverBody().transform(this);
 
-        if (body != statement.getBody() || recover != statement.getRecover()) {
-            return new TryStatement(body, recover, statement.getName(), statement.getRegion());
+        if (body != statement.getBody() || finallyBody != statement.getRecoverBody()) {
+            return new TryStatement(body, finallyBody, statement.getName(), recoverBody, statement.getRegion());
         }
 
         return statement;
