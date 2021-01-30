@@ -152,49 +152,92 @@ public class Parser {
         Region start = expect(For).getRegion();
         Token variable = expect(Symbol);
         expect(In);
-        // TODO: This will fail because number can be either integer or float.
-        //       This could be fixed in the future with addition of range objects
-        //       that will assert type at run-time, but currently it will just explode
-        //       if floating-point value was used.
-        int rangeBegin = (Integer) expect(Number).getNumberValue();
-        boolean rangeInclusive = expect(Range, RangeInc).getKind() == RangeInc;
-        int rangeEnd = (Integer) expect(Number).getNumberValue();
-        boolean rangeDescending = rangeEnd < rangeBegin;
+        Expression begin = parseExpression();
+        boolean inclusive = expect(Range, RangeInc).getKind() == RangeInc;
+        Expression end = parseExpression();
+        String name = null;
+        if (consume(Colon) != null) {
+            name = expect(Symbol).getStringValue();
+        }
         BlockStatement body = parseBlockStatement();
         Region region = start.until(body.getRegion());
 
-        return new BlockStatement(Arrays.asList(
-            new DeclareVariableStatement(
-                variable.getStringValue(),
-                new LoadConstantExpression<>(rangeBegin, variable.getRegion()),
-                variable.getRegion()
-            ),
-            new LoopStatement(
-                new BinaryExpression(
-                    new LoadSymbolExpression(variable.getStringValue(), region),
-                    new LoadConstantExpression<>(rangeEnd, region),
-                    rangeInclusive ? rangeDescending ? GreaterEq : LessEq : rangeDescending ? Greater : Less,
-                    region
+        {
+            // Probably we need a better solution for codegen.
+            // Maybe use nested parsers with templated code?
+
+            final String variableId = variable.getStringValue();
+            final String rangeId = UUID.randomUUID().toString();
+            final String iteratorId = UUID.randomUUID().toString();
+
+            return new BlockStatement(Arrays.asList(
+                // import 'range;
+                new ImportStatement("range", rangeId, false, region),
+
+                // variableId = begin;
+                new DeclareVariableStatement(variableId, begin, variable.getRegion()),
+
+                // let iteratorObjectId = new Range(variableId, end).get_iterator()
+                new DeclareVariableStatement(
+                    iteratorId,
+                    new CallExpression(
+                        new LoadAttributeExpression(
+                            new NewExpression(
+                                new LoadAttributeExpression(
+                                    new LoadSymbolExpression(rangeId, region),
+                                    "Range",
+                                    region
+                                ),
+                                Arrays.asList(
+                                    new LoadSymbolExpression(variableId, start),
+                                    end,
+                                    new LoadConstantExpression<>(inclusive, start)
+                                ),
+                                start
+                            ),
+                            "get_iterator",
+                            start
+                        ),
+                        Collections.emptyList(),
+                        region
+                    ),
+                    start
                 ),
-                new BlockStatement(
-                    Arrays.asList(
-                        body,
-                        new AssignSymbolStatement(variable.getStringValue(),
-                            new BinaryExpression(
-                                new LoadSymbolExpression(variable.getStringValue(), region),
-                                new LoadConstantExpression<>(1, region),
-                                rangeDescending ? Sub : Add,
+
+                new LoopStatement(
+                    // iteratorObjectId.has_next()
+                    new CallExpression(
+                        new LoadAttributeExpression(
+                            new LoadSymbolExpression(iteratorId, region),
+                            "has_next",
+                            region
+                        ),
+                        Collections.emptyList(),
+                        region
+                    ),
+
+                    new BlockStatement(Arrays.asList(
+                        // variableId = iteratorObjectId.get_next()
+                        new AssignSymbolStatement(
+                            variableId,
+                            new CallExpression(
+                                new LoadAttributeExpression(
+                                    new LoadSymbolExpression(iteratorId, region),
+                                    "get_next",
+                                    region
+                                ),
+                                Collections.emptyList(),
                                 region
                             ),
                             region
-                        )
-                    ),
+                        ),
+                        body
+                    ), region),
+                    name,
                     region
-                ),
-                null,
-                region
-            )
-        ), region);
+                )
+            ), region);
+        }
     }
 
     private ContinueStatement parseContinueStatement() throws ScriptException {

@@ -469,6 +469,17 @@ def test_ranged_loop() {
     }
 
     assert acc == 4995;
+
+    let begin = 10;
+    let end = 20;
+
+    acc = 0;
+
+    for i in begin..end {
+        acc += i;
+    }
+
+    assert acc == 145;
 }
 
 def test_none_type() {
@@ -522,19 +533,18 @@ def test_variadic_call() {
     })(1, 2);
 }
 
-def test_iterator() {
-    import iterator = iter;
+def test_iterator_range() {
+    import iterator;
+    import range;
 
     let index = 10;
 
-    let range = new iter.Range(index, 0);
-    assert not range.is_ascending;
-    assert range.is_descending;
+    let it = new range.Range(index, 0, false).get_iterator();
+    assert it is iterator.Iterator;
+    assert it is range.DescendingRangeIterator;
 
-    let iterator = range.get_iterator();
-
-    loop while iterator.has_next() {
-        assert iterator.get_next() == index;
+    loop while it.has_next() {
+        assert it.get_next() == index;
         index -= 1;
     }
 
@@ -607,10 +617,10 @@ def main() {
     test.pass('Local import', test_local_import);
     test.pass('Anonymous functions & variable capturing', test_lambda_functions);
     test.pass('Class single/multi inheritance & instantiation', test_class_instantiate);
-    test.pass('Ranged exclusive/inclusive loops', test_ranged_loop);
     test.pass('None type', test_none_type);
     test.pass('Variadic arguments count', test_variadic_call);
-    test.pass('Iterator class', test_iterator);
+    test.pass('Iterator & Range class', test_iterator_range);
+    test.pass('Ranged exclusive/inclusive loops', test_ranged_loop);
     test.pass('Unwrap operator', test_unwrap_operator);
     test.pass('Parse json', test_parse_json);
     test.pass('Instance of', test_instance_of);
