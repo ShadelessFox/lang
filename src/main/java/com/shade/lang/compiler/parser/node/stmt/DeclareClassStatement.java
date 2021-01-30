@@ -41,7 +41,7 @@ public class DeclareClassStatement extends Statement {
         assembler = new Assembler();
         assembler.addLocation(getRegion().getBegin());
 
-        final ClassContext classContext = new ClassContext(context);
+        final ClassContext classContext = new ClassContext(context, name);
         final int classInstanceSlot = classContext.addSlot("<instance>");
 
         for (Statement member : members) {

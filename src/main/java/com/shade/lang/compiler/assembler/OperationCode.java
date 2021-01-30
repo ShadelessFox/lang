@@ -53,10 +53,11 @@ public class OperationCode {
     public static final byte OP_ASSERT          = 0x23;
     public static final byte OP_IMPORT          = 0x24;
     public static final byte OP_NEW             = 0x25;
-    public static final byte OP_INSTANCE_OF     = 0x26;
+    public static final byte OP_SUPER           = 0x26;
+    public static final byte OP_INSTANCE_OF     = 0x27;
 
-    public static final byte OP_MAKE_FUNCTION   = 0x27;
-    public static final byte OP_MAKE_CLASS      = 0x28;
+    public static final byte OP_MAKE_FUNCTION   = 0x28;
+    public static final byte OP_MAKE_CLASS      = 0x29;
     // @formatter:on
 
 }

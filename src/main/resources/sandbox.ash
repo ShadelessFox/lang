@@ -402,12 +402,10 @@ class Bar : Foo {
     }
 }
 
-# Classes are being inherited from left to right,
-# so attributes from Foo will be overwritten by Bar's attributes.
 class Multi : Foo, Bar {
     constructor(self, a, b) {
-        super:Foo(a);
-        super:Bar(b);
+        super[Foo](a);
+        super[Bar](b);
         self.a = a;
         self.b = b;
     }

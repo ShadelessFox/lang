@@ -31,39 +31,21 @@ public class SuperExpression extends Expression {
         }
 
         if (target == null) {
-            // TODO: This is a limitation for now. We don't know
-            //       how many base classes does this class have.
-
-            // TODO: Also we can't be sure if specified class
-            //       is a parent of this class.
-
             throw new ScriptException("Super class must be explicitly specified", getRegion());
         }
 
-        if (arguments != null) {
-            // TODO: Constructor invocation. Looks ugly
+        target.compile(context, assembler);
+        assembler.emit(Operation.GET_LOCAL, Operand.imm8(0));
+        assembler.emit(Operation.SUPER);
 
+        if (arguments != null) {
             for (Expression argument : arguments) {
                 argument.compile(context, assembler);
             }
 
-            assembler.emit(Operation.GET_LOCAL, Operand.imm8(0));
-
-            target.compile(context, assembler);
+            assembler.emit(Operation.DUP_AT, Operand.imm8(-arguments.size() - 1));
             assembler.emit(Operation.GET_ATTRIBUTE, Operand.constant("<init>"));
-            assembler.addLocation(getRegion().getBegin());
-
             assembler.emit(Operation.CALL, Operand.imm8(arguments.size() + 1));
-            assembler.addLocation(getRegion().getBegin());
-        } else {
-            // TODO: We must allow calling super class' functions (#37).
-            //       This can be done by peeking inside target class'
-            //       attributes and calling it with this class' instance.
-
-            // TODO: The only problem is that we will need to inject
-            //       this instance, because
-
-            throw new ScriptException("Not implemented", getRegion());
         }
     }
 

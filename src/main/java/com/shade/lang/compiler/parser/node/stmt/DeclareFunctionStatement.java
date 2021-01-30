@@ -113,12 +113,14 @@ public class DeclareFunctionStatement extends Statement {
             assembler.getComputedLocations()
         );
 
-        if (context.unwrap(ClassContext.class) == null) {
+        final ClassContext classContext = context.unwrap(ClassContext.class);
+
+        if (classContext == null) {
             parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
             parentAssembler.emit(Operation.SET_GLOBAL, Operand.constant(name));
         } else {
             parentAssembler.emit(Operation.GET_LOCAL, Operand.imm8(context.addSlot("<instance>")));
-            parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(name), Operand.constant(chunk));
+            parentAssembler.emit(Operation.MAKE_FUNCTION, Operand.constant(classContext.getName() + '.' + name), Operand.constant(chunk));
             parentAssembler.emit(Operation.SET_ATTRIBUTE, Operand.constant(name));
         }
 

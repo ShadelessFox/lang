@@ -9,10 +9,8 @@ import com.shade.lang.compiler.parser.Tokenizer;
 import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.runtime.frames.*;
-import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.Class;
-import com.shade.lang.runtime.objects.Instance;
-import com.shade.lang.runtime.objects.ScriptObject;
+import com.shade.lang.runtime.objects.*;
 import com.shade.lang.runtime.objects.extension.Index;
 import com.shade.lang.runtime.objects.extension.MutableIndex;
 import com.shade.lang.runtime.objects.function.BoundFunction;
@@ -482,6 +480,23 @@ public class Machine {
                     }
                     Class clazz = (Class) object;
                     operandStack.push(clazz.instantiate());
+                    break;
+                }
+                case OP_SUPER: {
+                    final ScriptObject instance = operandStack.pop();
+                    final ScriptObject base = operandStack.pop();
+                    if (!(instance instanceof Instance)) {
+                        panic("Object '" + instance + "' must be class instance", true);
+                        break;
+                    }
+                    if (!(base instanceof Class)) {
+                        panic("Object '" + instance + "' must be class", true);
+                        break;
+                    }
+                    if (!((Class) base).isInstance((Instance) instance)) {
+                        panic("Object '" + instance + "' is not an instance of '" + base + "'", true);
+                    }
+                    operandStack.push(new Proxy((Instance) instance, (Class) base));
                     break;
                 }
                 case OP_INSTANCE_OF: {
