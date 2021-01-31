@@ -553,7 +553,12 @@ public class Machine {
                     break;
                 }
                 case OP_THROW: {
-                    panic(operandStack.pop(), true);
+                    final ScriptObject payload = operandStack.pop();
+                    if (payload == NoneValue.INSTANCE) {
+                        panic("Cannot throw 'none' as a payload", true);
+                        break;
+                    }
+                    panic(payload, true);
                     break;
                 }
                 default:
