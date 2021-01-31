@@ -85,6 +85,8 @@ public class Machine {
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
+                } catch (IllegalArgumentException e) {
+                    LOG.warning("Failed to load cached module '" + name + "' from '" + compiledPath + "': " + e.getMessage());
                 }
             }
         }

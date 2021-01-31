@@ -15,6 +15,9 @@ import java.util.zip.CRC32;
 
 public class ModuleSerializer {
     // @formatter:off
+    public static final int FILE_VERSION        = 1;
+    public static final int FILE_SIGNATURE      = ('A' << 24) | ('S' << 16) | ('H' << 8) | (FILE_VERSION & 0xff);
+
     public static final byte CONSTANT_NONE      = 1;
     public static final byte CONSTANT_STRING    = 1 << 1;
     public static final byte CONSTANT_INTEGER   = 1 << 2;
@@ -27,7 +30,7 @@ public class ModuleSerializer {
     }
 
     public static void writeModule(@NotNull DataOutputStream os, @NotNull Module module, int checksum) throws IOException {
-        os.write(new byte[]{'A', 'S', 'H', 0});
+        os.writeInt(FILE_SIGNATURE);
         os.writeInt(checksum);
 
         os.writeUTF(module.getName());
@@ -51,26 +54,7 @@ public class ModuleSerializer {
 
         os.writeShort(chunk.getConstants().length);
         for (Object constant : chunk.getConstants()) {
-            if (constant instanceof NoneValue) {
-                os.writeByte(CONSTANT_NONE);
-            } else if (constant instanceof String) {
-                os.writeByte(CONSTANT_STRING);
-                os.writeUTF((String) constant);
-            } else if (constant instanceof Integer) {
-                os.writeByte(CONSTANT_INTEGER);
-                os.writeInt((int) constant);
-            } else if (constant instanceof Float) {
-                os.writeByte(CONSTANT_FLOAT);
-                os.writeFloat((float) constant);
-            } else if (constant instanceof Boolean) {
-                os.writeByte(CONSTANT_BOOL);
-                os.writeBoolean((boolean) constant);
-            } else if (constant instanceof Chunk) {
-                os.writeByte(CONSTANT_CHUNK);
-                writeChunk(os, (Chunk) constant);
-            } else {
-                throw new IllegalArgumentException("Unsupported constant: " + constant + "(" + constant.getClass() + ")");
-            }
+            writeConstant(os, constant);
         }
 
         os.writeShort(chunk.getGuards().length);
@@ -86,6 +70,29 @@ public class ModuleSerializer {
             os.writeInt(location.getKey());
             os.writeShort(location.getValue().getFirst());
             os.writeShort(location.getValue().getSecond());
+        }
+    }
+
+    public static void writeConstant(@NotNull DataOutputStream os, @NotNull Object constant) throws IOException {
+        if (constant instanceof NoneValue) {
+            os.writeByte(CONSTANT_NONE);
+        } else if (constant instanceof String) {
+            os.writeByte(CONSTANT_STRING);
+            os.writeUTF((String) constant);
+        } else if (constant instanceof Integer) {
+            os.writeByte(CONSTANT_INTEGER);
+            os.writeInt((int) constant);
+        } else if (constant instanceof Float) {
+            os.writeByte(CONSTANT_FLOAT);
+            os.writeFloat((float) constant);
+        } else if (constant instanceof Boolean) {
+            os.writeByte(CONSTANT_BOOL);
+            os.writeBoolean((boolean) constant);
+        } else if (constant instanceof Chunk) {
+            os.writeByte(CONSTANT_CHUNK);
+            writeChunk(os, (Chunk) constant);
+        } else {
+            throw new IllegalArgumentException("Unsupported constant: " + constant + "(" + constant.getClass() + ")");
         }
     }
 
@@ -105,17 +112,13 @@ public class ModuleSerializer {
         }
     }
 
-    public static int readModuleChecksum(@NotNull DataInputStream is) throws IOException {
-        if (is.readInt() != ('A' << 24 | 'S' << 16 | 'H' << 8)) {
+    @Nullable
+    public static Module readModule(@NotNull DataInputStream is, int checksum) throws IOException {
+        if (is.readInt() != FILE_SIGNATURE) {
             throw new IllegalArgumentException("Invalid file signature");
         }
 
-        return is.readInt();
-    }
-
-    @Nullable
-    public static Module readModule(@NotNull DataInputStream is, int checksum) throws IOException {
-        if (readModuleChecksum(is) != checksum) {
+        if (is.readInt() != checksum) {
             return null;
         }
 
@@ -173,17 +176,17 @@ public class ModuleSerializer {
         final byte type = is.readByte();
 
         switch (type) {
-            case ModuleSerializer.CONSTANT_NONE:
+            case CONSTANT_NONE:
                 return NoneValue.INSTANCE;
-            case ModuleSerializer.CONSTANT_STRING:
+            case CONSTANT_STRING:
                 return is.readUTF();
-            case ModuleSerializer.CONSTANT_INTEGER:
+            case CONSTANT_INTEGER:
                 return is.readInt();
-            case ModuleSerializer.CONSTANT_FLOAT:
+            case CONSTANT_FLOAT:
                 return is.readFloat();
-            case ModuleSerializer.CONSTANT_BOOL:
+            case CONSTANT_BOOL:
                 return is.readBoolean();
-            case ModuleSerializer.CONSTANT_CHUNK:
+            case CONSTANT_CHUNK:
                 return readChunk(is);
             default:
                 throw new IllegalStateException("Unknown constant type: " + type);
