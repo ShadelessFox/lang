@@ -1,8 +1,7 @@
 package com.shade.lang.compiler.parser.node.context;
 
-import com.shade.lang.compiler.assembler.Operand;
-import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.runtime.objects.function.Guard;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,10 +23,6 @@ public class FunctionContext extends Context {
 
     public void addGuard(int start, int end, int offset, int slot) {
         guards.add(new Guard(start, end, offset, slot));
-    }
-
-    public void addGuard(int start, int end, int offset) {
-        guards.add(new Guard(start, end, offset, Operand.UNDEFINED));
     }
 
     @NotNull

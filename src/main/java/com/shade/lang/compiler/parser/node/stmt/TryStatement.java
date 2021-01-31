@@ -9,8 +9,11 @@ import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
+
+import java.util.UUID;
 
 public class TryStatement extends Statement {
     private final BlockStatement body;
@@ -61,14 +64,31 @@ public class TryStatement extends Statement {
             assembler.bind(end);
 
             FunctionContext functionContext = context.unwrap(FunctionContext.class);
-
-            if (slot != Operand.UNDEFINED) {
-                functionContext.addGuard(regionStart, regionEnd, offset, slot);
-            } else {
-                functionContext.addGuard(regionStart, regionEnd, offset);
-            }
+            functionContext.addGuard(regionStart, regionEnd, offset, slot);
         }
 
+        if (finallyBody != null) {
+            regionEnd = assembler.getOffset(assembler.getPosition());
+
+            Assembler.Label end = body.isControlFlowReturned() ? null : assembler.jump(Operation.JUMP);
+
+            int offset = assembler.getOffset(assembler.getPosition());
+            int slot = context.addSlot(UUID.randomUUID().toString());
+
+            finallyContext.compile(assembler);
+            assembler.emit(Operation.GET_LOCAL, Operand.imm8(slot));
+            assembler.emit(Operation.PUSH, Operand.constant(NoneValue.INSTANCE));
+            assembler.emit(Operation.CMP_EQ);
+            Assembler.Label throwEnd = assembler.jump(Operation.JUMP_IF_TRUE);
+            assembler.emit(Operation.GET_LOCAL, Operand.imm8(slot));
+            assembler.emit(Operation.THROW);
+
+            assembler.bind(throwEnd);
+            assembler.bind(end);
+
+            FunctionContext functionContext = context.unwrap(FunctionContext.class);
+            functionContext.addGuard(regionStart, regionEnd, offset, slot);
+        }
     }
 
     @NotNull

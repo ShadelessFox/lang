@@ -264,6 +264,14 @@ def test_try_finally() {
     })() == 2;
 
     assert (def () {
+        try {
+            return 123;
+        } finally {
+        }
+        assert false, 'unreachable';
+    })() == 123;
+
+    assert (def () {
         let value = 0;
         for i in 0..5 {
             value += 1;
@@ -298,6 +306,46 @@ def test_try_finally() {
         }
         return value;
     })() == 21;
+
+    assert (def () {
+        let value = 0;
+        try {
+            value += 5;
+            assert false;
+        } finally {
+            return value + 7;
+        }
+        assert false, 'unreachable';
+    })() == 12;
+
+    assert (def () {
+        let value = 0;
+        try {
+            value += 5;
+            assert false;
+        } recover e {
+            value = value + 7;
+            throw e;
+        } finally {
+            return value + 9;
+        }
+        assert false, 'unreachable';
+    })() == 21;
+
+    assert (def () {
+        let value = 0;
+        try {
+            try {
+                value += 5;
+                assert false;
+            } finally {
+                value += 7;
+            }
+        } recover {
+            return value;
+        }
+        assert false, 'unreachable';
+    })() == 12;
 }
 
 def test_throw() {
