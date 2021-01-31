@@ -266,7 +266,7 @@ public class Parser {
     private AssertStatement parseAssertStatement() throws ScriptException {
         Region start = expect(Assert).getRegion();
         Expression condition = parseExpression();
-        String message = "";
+        String message = null;
         if (consume(Comma) != null) {
             message = expect(String).getStringValue();
         }

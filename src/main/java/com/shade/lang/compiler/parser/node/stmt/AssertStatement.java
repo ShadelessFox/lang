@@ -8,13 +8,16 @@ import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
 
 public class AssertStatement extends Statement {
     private final Expression condition;
     private final String source;
     private final String message;
 
-    public AssertStatement(Expression condition, String source, String message, Region region) {
+    public AssertStatement(@NotNull Expression condition, @NotNull String source, @Nullable String message, @NotNull Region region) {
         super(region);
         this.condition = condition;
         this.message = message;
@@ -24,7 +27,7 @@ public class AssertStatement extends Statement {
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
         condition.compile(context, assembler);
-        assembler.emit(Operation.ASSERT, Operand.constant(source), Operand.constant(message));
+        assembler.emit(Operation.ASSERT, Operand.constant(source), Operand.constant(message == null ? NoneValue.INSTANCE : message));
         assembler.addLocation(getRegion().getBegin());
     }
 
