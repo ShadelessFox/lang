@@ -22,14 +22,10 @@ import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.runtime.objects.value.Value;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
+import com.shade.lang.util.serialization.ModuleSerializer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.io.*;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.logging.Level;
@@ -43,6 +39,7 @@ public class Machine {
 
     public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
     public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
+    public static final boolean ENABLE_CACHING = "true".equals(System.getProperty("ash.caching.enable"));
 
     private static final Logger LOG = Logger.getLogger(Machine.class.getName());
 
@@ -75,10 +72,27 @@ public class Machine {
             return modules.get(name);
         }
 
+        if (ENABLE_CACHING) {
+            final Path compiledPath = Paths.get(path.toString() + 'c');
+
+            if (Files.exists(compiledPath)) {
+                try (DataInputStream is = new DataInputStream(new FileInputStream(compiledPath.toFile()))) {
+                    final Module module = ModuleSerializer.readModule(is, ModuleSerializer.readFileChecksum(path.toFile()));
+
+                    if (module != null) {
+                        LOG.info("Loading cached module '" + name + "' from '" + compiledPath + "'");
+                        return load(module);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
         Module module = new Module(name, source);
         Context context = new Context(module);
 
-        LOG.info("Loading module from '" + path + "'");
+        LOG.info("Loading module '" + name + "' from '" + path + "'");
 
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             Parser parser = new Parser(new Tokenizer(reader));
@@ -86,6 +100,17 @@ public class Machine {
             Node node = parser.parse(source, Parser.Mode.Unit);
             node = Optimizer.optimize(node, Integer.getInteger("ash.opt.level", Integer.MAX_VALUE), Integer.getInteger("ash.opt.passes", 0));
             node.compile(context, null);
+
+            if (ENABLE_CACHING) {
+                final Path compiledPath = Paths.get(path.toString() + 'c');
+
+                try (DataOutputStream os = new DataOutputStream(new FileOutputStream(compiledPath.toFile()))) {
+                    LOG.info("Caching module '" + name + "' from '" + path + "'");
+                    ModuleSerializer.writeModule(os, module, ModuleSerializer.readFileChecksum(path.toFile()));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             return load(module);
         } catch (ScriptException e) {
