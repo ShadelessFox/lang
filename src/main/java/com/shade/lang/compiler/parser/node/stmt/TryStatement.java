@@ -106,7 +106,7 @@ public class TryStatement extends Statement {
         return finallyBody;
     }
 
-    @NotNull
+    @Nullable
     public String getName() {
         return name;
     }

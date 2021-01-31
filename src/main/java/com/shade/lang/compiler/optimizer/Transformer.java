@@ -32,6 +32,8 @@ public interface Transformer {
 
     Expression transform(NewExpression expression);
 
+    Expression transform(SuperExpression expression);
+
     Expression transform(UnaryExpression expression);
 
     Statement transform(Statement statement);
@@ -65,6 +67,8 @@ public interface Transformer {
     Statement transform(LoopStatement statement);
 
     Statement transform(ReturnStatement statement);
+
+    Statement transform(ThrowStatement statement);
 
     Statement transform(TryStatement statement);
 

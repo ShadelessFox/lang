@@ -51,6 +51,7 @@ public abstract class SimpleTransformer implements Transformer {
 
         return expression;
     }
+
     @Override
     public Expression transform(BinaryExpression expression) {
         Expression lhs = expression.getLhs().transform(this);
@@ -127,6 +128,11 @@ public abstract class SimpleTransformer implements Transformer {
 
     @Override
     public Expression transform(NewExpression expression) {
+        return expression;
+    }
+
+    @Override
+    public Expression transform(SuperExpression expression) {
         return expression;
     }
 
@@ -273,13 +279,24 @@ public abstract class SimpleTransformer implements Transformer {
     }
 
     @Override
+    public Statement transform(ThrowStatement statement) {
+        Expression value = statement.getValue().transform(this);
+
+        if (value != statement.getValue()) {
+            return new ThrowStatement(value, statement.getRegion());
+        }
+
+        return statement;
+    }
+
+    @Override
     public Statement transform(TryStatement statement) {
         BlockStatement body = (BlockStatement) statement.getBody().transform(this);
         BlockStatement recoverBody = statement.getRecoverBody() == null ? null : (BlockStatement) statement.getRecoverBody().transform(this);
-        BlockStatement finallyBody = statement.getRecoverBody() == null ? null : (BlockStatement) statement.getRecoverBody().transform(this);
+        BlockStatement finallyBody = statement.getFinallyBody() == null ? null : (BlockStatement) statement.getFinallyBody().transform(this);
 
-        if (body != statement.getBody() || finallyBody != statement.getRecoverBody()) {
-            return new TryStatement(body, finallyBody, statement.getName(), recoverBody, statement.getRegion());
+        if (body != statement.getBody() || recoverBody != statement.getRecoverBody() || finallyBody != statement.getFinallyBody()) {
+            return new TryStatement(body, recoverBody, statement.getName(), finallyBody, statement.getRegion());
         }
 
         return statement;
@@ -299,12 +316,12 @@ public abstract class SimpleTransformer implements Transformer {
         return statement;
     }
 
-    protected static  <T> boolean isConst(Expression expression, Class<T> clazz) {
+    protected static <T> boolean isConst(Expression expression, Class<T> clazz) {
         return expression instanceof LoadConstantExpression<?> && clazz.isInstance(((LoadConstantExpression<?>) expression).getValue());
     }
 
     @SuppressWarnings("unchecked")
-    protected static  <T> T asConst(Expression expression) {
+    protected static <T> T asConst(Expression expression) {
         return (T) ((LoadConstantExpression<?>) expression).getValue();
     }
 }
