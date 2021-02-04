@@ -607,7 +607,9 @@ public class Machine {
         StringBuilder builder = new StringBuilder();
         builder.append("Panicking: ").append(payload).append('\n');
 
-        LOG.info("Panicking with payload '" + payload + "' in " + callStack.peek());
+        if (ENABLE_LOGGING && !callStack.isEmpty()) {
+            LOG.info("Panicking with payload '" + payload + "' in " + callStack.peek());
+        }
 
         while (!callStack.empty()) {
             Frame currentFrame = callStack.peek();
