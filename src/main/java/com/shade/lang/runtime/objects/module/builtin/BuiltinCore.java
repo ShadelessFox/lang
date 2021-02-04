@@ -6,7 +6,6 @@ import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.module.NativeModule;
 import com.shade.lang.runtime.objects.module.NativeModuleProvider;
 import com.shade.lang.runtime.objects.value.ArrayValue;
-import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.runtime.objects.value.Value;
 
 import java.util.Arrays;
@@ -23,69 +22,59 @@ public class BuiltinCore extends NativeModule implements NativeModuleProvider {
         return new BuiltinCore();
     }
 
-    @FunctionHandler
-    public static Object println(Machine machine, ScriptObject... args) {
+    @FunctionDescriptor
+    public static void println(Machine machine, ScriptObject... args) {
         machine.getOut().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-        return NoneValue.INSTANCE;
     }
 
-    @FunctionHandler
-    public static Object print(Machine machine, ScriptObject... args) {
+    @FunctionDescriptor
+    public static void print(Machine machine, ScriptObject... args) {
         machine.getOut().print(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-        return NoneValue.INSTANCE;
     }
 
-    @FunctionHandler(name = "to_string")
+    @FunctionDescriptor(name = "to_string")
     public static Object toString(Machine machine, ScriptObject value) {
         return value.toString();
     }
 
-    @FunctionHandler(name = "to_array")
+    @FunctionDescriptor(name = "to_array")
     public static Object toArray(Machine machine, ScriptObject... args) {
         return new ArrayValue(args);
     }
 
-    @FunctionHandler(name = "add")
-    public static Object addItem(Machine machine, ScriptObject array, ScriptObject value) {
-        if (!(array instanceof ArrayValue)) {
-            machine.panic("Cannot add item to non-array", true);
-            return null;
-        }
-        ScriptObject[] src = ((ArrayValue) array).getValues();
+    @FunctionDescriptor(name = "add")
+    public static Object addItem(Machine machine, ScriptObject[] src, ScriptObject value) {
         ScriptObject[] dst = Arrays.copyOf(src, src.length + 1);
         dst[src.length] = value;
         return new ArrayValue(dst);
     }
 
-    @FunctionHandler
-    public static Object debug(Machine machine, ScriptObject... args) {
+    @FunctionDescriptor
+    public static void debug(Machine machine, ScriptObject... args) {
         Frame frame = machine.getCallStack().get(machine.getCallStack().size() - 2);
         machine.getErr().print("[" + frame + "] ");
         machine.getErr().println(Stream.of(args).map(Object::toString).collect(Collectors.joining(" ")));
-        return NoneValue.INSTANCE;
     }
 
-    @FunctionHandler(name = "debug_assert")
-    public static Object debugAssert(Machine machine, ScriptObject... args) {
+    @FunctionDescriptor(name = "debug_assert")
+    public static void debugAssert(Machine machine, ScriptObject... args) {
         for (ScriptObject argument : args) {
             Boolean value = ((Value) argument).getBoolean(machine);
             if (value == null) {
-                return null;
+                return;
             }
             if (value == Boolean.FALSE) {
                 machine.panic("Assertion failed", true);
-                return null;
+                return;
             }
         }
-        return NoneValue.INSTANCE;
     }
 
-    @FunctionHandler
-    public static Object panic(Machine machine, ScriptObject message, ScriptObject recoverable) {
-        String valueMessage = message.toString();
-        Boolean valueRecoverable = ((Value) recoverable).getBoolean(machine);
-        if (valueRecoverable != null) {
-            machine.panic(valueMessage, valueRecoverable);
+    @FunctionDescriptor
+    public static Object panic(Machine machine, ScriptObject payload, ScriptObject recoverable) {
+        Boolean value = ((Value) recoverable).getBoolean(machine);
+        if (value != null) {
+            machine.panic(payload, value);
         }
         return null;
     }
