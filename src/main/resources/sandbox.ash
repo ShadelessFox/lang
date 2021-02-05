@@ -588,6 +588,19 @@ def test_ranged_loop() {
     assert acc == 145;
 }
 
+def test_array_access() {
+    let arr = [1, 2, 3];
+    assert arr[0] == 1;
+    assert arr[1] == 2;
+    assert arr[2] == 3;
+    arr[0] = none;
+    assert arr[0] == none;
+    try {
+        arr[-1] = none;
+        assert false, 'unreachable';
+    } recover { }
+}
+
 def test_none_type() {
     assert none == none;
     if none {
@@ -729,6 +742,7 @@ def main() {
     test.pass('Variadic arguments count', test_variadic_call);
     test.pass('Iterator & Range class', test_iterator_range);
     test.pass('Ranged exclusive/inclusive loops', test_ranged_loop);
+    test.pass('Array access & assignment', test_array_access);
     test.pass('Unwrap operator', test_unwrap_operator);
     test.pass('Parse json', test_parse_json);
     test.pass('Instance of', test_instance_of);

@@ -10,6 +10,10 @@ public abstract class Value extends ScriptObject {
         super(true);
     }
 
+    protected Value(boolean immutable) {
+        super(immutable);
+    }
+
     public static Value from(Object value) {
         if (value == null) {
             return null;

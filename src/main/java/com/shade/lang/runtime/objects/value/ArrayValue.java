@@ -11,6 +11,7 @@ public class ArrayValue extends Value implements Index, MutableIndex {
     private final ScriptObject[] values;
 
     public ArrayValue(ScriptObject[] values) {
+        super(false);
         this.values = values;
         setAttribute("length", Value.from(values.length));
     }
@@ -42,6 +43,11 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
         if (idx >= values.length) {
             machine.panic("Index out of range (index is " + idx + ", size is " + values.length + ")", true);
+            return null;
+        }
+
+        if (idx < 0) {
+            machine.panic("Index is negative", true);
             return null;
         }
 
