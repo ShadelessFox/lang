@@ -59,9 +59,6 @@ def test_relational() {
     assert true or (false and true);
     assert false or false or true == true;
 
-    assert not false;
-    assert not (not true);
-
     assert not false and true;
     assert true and not false;
     assert false or not false;
@@ -94,6 +91,17 @@ def test_assignment() {
     assert a == 8;
     a += 2 + 2;
     assert a == 12;
+}
+
+def test_unary() {
+    assert -0 == 0;
+    assert +0 == 0;
+    assert +1 == 1;
+    assert -5 < 5;
+    assert -5 < +5;
+    assert not true == false;
+    assert not false;
+    assert not (not true);
 }
 
 def test_branch_return(x, a, b) {
@@ -726,6 +734,7 @@ def main() {
     test.pass('Operator precedence', test_precedence);
     test.pass('Relational operators', test_relational);
     test.pass('Assignment operators', test_assignment);
+    test.pass('Unary operators', test_unary);
     test.pass('If-else branching', test_branch);
     test.pass('Argument evaluation order', test_eval_order);
     test.pass('Execute factorial', test_factorial);

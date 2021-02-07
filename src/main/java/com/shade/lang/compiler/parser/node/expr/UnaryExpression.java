@@ -22,14 +22,18 @@ public class UnaryExpression extends Expression {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        rhs.compile(context, assembler);
+        if (operator != TokenKind.Sub) {
+            // Negation requires special treatment
+            rhs.compile(context, assembler);
+        }
 
         switch (operator) {
             case Add:
                 break;
             case Sub:
-                assembler.emit(Operation.PUSH, Operand.constant(Operand.UNDEFINED));
-                assembler.emit(Operation.MUL);
+                assembler.emit(Operation.PUSH, Operand.constant(0));
+                rhs.compile(context, assembler);
+                assembler.emit(Operation.SUB);
                 break;
             case Not:
                 assembler.emit(Operation.NOT);
