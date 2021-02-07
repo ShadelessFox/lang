@@ -148,6 +148,17 @@ public abstract class SimpleTransformer implements Transformer {
     }
 
     @Override
+    public Expression transform(UnwrapExpression expression) {
+        Expression rhs = expression.getExpression().transform(this);
+
+        if (rhs != expression.getExpression()) {
+            return new UnwrapExpression(rhs, expression.getRegion());
+        }
+
+        return expression;
+    }
+
+    @Override
     public Statement transform(AssertStatement statement) {
         Expression condition = statement.getCondition().transform(this);
 

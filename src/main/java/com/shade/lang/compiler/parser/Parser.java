@@ -463,7 +463,7 @@ public class Parser {
 
     private Expression parseUnaryExpression() throws ScriptException {
         Region start = token.getRegion();
-        Token operator = consume(Not, Add, Sub, Try);
+        Token operator = consume(Not, Add, Sub);
         if (operator != null) {
             Expression rhs = parsePrimaryExpression();
             return new UnaryExpression(rhs, operator.getKind(), start.until(rhs.getRegion()));
@@ -574,13 +574,17 @@ public class Parser {
     }
 
     private Expression parsePrimaryExpression(Expression lhs) throws ScriptException {
-        if (!matches(ParenL, Dot, BracketL)) {
+        if (!matches(ParenL, Dot, Question, BracketL)) {
             return lhs;
         }
 
         if (consume(Dot) != null) {
             Token name = expect(Symbol);
             return parsePrimaryExpression(new LoadAttributeExpression(lhs, name.getStringValue(), lhs.getRegion().until(name.getRegion())));
+        }
+
+        if (consume(Question) != null) {
+            return parsePrimaryExpression(new UnwrapExpression(lhs, lhs.getRegion()));
         }
 
         if (consume(BracketL) != null) {

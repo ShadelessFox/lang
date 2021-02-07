@@ -8,7 +8,6 @@ import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
-import com.shade.lang.runtime.objects.value.NoneValue;
 
 public class UnaryExpression extends Expression {
     private final Expression rhs;
@@ -37,14 +36,6 @@ public class UnaryExpression extends Expression {
                 break;
             case Not:
                 assembler.emit(Operation.NOT);
-                break;
-            case Try:
-                assembler.emit(Operation.DUP);
-                assembler.emit(Operation.PUSH, Operand.constant(NoneValue.INSTANCE));
-                assembler.emit(Operation.CMP_EQ);
-                Assembler.Label end = assembler.jump(Operation.JUMP_IF_FALSE);
-                assembler.emit(Operation.RETURN);
-                assembler.bind(end);
                 break;
             default:
                 throw new AssertionError("Unsupported unary operator: " + operator);

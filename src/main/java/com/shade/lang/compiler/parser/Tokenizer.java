@@ -312,6 +312,8 @@ public class Tokenizer {
                     return consume('=') ? make(TokenKind.GreaterEq) : make(TokenKind.Greater);
                 case '=':
                     return consume('=') ? make(TokenKind.Eq) : make(TokenKind.Assign);
+                case '?':
+                    return make(TokenKind.Question);
                 case '!':
                     if (consume('=')) {
                         return make(TokenKind.NotEq);

@@ -53,6 +53,7 @@ public enum TokenKind {
     Range("..", 0, TokenFlag.QUOTED),
     RangeInc("..=", 0, TokenFlag.QUOTED),
     Ellipsis("...", 0, TokenFlag.QUOTED),
+    Question("?", 0, TokenFlag.QUOTED),
 
     Assign("=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),
     AddAssign("+=", 1, TokenFlag.QUOTED | TokenFlag.ASSIGNMENT | TokenFlag.RIGHT_ASSOCIATIVE),

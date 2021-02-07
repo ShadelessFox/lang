@@ -679,17 +679,23 @@ def test_iterator_range() {
 }
 
 def test_unwrap_operator() {
-    assert (def () { let value = try none; assert false, 'unreachable'; })() == none;
-    assert (def () { let value = try 'hello'; return value; })() == 'hello';
-
     let helper = def (a, b, c) {
-        return try a + try b + try c;
+        return a? + b? + c?;
     };
 
     assert helper(none, none, none) == none;
     assert helper(1, 2, none) == none;
     assert helper(none, 2, 3) == none;
     assert helper(1, 2, 3) == 6;
+
+    let helper_call = def (value) {
+        return value()?()?()?;
+    };
+
+    assert helper_call(def () { return none; }) == none;
+    assert helper_call(def () { return def () { return none; }; }) == none;
+    assert helper_call(def () { return def () { return def () { return none; }; }; }) == none;
+    assert helper_call(def () { return def () { return def () { return 123; }; }; }) == 123;
 }
 
 def test_parse_json() {

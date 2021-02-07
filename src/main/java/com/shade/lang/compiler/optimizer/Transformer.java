@@ -36,6 +36,8 @@ public interface Transformer {
 
     Expression transform(UnaryExpression expression);
 
+    Expression transform(UnwrapExpression expression);
+
     Statement transform(Statement statement);
 
     Statement transform(AssertStatement statement);
