@@ -7,26 +7,14 @@ import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.expr.*;
 import com.shade.lang.compiler.parser.token.Region;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 
 public class ParserTest {
-    @Mock
-    private Region region;
-
-    @Before
-    public void init() {
-        MockitoAnnotations.openMocks(this);
-        Mockito.when(region.getBegin()).thenReturn(new Region.Span(0, 0, 0));
-        Mockito.when(region.getEnd()).thenReturn(new Region.Span(0, 0, 0));
-    }
+    private final Region region = new Region(new Region.Span(0, 0, 0), new Region.Span(0, 0, 0));
 
     @Test
     public void testChainedAttribute() throws ScriptException {

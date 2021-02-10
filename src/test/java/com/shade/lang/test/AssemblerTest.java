@@ -1,7 +1,7 @@
 package com.shade.lang.test;
 
 import com.shade.lang.compiler.assembler.Assembler;
-import com.shade.lang.compiler.assembler.OperationCode;
+import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.context.Context;
@@ -11,12 +11,9 @@ import com.shade.lang.compiler.parser.node.expr.UnaryExpression;
 import com.shade.lang.compiler.parser.node.stmt.*;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
+import com.shade.lang.runtime.objects.module.Module;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -24,22 +21,11 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static com.shade.lang.compiler.assembler.OperationCode.*;
+
 public class AssemblerTest {
-    private static final int MAX_CHUNK_SIZE = 1024;
-
-    @Mock
-    private Region region;
-
-    @Mock
-    private Context context;
-
-    @Before
-    public void init() {
-        MockitoAnnotations.openMocks(this);
-        Mockito.when(region.getBegin()).thenReturn(new Region.Span(0, 0, 0));
-        Mockito.when(region.getEnd()).thenReturn(new Region.Span(0, 0, 0));
-        Mockito.when(context.addSlot(Mockito.any())).thenReturn(0x69);
-    }
+    private final Region region = new Region(new Region.Span(0, 0, 0), new Region.Span(0, 0, 0));
+    private final Context context = new Context((Module) null);
 
     @Test
     public void testLoadConstant() throws ScriptException {
@@ -47,7 +33,7 @@ public class AssemblerTest {
 
         Assert.assertEquals(result.getConstants(), Collections.singletonList("abc"));
         Assert.assertArrayEquals(result.assemble().array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
+            OP_PUSH, 0x00, 0x00,
         });
     }
 
@@ -61,9 +47,9 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
-            OperationCode.OP_PUSH, 0x00, 0x01,
-            OperationCode.OP_ADD
+            OP_PUSH, 0x00, 0x00,
+            OP_PUSH, 0x00, 0x01,
+            OP_ADD
         });
     }
 
@@ -76,9 +62,9 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
-            OperationCode.OP_PUSH, 0x00, 0x01,
-            OperationCode.OP_MUL
+            OP_PUSH, 0x00, 0x00,
+            OP_PUSH, 0x00, 0x01,
+            OP_SUB
         });
     }
 
@@ -90,8 +76,8 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
-            OperationCode.OP_RETURN
+            OP_PUSH, 0x00, 0x00,
+            OP_RETURN
         });
     }
 
@@ -106,8 +92,8 @@ public class AssemblerTest {
 
         Assert.assertEquals(result.getConstants(), Arrays.asList(1, "abc", "def"));
         Assert.assertArrayEquals(result.assemble().array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
-            OperationCode.OP_ASSERT, 0x00, 0x01, 0x00, 0x02
+            OP_PUSH, 0x00, 0x00,
+            OP_ASSERT, 0x00, 0x01, 0x00, 0x02
         });
     }
 
@@ -121,23 +107,32 @@ public class AssemblerTest {
         ));
 
         Assert.assertArrayEquals(result.array(), new byte[]{
-            OperationCode.OP_PUSH, 0x00, 0x00,
-            OperationCode.OP_JUMP_IF_FALSE, 0x00, 0x07,
-            OperationCode.OP_PUSH, 0x00, 0x01,
-            OperationCode.OP_POP,
-            OperationCode.OP_JUMP, 0x00, 0x04,
-            OperationCode.OP_PUSH, 0x00, 0x02,
-            OperationCode.OP_POP,
+            OP_PUSH, 0x00, 0x00,
+            OP_JUMP_IF_FALSE, 0x00, 0x07,
+            OP_PUSH, 0x00, 0x01,
+            OP_POP,
+            OP_JUMP, 0x00, 0x04,
+            OP_PUSH, 0x00, 0x02,
+            OP_POP,
         });
     }
 
     @Test
     public void testLocalImport() throws ScriptException {
         Assembler result = assemble(context, new ImportStatement("abc", "def", false, region));
-
         Assert.assertEquals(result.getConstants(), Collections.singletonList("abc"));
         Assert.assertArrayEquals(result.assemble().array(), new byte[]{
-            OperationCode.OP_IMPORT, 0x00, 0x00, 0x69
+            OP_IMPORT, 0x00, 0x00, 0x00
+        });
+    }
+
+    @Test
+    public void testGlobalImport() throws ScriptException {
+        Assembler result = assemble(context, new ImportStatement("abc", "def", true, region));
+        Assert.assertEquals(result.getConstants(), Arrays.asList("abc", "def"));
+        Assert.assertArrayEquals(result.assemble().array(), new byte[]{
+            OP_IMPORT, 0x00, 0x00, Operand.UNDEFINED,
+            OP_SET_GLOBAL, 0x00, 0x01
         });
     }
 

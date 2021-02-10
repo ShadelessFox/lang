@@ -9,6 +9,7 @@ import com.shade.lang.compiler.parser.node.expr.UnaryExpression;
 import com.shade.lang.compiler.parser.node.stmt.BlockStatement;
 import com.shade.lang.compiler.parser.node.stmt.BranchStatement;
 import com.shade.lang.compiler.parser.node.stmt.ReturnStatement;
+import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,66 +18,67 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class OptimizerTest {
+    private final Region region = new Region(new Region.Span(0, 0, 0), new Region.Span(0, 0, 0));
     private static final int OPTIMIZER_PASSES_COUNT = 10;
 
     @Test
     public void testConstantFolding() {
         assertOptimized(
-            new LoadConstantExpression<>(12, null),
+            new LoadConstantExpression<>(12, region),
             new BinaryExpression(
-                new LoadConstantExpression<>(5, null),
-                new LoadConstantExpression<>(7, null),
+                new LoadConstantExpression<>(5, region),
+                new LoadConstantExpression<>(7, region),
                 TokenKind.Add,
-                null
+                region
             )
         );
 
         assertOptimized(
-            new LoadConstantExpression<>(true, null),
+            new LoadConstantExpression<>(true, region),
             new LogicalExpression(
-                new LoadConstantExpression<>(true, null),
-                new LoadConstantExpression<>(false, null),
+                new LoadConstantExpression<>(true, region),
+                new LoadConstantExpression<>(false, region),
                 TokenKind.Or,
-                null
+                region
             )
         );
 
         assertOptimized(
-            new LoadConstantExpression<>(false, null),
+            new LoadConstantExpression<>(false, region),
             new LogicalExpression(
-                new LoadConstantExpression<>(false, null),
-                new LoadConstantExpression<>(false, null),
+                new LoadConstantExpression<>(false, region),
+                new LoadConstantExpression<>(false, region),
                 TokenKind.Or,
-                null
+                region
             )
         );
 
         assertOptimized(
-            new LoadConstantExpression<>(true, null),
+            new LoadConstantExpression<>(true, region),
             new LogicalExpression(
-                new LoadConstantExpression<>(true, null),
-                new LoadConstantExpression<>(true, null),
+                new LoadConstantExpression<>(true, region),
+                new LoadConstantExpression<>(true, region),
                 TokenKind.And,
-                null
+                region
             )
         );
 
         assertOptimized(
-            new LoadConstantExpression<>(false, null),
+            new LoadConstantExpression<>(false, region),
             new LogicalExpression(
-                new LoadConstantExpression<>(false, null),
-                new LoadConstantExpression<>(true, null),
+                new LoadConstantExpression<>(false, region),
+                new LoadConstantExpression<>(true, region),
                 TokenKind.And,
-                null
+                region
             )
         );
 
         assertOptimized(
-            new LoadConstantExpression<>(-5, null),
+            new LoadConstantExpression<>(-5, region),
             new UnaryExpression(
-                new LoadConstantExpression<>(5, null),
+                new LoadConstantExpression<>(5, region),
                 TokenKind.Sub,
-                null
+                region
             )
         );
     }
@@ -86,42 +88,42 @@ public class OptimizerTest {
         assertOptimized(
             new BlockStatement(
                 Collections.singletonList(
-                    new ReturnStatement(new LoadConstantExpression<>(1, null), null)
+                    new ReturnStatement(new LoadConstantExpression<>(1, region), region)
                 ),
-                null
+                region
             ),
             new BlockStatement(
                 Arrays.asList(
-                    new ReturnStatement(new LoadConstantExpression<>(1, null), null),
-                    new ReturnStatement(new LoadConstantExpression<>(2, null), null),
-                    new ReturnStatement(new LoadConstantExpression<>(3, null), null)
+                    new ReturnStatement(new LoadConstantExpression<>(1, region), region),
+                    new ReturnStatement(new LoadConstantExpression<>(2, region), region),
+                    new ReturnStatement(new LoadConstantExpression<>(3, region), region)
                 ),
-                null
+                region
             )
         );
 
         assertOptimized(
             new BlockStatement(
                 Collections.singletonList(
-                    new ReturnStatement(new LoadConstantExpression<>(1, null), null)
+                    new ReturnStatement(new LoadConstantExpression<>(1, region), region)
                 ),
-                null
+                region
             ),
             new BranchStatement(
-                new LoadConstantExpression<>(true, null),
+                new LoadConstantExpression<>(true, region),
                 new BlockStatement(
                     Collections.singletonList(
-                        new ReturnStatement(new LoadConstantExpression<>(1, null), null)
+                        new ReturnStatement(new LoadConstantExpression<>(1, region), region)
                     ),
-                    null
+                    region
                 ),
                 new BlockStatement(
                     Collections.singletonList(
-                        new ReturnStatement(new LoadConstantExpression<>(2, null), null)
+                        new ReturnStatement(new LoadConstantExpression<>(2, region), region)
                     ),
-                    null
+                    region
                 ),
-                null
+                region
             )
         );
     }

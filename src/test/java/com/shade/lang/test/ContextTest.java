@@ -4,15 +4,11 @@ import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.runtime.objects.module.Module;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mock;
 
 public class ContextTest {
-    @Mock
-    private Module module;
-
     @Test
     public void testLocals() {
-        Context context1 = new Context(module);
+        Context context1 = new Context((Module) null);
         {
             Assert.assertEquals(0, context1.addSlot("a"));
             Assert.assertEquals(1, context1.addSlot("b"));
