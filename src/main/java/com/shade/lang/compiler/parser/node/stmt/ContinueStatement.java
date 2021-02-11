@@ -4,10 +4,12 @@ import com.shade.lang.compiler.assembler.Assembler;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.LoopContext;
 import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 public class ContinueStatement extends Statement {
     private final String name;
@@ -35,6 +37,16 @@ public class ContinueStatement extends Statement {
         }
 
         loopContext.addCanceller(this, assembler.jump(Operation.JUMP), LoopContext.CancelType.Continue, name);
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterContinueStatement(this)) {
+            return visitor.leaveContinueStatement(this);
+        }
+
+        return this;
     }
 
     public String getName() {

@@ -129,7 +129,7 @@ public class OptimizerTest {
     }
 
     private void assertOptimized(Node expected, Node actual) {
-        Node optimized = Optimizer.optimize(actual, Integer.MAX_VALUE, OPTIMIZER_PASSES_COUNT);
+        Node optimized = new Optimizer(Integer.MAX_VALUE).optimize(actual, OPTIMIZER_PASSES_COUNT);
         Assert.assertEquals(expected, optimized);
     }
 }

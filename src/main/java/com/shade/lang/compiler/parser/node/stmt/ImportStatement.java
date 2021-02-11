@@ -5,8 +5,10 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 public class ImportStatement extends Statement {
     private final String name;
@@ -32,6 +34,16 @@ public class ImportStatement extends Statement {
             assembler.emit(Operation.IMPORT, Operand.constant(name), Operand.imm8(context.addSlot(alias)));
             assembler.addLocation(getRegion().getBegin());
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterImportStatement(this)) {
+            return visitor.leaveImportStatement(this);
+        }
+
+        return this;
     }
 
     public String getName() {

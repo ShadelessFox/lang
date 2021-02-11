@@ -4,8 +4,10 @@ import com.shade.lang.compiler.assembler.Assembler;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -25,6 +27,23 @@ public class LoadIndexExpression extends Expression {
         index.compile(context, assembler);
         assembler.emit(Operation.GET_INDEX);
         assembler.addLocation(getRegion().getBegin());
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterLoadIndexExpression(this)) {
+            final Expression owner = this.owner.accept(visitor);
+            final Expression index = this.index.accept(visitor);
+
+            if (owner != this.owner || index != this.index) {
+                return visitor.leaveLoadIndexExpression(new LoadIndexExpression(owner, index, getRegion()));
+            } else {
+                return visitor.leaveLoadIndexExpression(this);
+            }
+        }
+
+        return this;
     }
 
     @Override

@@ -8,11 +8,13 @@ import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.ClassContext;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -143,6 +145,22 @@ public class DeclareFunctionStatement extends Statement {
             }
             LOG.info(writer.toString());
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterDeclareFunctionStatement(this)) {
+            final BlockStatement body = (BlockStatement) this.body.accept(visitor);
+
+            if (body != this.body) {
+                return visitor.leaveDeclareFunctionStatement(new DeclareFunctionStatement(name, arguments, boundArguments, body, variadic, getRegion()));
+            } else {
+                return visitor.leaveDeclareFunctionStatement(this);
+            }
+        }
+
+        return this;
     }
 
     public String getName() {

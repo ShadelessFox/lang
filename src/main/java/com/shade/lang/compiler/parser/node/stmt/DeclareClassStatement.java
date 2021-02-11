@@ -6,12 +6,14 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.ClassContext;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -19,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class DeclareClassStatement extends Statement {
     private static final Logger LOG = Logger.getLogger(DeclareClassStatement.class.getName());
@@ -76,6 +79,27 @@ public class DeclareClassStatement extends Statement {
             assembler.print(new PrintWriter(writer));
             LOG.info(writer.toString());
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterDeclareClassStatement(this)) {
+            final List<Expression> bases = this.bases.stream()
+                .map(x -> x.accept(visitor))
+                .collect(Collectors.toList());
+            final List<Statement> members = this.members.stream()
+                .map(x -> x.accept(visitor))
+                .collect(Collectors.toList());
+
+            if (!bases.equals(this.bases) || !members.equals(this.members)) {
+                return visitor.leaveDeclareClassStatement(new DeclareClassStatement(name, bases, members, getRegion()));
+            } else {
+                return visitor.leaveDeclareClassStatement(this);
+            }
+        }
+
+        return this;
     }
 
     public String getName() {

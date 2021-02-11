@@ -5,9 +5,11 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.expr.LogicalExpression;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 public class BranchStatement extends Statement {
     private final Expression condition;
@@ -50,6 +52,24 @@ public class BranchStatement extends Statement {
             }
             assembler.bind(end);
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterBranchStatement(this)) {
+            final Expression condition = this.condition.accept(visitor);
+            final Statement pass = this.pass.accept(visitor);
+            final Statement fail = this.fail == null ? null : this.fail.accept(visitor);
+
+            if (condition != this.condition || pass != this.pass || fail != this.fail) {
+                return visitor.leaveBranchStatement(new BranchStatement(condition, pass, fail, getRegion()));
+            } else {
+                return visitor.leaveBranchStatement(this);
+            }
+        }
+
+        return this;
     }
 
     public Expression getCondition() {

@@ -5,9 +5,11 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.LoopContext;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 public class LoopStatement extends Statement {
     private final Expression condition;
@@ -49,6 +51,23 @@ public class LoopStatement extends Statement {
         }
 
         assembler.bind(end);
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterLoopStatement(this)) {
+            final Expression condition = this.condition == null ? null : this.condition.accept(visitor);
+            final BlockStatement body = (BlockStatement) this.body.accept(visitor);
+
+            if (condition != this.condition || body != this.body) {
+                return visitor.leaveLoopStatement(new LoopStatement(condition, body, name, getRegion()));
+            } else {
+                return visitor.leaveLoopStatement(this);
+            }
+        }
+
+        return this;
     }
 
     public Expression getCondition() {

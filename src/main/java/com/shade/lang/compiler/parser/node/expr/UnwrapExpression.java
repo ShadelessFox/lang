@@ -6,6 +6,7 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.util.annotations.NotNull;
@@ -27,6 +28,22 @@ public class UnwrapExpression extends Expression {
         Assembler.Label end = assembler.jump(Operation.JUMP_IF_FALSE);
         assembler.emit(Operation.RETURN);
         assembler.bind(end);
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterUnwrapExpression(this)) {
+            final Expression expression = this.expression.accept(visitor);
+
+            if (expression != this.expression) {
+                return visitor.leaveUnwrapExpression(new UnwrapExpression(expression, getRegion()));
+            } else {
+                return visitor.leaveUnwrapExpression(this);
+            }
+        }
+
+        return this;
     }
 
     @NotNull

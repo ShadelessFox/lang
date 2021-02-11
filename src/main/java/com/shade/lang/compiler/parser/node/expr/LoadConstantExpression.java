@@ -5,8 +5,10 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -26,6 +28,16 @@ public class LoadConstantExpression<T> extends Expression {
         }
 
         throw new RuntimeException("Unsupported constant value: " + value + " (" + value.getClass() + ")");
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterLoadConstantExpression(this)) {
+            return visitor.leaveLoadConstantExpression(this);
+        }
+
+        return this;
     }
 
     @Override

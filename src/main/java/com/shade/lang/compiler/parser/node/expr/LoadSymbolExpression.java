@@ -4,8 +4,10 @@ import com.shade.lang.compiler.assembler.Assembler;
 import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.node.Expression;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -26,6 +28,16 @@ public class LoadSymbolExpression extends Expression {
         }
 
         assembler.addLocation(getRegion().getBegin());
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterLoadSymbolExpression(this)) {
+            return visitor.leaveLoadSymbolExpression(this);
+        }
+
+        return this;
     }
 
     @Override

@@ -5,9 +5,11 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Node;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,15 @@ public class LogicalExpression extends Expression {
         this.operator = operator;
         this.pass = new LoadConstantExpression<>(true, region);
         this.fail = new LoadConstantExpression<>(false, region);
+    }
+
+    public LogicalExpression(Expression lhs, Expression rhs, TokenKind operator, Node pass, Node fail, Region region) {
+        super(region);
+        this.lhs = lhs;
+        this.rhs = rhs;
+        this.operator = operator;
+        this.pass = pass;
+        this.fail = fail;
     }
 
     @Override
@@ -76,6 +87,25 @@ public class LogicalExpression extends Expression {
         } else {
             node.compile(context, assembler);
         }
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterLogicalExpression(this)) {
+            final Expression lhs = this.lhs.accept(visitor);
+            final Expression rhs = this.rhs.accept(visitor);
+            final Node pass = this.pass.accept(visitor);
+            final Node fail = this.fail == null ? null : this.fail.accept(visitor);
+
+            if (lhs != this.lhs || rhs != this.rhs || pass != this.pass || fail != this.fail) {
+                return visitor.leaveLogicalExpression(new LogicalExpression(lhs, rhs, operator, pass, fail, getRegion()));
+            } else {
+                return visitor.leaveLogicalExpression(this);
+            }
+        }
+
+        return this;
     }
 
     public Expression getLhs() {

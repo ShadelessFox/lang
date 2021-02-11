@@ -5,9 +5,11 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
+import com.shade.lang.util.annotations.NotNull;
 
 public class UnaryExpression extends Expression {
     private final Expression rhs;
@@ -42,6 +44,22 @@ public class UnaryExpression extends Expression {
         }
 
         assembler.addLocation(getRegion().getBegin());
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterUnaryExpression(this)) {
+            final Expression rhs = this.rhs.accept(visitor);
+
+            if (rhs != this.rhs) {
+                return visitor.leaveUnaryExpression(new UnaryExpression(rhs, operator, getRegion()));
+            } else {
+                return visitor.leaveUnaryExpression(this);
+            }
+        }
+
+        return this;
     }
 
     public Expression getRhs() {

@@ -8,6 +8,7 @@ import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.node.context.FunctionContext;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.util.annotations.NotNull;
@@ -89,6 +90,24 @@ public class TryStatement extends Statement {
             FunctionContext functionContext = context.unwrap(FunctionContext.class);
             functionContext.addGuard(regionStart, regionEnd, offset, slot);
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterTryStatement(this)) {
+            final BlockStatement body = (BlockStatement) this.body.accept(visitor);
+            final BlockStatement recoverBody = this.recoverBody == null ? null : (BlockStatement) this.recoverBody.accept(visitor);
+            final BlockStatement finallyBody = this.finallyBody == null ? null : (BlockStatement) this.finallyBody.accept(visitor);
+
+            if (body != this.body || recoverBody != this.recoverBody || finallyBody != this.finallyBody) {
+                return visitor.leaveTryStatement(new TryStatement(body, recoverBody, name, finallyBody, getRegion()));
+            } else {
+                return visitor.leaveTryStatement(this);
+            }
+        }
+
+        return this;
     }
 
     @NotNull

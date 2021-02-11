@@ -4,9 +4,11 @@ import com.shade.lang.compiler.assembler.Assembler;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
+import com.shade.lang.util.annotations.NotNull;
 
 public class BinaryExpression extends Expression {
     private final Expression lhs;
@@ -68,6 +70,23 @@ public class BinaryExpression extends Expression {
         }
 
         assembler.addLocation(getRegion().getBegin());
+    }
+
+    @NotNull
+    @Override
+    public Expression accept(@NotNull Visitor visitor) {
+        if (visitor.enterBinaryExpression(this)) {
+            final Expression lhs = this.lhs.accept(visitor);
+            final Expression rhs = this.rhs.accept(visitor);
+
+            if (lhs != this.lhs || rhs != this.rhs) {
+                return visitor.leaveBinaryExpression(new BinaryExpression(lhs, rhs, operator, getRegion()));
+            } else {
+                return visitor.leaveBinaryExpression(this);
+            }
+        }
+
+        return this;
     }
 
     public Expression getLhs() {

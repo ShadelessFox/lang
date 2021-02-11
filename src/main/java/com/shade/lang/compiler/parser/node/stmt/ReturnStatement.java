@@ -6,6 +6,7 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.context.FinallyContext;
 import com.shade.lang.compiler.parser.token.Region;
@@ -42,6 +43,22 @@ public class ReturnStatement extends Statement {
         }
 
         assembler.emit(Operation.RETURN);
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterReturnStatement(this)) {
+            final Expression value = this.value == null ? null : this.value.accept(visitor);
+
+            if (value != this.value) {
+                return visitor.leaveReturnStatement(new ReturnStatement(value, getRegion()));
+            } else {
+                return visitor.leaveReturnStatement(this);
+            }
+        }
+
+        return this;
     }
 
     @Override

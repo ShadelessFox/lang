@@ -6,8 +6,10 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Statement;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.token.Region;
+import com.shade.lang.util.annotations.NotNull;
 
 public class DeclareVariableStatement extends Statement {
     private final String name;
@@ -27,6 +29,22 @@ public class DeclareVariableStatement extends Statement {
         } else {
             throw new ScriptException("Local variable '" + name + "' already declared", getRegion());
         }
+    }
+
+    @NotNull
+    @Override
+    public Statement accept(@NotNull Visitor visitor) {
+        if (visitor.enterDeclareVariableStatement(this)) {
+            final Expression value = this.value.accept(visitor);
+
+            if (value != this.value) {
+                return visitor.leaveDeclareVariableStatement(new DeclareVariableStatement(name, value, getRegion()));
+            } else {
+                return visitor.leaveDeclareVariableStatement(this);
+            }
+        }
+
+        return this;
     }
 
     public String getName() {
