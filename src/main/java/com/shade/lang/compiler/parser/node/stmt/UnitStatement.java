@@ -72,6 +72,7 @@ public class UnitStatement extends Statement {
         if (visitor.enterUnitStatement(this)) {
             final List<Statement> statements = this.statements.stream()
                 .map(x -> x.accept(visitor))
+                .filter(EmptyStatement::nonEmpty)
                 .collect(Collectors.toList());
 
             if (!statements.equals(this.statements)) {

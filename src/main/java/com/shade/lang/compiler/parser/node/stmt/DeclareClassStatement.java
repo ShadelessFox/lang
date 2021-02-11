@@ -90,6 +90,7 @@ public class DeclareClassStatement extends Statement {
                 .collect(Collectors.toList());
             final List<Statement> members = this.members.stream()
                 .map(x -> x.accept(visitor))
+                .filter(EmptyStatement::nonEmpty)
                 .collect(Collectors.toList());
 
             if (!bases.equals(this.bases) || !members.equals(this.members)) {
