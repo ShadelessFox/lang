@@ -1,133 +1,146 @@
 package com.shade.lang.compiler.optimizer.transformers;
 
-import com.shade.lang.compiler.optimizer.SimpleTransformer;
+import com.shade.lang.compiler.optimizer.Transformer;
+import com.shade.lang.compiler.optimizer.TransformerProvider;
 import com.shade.lang.compiler.parser.node.Expression;
-import com.shade.lang.compiler.parser.node.expr.*;
+import com.shade.lang.compiler.parser.node.expr.BinaryExpression;
+import com.shade.lang.compiler.parser.node.expr.LoadConstantExpression;
+import com.shade.lang.compiler.parser.node.expr.LogicalExpression;
+import com.shade.lang.compiler.parser.node.expr.UnaryExpression;
 import com.shade.lang.compiler.parser.token.TokenKind;
+import com.shade.lang.util.annotations.NotNull;
 
-public class ConstantFoldingTransformer extends SimpleTransformer {
+import static com.shade.lang.compiler.optimizer.TransformerUtils.asConst;
+import static com.shade.lang.compiler.optimizer.TransformerUtils.isConst;
+
+public class ConstantFoldingTransformer extends Transformer implements TransformerProvider {
+    private static final ConstantFoldingTransformer INSTANCE = new ConstantFoldingTransformer();
+
     @Override
     public int getLevel() {
         return 1;
     }
 
+    @NotNull
     @Override
-    public Expression transform(BinaryExpression expression) {
-        BinaryExpression transformed = (BinaryExpression) super.transform(expression);
+    public Transformer create() {
+        return INSTANCE;
+    }
 
-        if (isConst(transformed.getLhs(), Number.class) && isConst(transformed.getRhs(), Number.class)) {
-            Number lhsValue = asConst(transformed.getLhs());
-            Number rhsValue = asConst(transformed.getRhs());
+    @NotNull
+    @Override
+    public Expression leaveBinaryExpression(@NotNull BinaryExpression expression) {
+        if (isConst(expression.getLhs(), Number.class) && isConst(expression.getRhs(), Number.class)) {
+            final Number lhs = asConst(expression.getLhs(), Number.class);
+            final Number rhs = asConst(expression.getRhs(), Number.class);
 
-            if (lhsValue instanceof Float || rhsValue instanceof Float) {
-                switch (transformed.getOperator()) {
+            if (lhs instanceof Float || rhs instanceof Float) {
+                switch (expression.getOperator()) {
                     case Add:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() + rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() + rhs.floatValue(), expression.getRegion());
                     case Sub:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() - rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() - rhs.floatValue(), expression.getRegion());
                     case Mul:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() * rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() * rhs.floatValue(), expression.getRegion());
                     case Div:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() / rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() / rhs.floatValue(), expression.getRegion());
                     case Eq:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() == rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() == rhs.floatValue(), expression.getRegion());
                     case NotEq:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() != rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() != rhs.floatValue(), expression.getRegion());
                     case Less:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() < rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() < rhs.floatValue(), expression.getRegion());
                     case LessEq:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() <= rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() <= rhs.floatValue(), expression.getRegion());
                     case Greater:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() > rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() > rhs.floatValue(), expression.getRegion());
                     case GreaterEq:
-                        return new LoadConstantExpression<>(lhsValue.floatValue() >= rhsValue.floatValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.floatValue() >= rhs.floatValue(), expression.getRegion());
                 }
-            } else {
-                switch (transformed.getOperator()) {
+            } else if (lhs instanceof Integer || rhs instanceof Integer) {
+                switch (expression.getOperator()) {
                     case Add:
-                        return new LoadConstantExpression<>(lhsValue.intValue() + rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() + rhs.intValue(), expression.getRegion());
                     case Sub:
-                        return new LoadConstantExpression<>(lhsValue.intValue() - rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() - rhs.intValue(), expression.getRegion());
                     case Mul:
-                        return new LoadConstantExpression<>(lhsValue.intValue() * rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() * rhs.intValue(), expression.getRegion());
                     case Div:
-                        return new LoadConstantExpression<>(lhsValue.intValue() / rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() / rhs.intValue(), expression.getRegion());
                     case Eq:
-                        return new LoadConstantExpression<>(lhsValue.intValue() == rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() == rhs.intValue(), expression.getRegion());
                     case NotEq:
-                        return new LoadConstantExpression<>(lhsValue.intValue() != rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() != rhs.intValue(), expression.getRegion());
                     case Less:
-                        return new LoadConstantExpression<>(lhsValue.intValue() < rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() < rhs.intValue(), expression.getRegion());
                     case LessEq:
-                        return new LoadConstantExpression<>(lhsValue.intValue() <= rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() <= rhs.intValue(), expression.getRegion());
                     case Greater:
-                        return new LoadConstantExpression<>(lhsValue.intValue() > rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() > rhs.intValue(), expression.getRegion());
                     case GreaterEq:
-                        return new LoadConstantExpression<>(lhsValue.intValue() >= rhsValue.intValue(), transformed.getRegion());
+                        return new LoadConstantExpression<>(lhs.intValue() >= rhs.intValue(), expression.getRegion());
                 }
             }
         }
 
-        if (isConst(transformed.getLhs(), Boolean.class) && isConst(transformed.getRhs(), Boolean.class)) {
-            boolean lhsValue = asConst(transformed.getLhs());
-            boolean rhsValue = asConst(transformed.getRhs());
+        if (isConst(expression.getLhs(), Boolean.class) && isConst(expression.getRhs(), Boolean.class)) {
+            final Boolean lhs = asConst(expression.getLhs(), Boolean.class);
+            final Boolean rhs = asConst(expression.getRhs(), Boolean.class);
 
-            switch (transformed.getOperator()) {
+            switch (expression.getOperator()) {
                 case Eq:
-                    return new LoadConstantExpression<>(lhsValue == rhsValue, transformed.getRegion());
+                    return new LoadConstantExpression<>(lhs == rhs, expression.getRegion());
                 case NotEq:
-                    return new LoadConstantExpression<>(lhsValue != rhsValue, transformed.getRegion());
+                    return new LoadConstantExpression<>(lhs != rhs, expression.getRegion());
             }
         }
 
-        if (isConst(transformed.getLhs(), String.class) && isConst(transformed.getRhs(), String.class) && transformed.getOperator() == TokenKind.Add) {
-            String lhsValue = asConst(transformed.getLhs());
-            String rhsValue = asConst(transformed.getRhs());
+        if (isConst(expression.getLhs(), String.class) && isConst(expression.getRhs(), String.class) && expression.getOperator() == TokenKind.Add) {
+            final String lhs = asConst(expression.getLhs(), String.class);
+            final String rhs = asConst(expression.getRhs(), String.class);
 
-            return new LoadConstantExpression<>(lhsValue + rhsValue, transformed.getRegion());
+            return new LoadConstantExpression<>(lhs + rhs, expression.getRegion());
         }
 
-        return transformed;
+        return super.leaveBinaryExpression(expression);
     }
 
+    @NotNull
     @Override
-    public Expression transform(LogicalExpression expression) {
-        LogicalExpression transformed = (LogicalExpression) super.transform(expression);
+    public Expression leaveLogicalExpression(@NotNull LogicalExpression expression) {
+        if (isConst(expression.getLhs(), Boolean.class) && isConst(expression.getRhs(), Boolean.class)) {
+            final Boolean lhs = asConst(expression.getLhs(), Boolean.class);
+            final Boolean rhs = asConst(expression.getRhs(), Boolean.class);
 
-        if (isConst(transformed.getLhs(), Boolean.class) && isConst(transformed.getRhs(), Boolean.class)) {
-            boolean lhsValue = asConst(transformed.getLhs());
-            boolean rhsValue = asConst(transformed.getRhs());
-
-            switch (transformed.getOperator()) {
+            switch (expression.getOperator()) {
                 case And:
-                    return new LoadConstantExpression<>(lhsValue && rhsValue, transformed.getRegion());
+                    return new LoadConstantExpression<>(lhs && rhs, expression.getRegion());
                 case Or:
-                    return new LoadConstantExpression<>(lhsValue || rhsValue, transformed.getRegion());
+                    return new LoadConstantExpression<>(lhs || rhs, expression.getRegion());
             }
         }
 
-        return transformed;
+        return super.leaveLogicalExpression(expression);
     }
 
+    @NotNull
     @Override
-    public Expression transform(UnaryExpression expression) {
-        UnaryExpression transformed = (UnaryExpression) super.transform(expression);
+    public Expression leaveUnaryExpression(@NotNull UnaryExpression expression) {
+        if (isConst(expression.getRhs(), Number.class) && expression.getOperator() == TokenKind.Sub) {
+            final Number rhs = asConst(expression.getRhs(), Number.class);
 
-        if (isConst(transformed.getRhs(), Number.class) && transformed.getOperator() == TokenKind.Sub) {
-            Number rhsValue = asConst(transformed.getRhs());
-
-            if (rhsValue instanceof Float) {
-                return new LoadConstantExpression<>(-rhsValue.floatValue(), transformed.getRegion());
-            } else {
-                return new LoadConstantExpression<>(-rhsValue.intValue(), transformed.getRegion());
+            if (rhs instanceof Float) {
+                return new LoadConstantExpression<>(-rhs.floatValue(), expression.getRegion());
+            } else if (rhs instanceof Integer) {
+                return new LoadConstantExpression<>(-rhs.intValue(), expression.getRegion());
             }
         }
 
-        if (isConst(transformed.getRhs(), Boolean.class) && transformed.getOperator() == TokenKind.Not) {
-            boolean rhsValue = asConst(transformed.getRhs());
-            return new LoadConstantExpression<>(!rhsValue, transformed.getRegion());
+        if (isConst(expression.getRhs(), Boolean.class) && expression.getOperator() == TokenKind.Not) {
+            final Boolean rhs = asConst(expression.getRhs(), Boolean.class);
+            return new LoadConstantExpression<>(!rhs, expression.getRegion());
         }
 
-        return transformed;
+        return super.leaveUnaryExpression(expression);
     }
 }

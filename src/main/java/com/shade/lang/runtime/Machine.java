@@ -99,8 +99,12 @@ public class Machine {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             Parser parser = new Parser(new Tokenizer(reader));
 
+            final int optimizerLevel = Integer.getInteger("ash.opt.level", Integer.MAX_VALUE);
+            final int optimizerPasses = Integer.getInteger("ash.opt.passes", 0);
+            final Optimizer optimizer = new Optimizer(optimizerLevel);
+
             Node node = parser.parse(source, Parser.Mode.Unit);
-            node = Optimizer.optimize(node, Integer.getInteger("ash.opt.level", Integer.MAX_VALUE), Integer.getInteger("ash.opt.passes", 0));
+            node = optimizer.optimize(node, optimizerPasses);
             node.compile(context, null);
 
             if (ENABLE_CACHING) {

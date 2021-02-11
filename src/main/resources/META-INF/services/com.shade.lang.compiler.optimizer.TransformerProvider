@@ -1,0 +1,2 @@
+com.shade.lang.compiler.optimizer.transformers.ConstantFoldingTransformer
+com.shade.lang.compiler.optimizer.transformers.DeadCodeEliminationTransformer

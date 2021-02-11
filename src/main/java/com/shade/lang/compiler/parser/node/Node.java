@@ -1,7 +1,6 @@
 package com.shade.lang.compiler.parser.node;
 
 import com.shade.lang.compiler.assembler.Assembler;
-import com.shade.lang.compiler.optimizer.Transformer;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.context.Context;
 import com.shade.lang.compiler.parser.node.visitor.Visitor;
@@ -16,8 +15,6 @@ public abstract class Node {
     }
 
     public abstract void compile(Context context, Assembler assembler) throws ScriptException;
-
-    public abstract Node transform(Transformer transformer);
 
     @NotNull
     public abstract Node accept(@NotNull Visitor visitor);
