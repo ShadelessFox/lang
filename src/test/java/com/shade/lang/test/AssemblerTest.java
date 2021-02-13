@@ -1,7 +1,6 @@
 package com.shade.lang.test;
 
 import com.shade.lang.compiler.assembler.Assembler;
-import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Node;
 import com.shade.lang.compiler.parser.node.context.Context;
@@ -119,20 +118,35 @@ public class AssemblerTest {
 
     @Test
     public void testLocalImport() throws ScriptException {
-        Assembler result = assemble(context, new ImportStatement("abc", "def", false, region));
-        Assert.assertEquals(result.getConstants(), Collections.singletonList("abc"));
+        Assembler result = assemble(context, new ImportStatement("abc", "def", null, false, region));
+        Assert.assertEquals(Collections.singletonList("abc"), result.getConstants());
         Assert.assertArrayEquals(result.assemble().array(), new byte[]{
-            OP_IMPORT, 0x00, 0x00, 0x00
+            OP_IMPORT, 0x00, 0x00,
+            OP_SET_LOCAL, 0x00
         });
     }
 
     @Test
     public void testGlobalImport() throws ScriptException {
-        Assembler result = assemble(context, new ImportStatement("abc", "def", true, region));
-        Assert.assertEquals(result.getConstants(), Arrays.asList("abc", "def"));
+        Assembler result = assemble(context, new ImportStatement("abc", "def", null, true, region));
+        Assert.assertEquals(Arrays.asList("abc", "def"), result.getConstants());
         Assert.assertArrayEquals(result.assemble().array(), new byte[]{
-            OP_IMPORT, 0x00, 0x00, Operand.UNDEFINED,
+            OP_IMPORT, 0x00, 0x00,
             OP_SET_GLOBAL, 0x00, 0x01
+        });
+    }
+
+    @Test
+    public void testItemImport() throws ScriptException {
+        Assembler result = assemble(context, new ImportStatement("abc", null, new String[]{"ghi", "jkl"}, false, region));
+        Assert.assertEquals(Arrays.asList("abc", "ghi", "jkl"), result.getConstants());
+        Assert.assertArrayEquals(result.assemble().array(), new byte[]{
+            OP_IMPORT, 0x00, 0x00,
+            OP_DUP,
+            OP_GET_ATTRIBUTE, 0x00, 0x01,
+            OP_SET_LOCAL, 0x00,
+            OP_GET_ATTRIBUTE, 0x00, 0x02,
+            OP_SET_LOCAL, 0x01,
         });
     }
 

@@ -488,18 +488,13 @@ public class Machine {
                 }
                 case OP_IMPORT: {
                     final String name = (String) frame.getNextConstant();
-                    final byte slot = frame.getNextImm8();
                     final Module module = load(name);
                     if (module != null) {
                         if (module == frame.getModule()) {
                             panic("Cannot import itself", true);
                             break;
                         }
-                        if (slot != Operand.UNDEFINED) {
-                            frame.getLocals()[slot] = module;
-                        } else {
-                            operandStack.push(module);
-                        }
+                        operandStack.push(module);
                     }
                     break;
                 }

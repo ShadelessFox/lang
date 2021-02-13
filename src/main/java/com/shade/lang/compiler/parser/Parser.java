@@ -72,8 +72,13 @@ public class Parser {
         if (consume(Assign) != null) {
             alias = expect(Symbol).getStringValue();
         }
+        List<String> names = null;
+        if (alias == null && matches(BraceL)) {
+            names = new ArrayList<>();
+            list(BraceL, BraceR, Comma, names, () -> expect(Symbol).getStringValue());
+        }
         Token end = expect(Semicolon);
-        return new ImportStatement(name, alias, global, start.until(end.getRegion()));
+        return new ImportStatement(name, alias, names == null ? null : names.toArray(new String[0]), global, start.until(end.getRegion()));
     }
 
     private Statement parseStatement() throws ScriptException {
@@ -174,7 +179,7 @@ public class Parser {
 
             return new BlockStatement(Arrays.asList(
                 // import 'range;
-                new ImportStatement("range", rangeId, false, region),
+                new ImportStatement("range", rangeId, null, false, region),
 
                 // variableId = begin;
                 new DeclareVariableStatement(variableId, begin, variable.getRegion()),

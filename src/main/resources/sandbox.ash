@@ -453,6 +453,8 @@ def test_loops() {
 def test_local_import() {
     import builtin = blt;
     let print = blt.print;
+    import builtin { println };
+    assert blt.println == println;
 }
 
 def test_lambda_functions() {
