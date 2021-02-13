@@ -15,7 +15,7 @@ import java.util.zip.CRC32;
 
 public class ModuleSerializer {
     // @formatter:off
-    public static final int FILE_VERSION        = 1;
+    public static final int FILE_VERSION        = 2;
     public static final int FILE_SIGNATURE      = ('A' << 24) | ('S' << 16) | ('H' << 8) | (FILE_VERSION & 0xff);
 
     public static final byte CONSTANT_NONE      = 1;
