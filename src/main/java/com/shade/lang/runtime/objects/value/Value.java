@@ -2,8 +2,10 @@ package com.shade.lang.runtime.objects.value;
 
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.ScriptObject;
+import com.shade.lang.util.annotations.NotNull;
 
 import java.util.Objects;
+import java.util.Stack;
 
 public abstract class Value extends ScriptObject {
     protected Value() {
@@ -83,5 +85,42 @@ public abstract class Value extends ScriptObject {
     @Override
     public String toString() {
         return getValue().toString();
+    }
+
+    /**
+     * The print stack used to track cyclic objects.
+     */
+    private static final Stack<ScriptObject> PRINT_STACK = new Stack<>();
+
+    /**
+     * Pushes the supplied <code>object</code> onto the print stack (if not present) to prevent
+     * cyclic {@link #toString()} evaluation of the same object by tracking values currently being printed.
+     * <p>
+     *
+     * @param object the object to push onto the print stack
+     * @return <code>true</code> if the supplied <code>object</code>was already tracked, <code>false</code> otherwise.
+     * If so, {@link #leavePrint(ScriptObject)} must be called with the same object.
+     */
+    protected static boolean enterPrint(@NotNull ScriptObject object) {
+        for (int index = PRINT_STACK.size() - 1; index >= 0; index--) {
+            if (PRINT_STACK.get(index) == object) {
+                return true;
+            }
+        }
+        PRINT_STACK.push(object);
+        return false;
+    }
+
+    /**
+     * Removes the supplied <code>object</code> from the print stack. This function must be called only if
+     * invocation of {@link #enterPrint(ScriptObject)} with the same object resulted in <code>false</code>.
+     *
+     * @param object the object to remove from the print stack
+     */
+    protected static void leavePrint(@NotNull ScriptObject object) {
+        if (PRINT_STACK.peek() != object) {
+            throw new IllegalArgumentException("leavePrint must be preceded by enterPrint on the same object");
+        }
+        PRINT_STACK.pop();
     }
 }

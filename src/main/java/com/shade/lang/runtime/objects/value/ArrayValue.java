@@ -73,6 +73,9 @@ public class ArrayValue extends Value implements Index, MutableIndex {
 
     @Override
     public String toString() {
+        if (enterPrint(this)) {
+            return "[...]";
+        }
         int max = values.length - 1;
         if (max == -1) {
             return "[]";
@@ -81,8 +84,10 @@ public class ArrayValue extends Value implements Index, MutableIndex {
         builder.append('[');
         for (int index = 0; ; index++) {
             builder.append(values[index].toDisplayString());
-            if (index == max)
+            if (index == max) {
+                leavePrint(this);
                 return builder.append(']').toString();
+            }
             builder.append(", ");
         }
     }

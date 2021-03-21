@@ -734,6 +734,36 @@ def test_instance_of() {
     assert m is Self;
 }
 
+def test_cycling_string_representation() {
+    {
+        let a = ['a', 'b'];
+        assert std.to_string(a) == '[\'a\', \'b\']';
+    }
+
+    {
+        let a = ['a', none];
+        a[1] = a;
+        assert std.to_string(a) == '[\'a\', [...]]';
+    }
+
+    {
+        let a = ['a', none];
+        a[0] = a;
+        a[1] = a;
+        assert std.to_string(a) == '[[...], [...]]';
+    }
+
+    {
+        let a = ['a', none];
+        let b = ['b', none];
+        a[1] = b;
+        b[1] = a;
+
+        assert std.to_string(a) == '[\'a\', [\'b\', [...]]]';
+        assert std.to_string(b) == '[\'b\', [\'a\', [...]]]';
+    }
+}
+
 def main() {
     import test;
 
@@ -763,6 +793,7 @@ def main() {
     test.pass('Unwrap operator', test_unwrap_operator);
     test.pass('Parse json', test_parse_json);
     test.pass('Instance of', test_instance_of);
+    test.pass('Cyclic string representation', test_cycling_string_representation);
     test.fail('Throw value', def () { throw 'hello'; });
     test.fail('Fail assert', def () { assert false; });
     test.fail('No such attribute', def () { std.println(none.hello); });
