@@ -1,6 +1,5 @@
 package com.shade.lang.runtime;
 
-import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.optimizer.Optimizer;
 import com.shade.lang.compiler.parser.Parser;
@@ -20,9 +19,9 @@ import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.NoneValue;
 import com.shade.lang.runtime.objects.value.Value;
+import com.shade.lang.tool.serialization.ModuleSerializer;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
-import com.shade.lang.util.serialization.ModuleSerializer;
 
 import java.io.*;
 import java.nio.file.*;

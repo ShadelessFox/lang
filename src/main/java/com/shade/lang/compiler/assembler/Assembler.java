@@ -1,7 +1,7 @@
 package com.shade.lang.compiler.assembler;
 
 import com.shade.lang.compiler.parser.token.Region;
-import com.shade.lang.util.Pair;
+import com.shade.lang.tool.serialization.attributes.LineNumberTableAttribute;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
 
@@ -34,7 +34,7 @@ public class Assembler {
      * Map of instruction's offsets to its location
      * inside code's source file.
      */
-    private final Map<Integer, Pair<Short, Short>> locations = new HashMap<>();
+    private final Map<Integer, LineNumberTableAttribute.Location> locations = new HashMap<>();
 
     /*
      * Current imaginable stack size. This
@@ -342,7 +342,7 @@ public class Assembler {
     public void addLocation(@NotNull Region.Span span) {
         final short line = (short) (span.getLine() & 0xffff);
         final short column = (short) (span.getColumn() & 0xffff);
-        locations.put(instructions.size(), new Pair<>(line, column));
+        locations.put(instructions.size(), new LineNumberTableAttribute.Location(line, column));
     }
 
     /**
@@ -385,7 +385,7 @@ public class Assembler {
      *
      * @return instruction source file mappings
      */
-    public Map<Integer, Pair<Short, Short>> getLocations() {
+    public Map<Integer, LineNumberTableAttribute.Location> getLocations() {
         return locations;
     }
 
@@ -399,7 +399,7 @@ public class Assembler {
      *
      * @return instruction source file mappings.
      */
-    public Map<Integer, Pair<Short, Short>> getComputedLocations() {
+    public Map<Integer, LineNumberTableAttribute.Location> getComputedLocations() {
         return locations.entrySet().stream().collect(Collectors.toMap(
             e -> getOffset(e.getKey()),
             Map.Entry::getValue

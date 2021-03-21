@@ -3,9 +3,9 @@ package com.shade.lang.runtime.frames;
 import com.shade.lang.runtime.objects.ScriptObject;
 import com.shade.lang.runtime.objects.function.RuntimeFunction;
 import com.shade.lang.runtime.objects.module.Module;
-import com.shade.lang.util.Pair;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
+import com.shade.lang.tool.serialization.attributes.LineNumberTableAttribute;
 
 import java.util.Objects;
 
@@ -37,12 +37,20 @@ public class RuntimeFrame extends Frame {
 
     @Override
     public String toString() {
-        final Pair<Short, Short> line = getChunk().getLocations().get(pc);
-
-        if (line != null) {
-            return getModule().getName() + '/' + function.getName() + " (" + getModule().getSource() + ':' + line.getFirst() + ':' + line.getSecond() + ')';
+        final LineNumberTableAttribute.Location location = getLocation(pc);
+        if (location != null) {
+            return getModule().getName() + '/' + function.getName() + " (" + getModule().getSource() + ':' + location + ')';
         } else {
             return getModule().getName() + '/' + function.getName() + " (" + getModule().getSource() + ":+" + pc + ')';
         }
+    }
+
+    @Nullable
+    private LineNumberTableAttribute.Location getLocation(int pc) {
+        final LineNumberTableAttribute attribute = getChunk().getSingleAttribute(LineNumberTableAttribute.DESCRIPTOR);
+        if (attribute == null) {
+            return null;
+        }
+        return attribute.getLocationByAddress(pc);
     }
 }

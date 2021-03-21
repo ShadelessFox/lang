@@ -1,21 +1,21 @@
-package com.shade.lang.util.serialization;
+package com.shade.lang.tool.serialization;
 
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.module.Module;
 import com.shade.lang.runtime.objects.value.NoneValue;
-import com.shade.lang.util.Pair;
 import com.shade.lang.util.annotations.NotNull;
 import com.shade.lang.util.annotations.Nullable;
+import com.shade.lang.tool.serialization.attributes.*;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 import java.util.zip.CRC32;
 
 public class ModuleSerializer {
     // @formatter:off
-    public static final int FILE_VERSION        = 2;
+    public static final int FILE_VERSION        = 3;
     public static final int FILE_SIGNATURE      = ('A' << 24) | ('S' << 16) | ('H' << 8) | (FILE_VERSION & 0xff);
 
     public static final byte CONSTANT_NONE      = 1;
@@ -25,6 +25,9 @@ public class ModuleSerializer {
     public static final byte CONSTANT_BOOL      = 1 << 4;
     public static final byte CONSTANT_CHUNK     = 1 << 5;
     // @formatter:on
+
+    private static final Logger LOG = Logger.getLogger(ModuleSerializer.class.getName());
+    private static Map<String, AttributeDescriptor<?>> availableAttributeDescriptors;
 
     private ModuleSerializer() {
     }
@@ -65,12 +68,7 @@ public class ModuleSerializer {
             os.writeByte(guard.getSlot());
         }
 
-        os.writeShort(chunk.getLocations().size());
-        for (Map.Entry<Integer, Pair<Short, Short>> location : chunk.getLocations().entrySet()) {
-            os.writeInt(location.getKey());
-            os.writeShort(location.getValue().getFirst());
-            os.writeShort(location.getValue().getSecond());
-        }
+        writeAttributes(os, chunk.getFlattenAttributes());
     }
 
     public static void writeConstant(@NotNull DataOutputStream os, @NotNull Object constant) throws IOException {
@@ -94,6 +92,26 @@ public class ModuleSerializer {
         } else {
             throw new IllegalArgumentException("Unsupported constant: " + constant + "(" + constant.getClass() + ")");
         }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void writeAttributes(@NotNull DataOutputStream os, @NotNull Attribute<?>[] attributes) throws IOException {
+        os.writeShort(attributes.length);
+        for (Attribute<?> attribute : attributes) {
+            // Abuse type erasure to make this work...
+            ModuleSerializer.<Attribute>writeAttribute(os, attribute);
+        }
+    }
+
+    public static <T extends Attribute<T>> void writeAttribute(@NotNull DataOutputStream os, @NotNull T attribute) throws IOException {
+        final AttributeDescriptor<T> descriptor = attribute.getDescriptor();
+        final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (final DataOutputStream stream = new DataOutputStream(buffer)) {
+            descriptor.save(stream, attribute);
+        }
+        os.writeUTF(descriptor.getName());
+        os.writeInt(buffer.size());
+        os.write(buffer.toByteArray());
     }
 
     public static int readFileChecksum(@NotNull File file) throws IOException {
@@ -154,9 +172,24 @@ public class ModuleSerializer {
             guards[index] = new Guard(is.readInt(), is.readInt(), is.readInt(), is.readByte());
         }
 
-        final Map<Integer, Pair<Short, Short>> locations = new HashMap<>();
-        for (int index = 0, length = is.readShort(); index < length; index++) {
-            locations.put(is.readInt(), new Pair<>(is.readShort(), is.readShort()));
+        final List<Attribute<?>> attributes = new ArrayList<>();
+        for (int count = is.readShort(); count > 0; count--) {
+            final String name = is.readUTF();
+            final int length = is.readInt();
+            final AttributeDescriptor<?> descriptor = availableAttributeDescriptors().get(name);
+
+            if (descriptor == null) {
+                LOG.severe(() -> "Cannot find descriptor for attribute '" + name + "', skipping");
+                is.skipBytes(length);
+                continue;
+            }
+
+            final byte[] buffer = new byte[length];
+            is.readFully(buffer);
+
+            try (DataInputStream stream = new DataInputStream(new ByteArrayInputStream(buffer))) {
+                attributes.add(descriptor.load(stream));
+            }
         }
 
         return new Chunk(
@@ -167,7 +200,7 @@ public class ModuleSerializer {
             arguments,
             boundArguments,
             locals,
-            locations
+            attributes.toArray(new Attribute[0])
         );
     }
 
@@ -190,6 +223,47 @@ public class ModuleSerializer {
                 return readChunk(is);
             default:
                 throw new IllegalStateException("Unknown constant type: " + type);
+        }
+    }
+
+    @NotNull
+    public static Map<String, AttributeDescriptor<?>> availableAttributeDescriptors() {
+        if (availableAttributeDescriptors == null) {
+            availableAttributeDescriptors = new HashMap<>();
+            for (AttributeProvider provider : ServiceLoader.load(AttributeProvider.class)) {
+                final Iterator<AttributeDescriptor<?>> iterator = provider.attributes();
+                while (iterator.hasNext()) {
+                    final AttributeDescriptor<?> descriptor = iterator.next();
+                    final String name = descriptor.getName();
+                    if (availableAttributeDescriptors.containsKey(name)) {
+                        LOG.severe(() -> "Duplicated descriptor for attribute '" + name + "': " + descriptor.getClass().getName());
+                        continue;
+                    }
+                    availableAttributeDescriptors.put(name, descriptor);
+                }
+            }
+        }
+        return Collections.unmodifiableMap(availableAttributeDescriptors);
+    }
+
+    public static class DebugAttributeProvider implements AttributeProvider {
+        private final List<AttributeDescriptor<?>> SUPPORTED_ATTRIBUTES = Arrays.asList(
+            LineNumberTableAttribute.DESCRIPTOR,
+            LocalVariableTableAttribute.DESCRIPTOR
+        );
+
+        @NotNull
+        @Override
+        public Iterator<AttributeDescriptor<?>> attributes() {
+            return SUPPORTED_ATTRIBUTES.iterator();
+        }
+
+        @Nullable
+        @Override
+        public AttributeDescriptor<?> attributeForName(@NotNull String name) {
+            return SUPPORTED_ATTRIBUTES.stream()
+                .filter(descriptor -> descriptor.getName().equals(name))
+                .findFirst().orElse(null);
         }
     }
 }

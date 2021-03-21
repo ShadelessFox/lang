@@ -5,13 +5,15 @@ import com.shade.lang.compiler.assembler.Operand;
 import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Statement;
-import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.tool.serialization.attributes.Attribute;
+import com.shade.lang.tool.serialization.attributes.LineNumberTableAttribute;
 import com.shade.lang.util.annotations.NotNull;
 
 import java.io.PrintWriter;
@@ -53,7 +55,9 @@ public class UnitStatement extends Statement {
             (byte) 0,
             (byte) 0,
             (byte) 0,
-            assembler.getComputedLocations()
+            new Attribute[]{
+                new LineNumberTableAttribute(assembler.getComputedLocations())
+            }
         );
 
         context.getModule().setChunk(chunk);

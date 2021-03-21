@@ -14,6 +14,8 @@ import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.value.NoneValue;
+import com.shade.lang.tool.serialization.attributes.Attribute;
+import com.shade.lang.tool.serialization.attributes.LineNumberTableAttribute;
 import com.shade.lang.util.annotations.NotNull;
 
 import java.io.PrintWriter;
@@ -112,7 +114,9 @@ public class DeclareFunctionStatement extends Statement {
             (byte) arguments.size(),
             (byte) boundArguments.size(),
             (byte) functionLocalsCount.get(),
-            assembler.getComputedLocations()
+            new Attribute[]{
+                new LineNumberTableAttribute(assembler.getComputedLocations())
+            }
         );
 
         final ClassContext classContext = context.unwrap(ClassContext.class);

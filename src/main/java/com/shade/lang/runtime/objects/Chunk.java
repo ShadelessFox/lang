@@ -1,10 +1,12 @@
 package com.shade.lang.runtime.objects;
 
 import com.shade.lang.runtime.objects.function.Guard;
-import com.shade.lang.util.Pair;
 import com.shade.lang.util.annotations.NotNull;
+import com.shade.lang.util.annotations.Nullable;
+import com.shade.lang.tool.serialization.attributes.Attribute;
+import com.shade.lang.tool.serialization.attributes.AttributeDescriptor;
 
-import java.util.Map;
+import java.util.Arrays;
 
 public class Chunk extends ScriptObject {
     // @formatter:off
@@ -20,9 +22,9 @@ public class Chunk extends ScriptObject {
     private final byte arguments;
     private final byte boundArguments;
     private final byte locals;
-    private final Map<Integer, Pair<Short, Short>> locations;
+    private final Attribute<?>[] attributes;
 
-    public Chunk(@NotNull byte[] code, @NotNull Object[] constants, @NotNull Guard[] guards, byte flags, byte arguments, byte boundArguments, byte locals, @NotNull Map<Integer, Pair<Short, Short>> locations) {
+    public Chunk(@NotNull byte[] code, @NotNull Object[] constants, @NotNull Guard[] guards, byte flags, byte arguments, byte boundArguments, byte locals, @NotNull Attribute<?>[] attributes) {
         super(true);
         this.code = code;
         this.constants = constants;
@@ -31,7 +33,7 @@ public class Chunk extends ScriptObject {
         this.arguments = arguments;
         this.boundArguments = boundArguments;
         this.locals = locals;
-        this.locations = locations;
+        this.attributes = attributes;
     }
 
     @NotNull
@@ -65,9 +67,25 @@ public class Chunk extends ScriptObject {
         return locals;
     }
 
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <T extends Attribute<T>> T getSingleAttribute(@NotNull AttributeDescriptor<T> descriptor) {
+        return (T) Arrays.stream(attributes)
+            .filter(attribute -> attribute.getDescriptor() == descriptor)
+            .findFirst().orElse(null);
+    }
+
+    @SuppressWarnings("unchecked")
     @NotNull
-    public Map<Integer, Pair<Short, Short>> getLocations() {
-        return locations;
+    public <T extends Attribute<T>> T[] getMultipleAttributes(@NotNull AttributeDescriptor<T> descriptor) {
+        return (T[]) Arrays.stream(attributes)
+            .filter(attribute -> attribute.getDescriptor() == descriptor)
+            .toArray();
+    }
+
+    @NotNull
+    public Attribute<?>[] getFlattenAttributes() {
+        return attributes;
     }
 
     @Override
