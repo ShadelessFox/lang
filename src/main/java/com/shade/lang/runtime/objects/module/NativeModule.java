@@ -13,18 +13,18 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
+import sun.misc.Unsafe;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static org.objectweb.asm.Opcodes.*;
 
 public abstract class NativeModule extends Module {
-    private static final BridgeClassLoader BRIDGE_CLASS_LOADER = new BridgeClassLoader();
-
     public NativeModule(String moduleName) {
         super(moduleName, '<' + moduleName + '>');
 
@@ -36,7 +36,8 @@ public abstract class NativeModule extends Module {
             final FunctionDescriptor descriptor = method.getDeclaredAnnotation(FunctionDescriptor.class);
             final String name = descriptor.name().isEmpty() ? method.getName() : descriptor.name();
 
-            final Class<?> bridge = BRIDGE_CLASS_LOADER.generate(method, descriptor);
+            final BridgeGenerator generator = new BridgeGenerator();
+            final Class<?> bridge = generator.generate(method, descriptor);
             final NativeFunction.Prototype prototype;
 
             try {
@@ -65,15 +66,10 @@ public abstract class NativeModule extends Module {
         String[] arguments() default {};
     }
 
-    private static final class BridgeClassLoader extends ClassLoader {
+    private static final class BridgeGenerator {
+        private static final Unsafe UNSAFE = getUnsafe();
+
         public Class<?> generate(@NotNull Method method, @NotNull FunctionDescriptor descriptor) {
-            final String clsName = method.getDeclaringClass().getTypeName() + '$' + method.getName();
-            final Class<?> cls = findLoadedClass(clsName);
-
-            if (cls != null) {
-                return cls;
-            }
-
             if (method.getParameterCount() == 0 || method.getParameterTypes()[0] != Machine.class) {
                 throw new IllegalArgumentException("Method should accept `Machine` as first argument");
             }
@@ -136,8 +132,7 @@ public abstract class NativeModule extends Module {
                 mv.visitEnd();
             }
 
-            final byte[] b = cw.toByteArray();
-            return defineClass(clsName, b, 0, b.length);
+            return UNSAFE.defineAnonymousClass(BridgeGenerator.class, cw.toByteArray(), null);
         }
 
         private static void emitCast(MethodVisitor visitor, String name, Class<?> type) {
@@ -225,6 +220,17 @@ public abstract class NativeModule extends Module {
             {
                 visitor.visitTypeInsn(CHECKCAST, Type.getInternalName(boxedType));
                 visitor.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(boxedType), boxedTypeGetter, "()" + Type.getDescriptor(type), false);
+            }
+        }
+
+        @NotNull
+        private static Unsafe getUnsafe() {
+            try {
+                final Field instanceField = Unsafe.class.getDeclaredField("theUnsafe");
+                instanceField.setAccessible(true);
+                return (Unsafe) instanceField.get(null);
+            } catch (Exception e) {
+                throw new IllegalStateException("Cannot obtain sun.misc.Unsafe", e);
             }
         }
     }
