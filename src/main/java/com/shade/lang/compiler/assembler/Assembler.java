@@ -82,7 +82,7 @@ public class Assembler {
         int stackPushAffect = operation.getStackPush(operands);
 
         if (currentStackSize - stackPopAffect < 0) {
-            throw new IllegalStateException("Reached negative stack size on operand '" + operation + "': required " + stackPopAffect + " element(-s) on the stack but " + currentStackSize + " is available");
+            throw new IllegalStateException("Reached negative stack size on instruction '" + operation + "': required " + stackPopAffect + " element(-s) on the stack but only " + currentStackSize + " is available");
         }
 
         currentStackSize -= stackPopAffect;
