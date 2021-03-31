@@ -37,7 +37,7 @@ public abstract class NativeModule extends Module {
             final String name = descriptor.name().isEmpty() ? method.getName() : descriptor.name();
 
             final BridgeGenerator generator = new BridgeGenerator();
-            final Class<?> bridge = generator.generate(method, descriptor);
+            final Class<?> bridge = generator.generate(this, method, descriptor);
             final NativeFunction.Prototype prototype;
 
             try {
@@ -69,7 +69,7 @@ public abstract class NativeModule extends Module {
     private static final class BridgeGenerator {
         private static final Unsafe UNSAFE = getUnsafe();
 
-        public Class<?> generate(@NotNull Method method, @NotNull FunctionDescriptor descriptor) {
+        public Class<?> generate(@NotNull NativeModule host, @NotNull Method method, @NotNull FunctionDescriptor descriptor) {
             if (method.getParameterCount() == 0 || method.getParameterTypes()[0] != Machine.class) {
                 throw new IllegalArgumentException("Method should accept `Machine` as first argument");
             }
@@ -132,7 +132,7 @@ public abstract class NativeModule extends Module {
                 mv.visitEnd();
             }
 
-            return UNSAFE.defineAnonymousClass(BridgeGenerator.class, cw.toByteArray(), null);
+            return UNSAFE.defineAnonymousClass(host.getClass(), cw.toByteArray(), null);
         }
 
         private static void emitCast(MethodVisitor visitor, String name, Class<?> type) {
