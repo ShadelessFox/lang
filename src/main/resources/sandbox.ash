@@ -104,14 +104,6 @@ def test_unary() {
     assert not (not true);
 }
 
-def test_branch_return(x, a, b) {
-    if x {
-        return a;
-    } else {
-        return b;
-    }
-}
-
 def test_branch() {
     result = 0;
 
@@ -133,8 +125,29 @@ def test_branch() {
     if true or (true and (false or true)) { result = 6; } else { result = 0; }
     assert result == 6;
 
+    let test_branch_return = def (x, a, b) {
+        if x {
+            return a;
+        } else {
+            return b;
+        }
+    };
+
     assert test_branch_return(true, 1, 2) == 1;
     assert test_branch_return(false, 1, 2) == 2;
+
+    let test_branch_return_complex = def (x, y, z, w, v, a, b) {
+        if x and (y or z) and (w or v) {
+            return a;
+        } else {
+            return b;
+        }
+    };
+
+    assert test_branch_return_complex(true, false, true, true, false, 1, 2) == 1;
+    assert test_branch_return_complex(false, false, true, true, false, 1, 2) == 2;
+    assert test_branch_return_complex(true, false, false, true, false, 1, 2) == 2;
+    assert test_branch_return_complex(true, false, true, false, false, 1, 2) == 2;
 }
 
 def test_eval_order_a() {

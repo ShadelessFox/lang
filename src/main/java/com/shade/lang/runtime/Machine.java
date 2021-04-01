@@ -368,11 +368,31 @@ public class Machine {
                     }
                     break;
                 }
+                case OP_JUMP_IF_TRUE_OR_POP: {
+                    final Value value = (Value) operandStack.peek();
+                    final short offset = frame.getNextImm16();
+                    if (value.getBoolean(this) == Boolean.TRUE) {
+                        frame.pc += offset;
+                    } else {
+                        operandStack.pop();
+                    }
+                    break;
+                }
                 case OP_JUMP_IF_FALSE: {
                     Value value = (Value) operandStack.pop();
                     int offset = frame.getNextImm16();
                     if (value.getBoolean(this) == Boolean.FALSE) {
                         frame.pc += offset;
+                    }
+                    break;
+                }
+                case OP_JUMP_IF_FALSE_OR_POP: {
+                    final Value value = (Value) operandStack.peek();
+                    final int offset = frame.getNextImm16();
+                    if (value.getBoolean(this) == Boolean.FALSE) {
+                        frame.pc += offset;
+                    } else {
+                        operandStack.pop();
                     }
                     break;
                 }

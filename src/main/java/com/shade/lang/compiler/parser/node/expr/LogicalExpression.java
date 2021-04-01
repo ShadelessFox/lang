@@ -5,8 +5,9 @@ import com.shade.lang.compiler.assembler.Operation;
 import com.shade.lang.compiler.parser.ScriptException;
 import com.shade.lang.compiler.parser.node.Expression;
 import com.shade.lang.compiler.parser.node.Node;
-import com.shade.lang.compiler.parser.node.visitor.Visitor;
+import com.shade.lang.compiler.parser.node.Statement;
 import com.shade.lang.compiler.parser.node.context.Context;
+import com.shade.lang.compiler.parser.node.visitor.Visitor;
 import com.shade.lang.compiler.parser.token.Region;
 import com.shade.lang.compiler.parser.token.TokenKind;
 import com.shade.lang.util.annotations.NotNull;
@@ -26,8 +27,8 @@ public class LogicalExpression extends Expression {
         this.lhs = lhs;
         this.rhs = rhs;
         this.operator = operator;
-        this.pass = new LoadConstantExpression<>(true, region);
-        this.fail = new LoadConstantExpression<>(false, region);
+        this.pass = null;
+        this.fail = null;
     }
 
     public LogicalExpression(Expression lhs, Expression rhs, TokenKind operator, Node pass, Node fail, Region region) {
@@ -44,46 +45,55 @@ public class LogicalExpression extends Expression {
         final List<Assembler.Label> passLabels = new ArrayList<>();
         final List<Assembler.Label> failLabels = new ArrayList<>();
 
-        compile(context, assembler, this, pass, fail, passLabels, failLabels, true);
+        compile0(context, assembler, this, passLabels, failLabels, pass == null);
 
-        passLabels.forEach(assembler::bind);
-        pass.compile(context, assembler);
-
-        Assembler.Label end = assembler.jump(Operation.JUMP);
-
-        failLabels.forEach(assembler::bind);
-        if (fail != null) {
-            fail.compile(context, assembler);
+        if (pass != null) {
+            failLabels.add(assembler.jump(Operation.JUMP_IF_FALSE));
+            assembler.addLocation(getRegion().getBegin());
         }
 
-        assembler.bind(end);
+        passLabels.forEach(assembler::bind);
+
+        if (pass != null) {
+            pass.compile(context, assembler);
+        }
+
+        failLabels.forEach(assembler::bind);
+
+        if (pass != null) {
+            final Assembler.Label end = pass instanceof Statement && !((Statement) pass).isControlFlowReturned()
+                ? assembler.jump(Operation.JUMP)
+                : null;
+
+            if (fail != null) {
+                fail.compile(context, assembler);
+            }
+
+            assembler.bind(end);
+        }
     }
 
-    private void compile(Context context, Assembler assembler, Node node, Node pass, Node fail, List<Assembler.Label> passLabels, List<Assembler.Label> failLabels, boolean root) throws ScriptException {
+    private void compile0(Context context, Assembler assembler, Node node, List<Assembler.Label> passLabels, List<Assembler.Label> failLabels, boolean preserveResults) throws ScriptException {
         if (node instanceof LogicalExpression) {
-            LogicalExpression logical = (LogicalExpression) node;
-            logical.setPass(pass);
-            logical.setFail(fail);
+            final Expression lhs = ((LogicalExpression) node).getLhs();
+            final Expression rhs = ((LogicalExpression) node).getRhs();
 
-            compile(context, assembler, logical.lhs, pass, fail, passLabels, failLabels, false);
+            compile0(context, assembler, lhs, passLabels, failLabels, preserveResults);
 
-            switch (logical.operator) {
+            switch (operator) {
                 case And:
-                    failLabels.add(assembler.jump(Operation.JUMP_IF_FALSE));
+                    failLabels.add(assembler.jump(preserveResults ? Operation.JUMP_IF_FALSE_OR_POP : Operation.JUMP_IF_FALSE));
                     assembler.addLocation(getRegion().getBegin());
                     break;
                 case Or:
-                    passLabels.add(assembler.jump(Operation.JUMP_IF_TRUE));
+                    passLabels.add(assembler.jump(preserveResults ? Operation.JUMP_IF_TRUE_OR_POP : Operation.JUMP_IF_TRUE));
                     assembler.addLocation(getRegion().getBegin());
                     break;
+                default:
+                    throw new AssertionError("Unsupported logical operator: " + operator);
             }
 
-            compile(context, assembler, logical.rhs, pass, fail, passLabels, failLabels, false);
-
-            if (root) {
-                failLabels.add(assembler.jump(Operation.JUMP_IF_FALSE));
-                assembler.addLocation(getRegion().getBegin());
-            }
+            compile0(context, assembler, rhs, passLabels, failLabels, preserveResults);
         } else {
             node.compile(context, assembler);
         }
@@ -95,7 +105,7 @@ public class LogicalExpression extends Expression {
         if (visitor.enterLogicalExpression(this)) {
             final Expression lhs = this.lhs.accept(visitor);
             final Expression rhs = this.rhs.accept(visitor);
-            final Node pass = this.pass.accept(visitor);
+            final Node pass = this.pass == null ? null : this.pass.accept(visitor);
             final Node fail = this.fail == null ? null : this.fail.accept(visitor);
 
             if (lhs != this.lhs || rhs != this.rhs || pass != this.pass || fail != this.fail) {

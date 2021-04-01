@@ -40,6 +40,8 @@ public enum Operation {
     JUMP(OperationCode.OP_JUMP, new OperandType[]{OperandType.IMM_16}, 0, 0),
     JUMP_IF_TRUE(OperationCode.OP_JUMP_IF_TRUE, new OperandType[]{OperandType.IMM_16}, 1, 0),
     JUMP_IF_FALSE(OperationCode.OP_JUMP_IF_FALSE, new OperandType[]{OperandType.IMM_16}, 1, 0),
+    JUMP_IF_TRUE_OR_POP(OperationCode.OP_JUMP_IF_TRUE_OR_POP, new OperandType[]{OperandType.IMM_16}, 1, 0),
+    JUMP_IF_FALSE_OR_POP(OperationCode.OP_JUMP_IF_FALSE_OR_POP, new OperandType[]{OperandType.IMM_16}, 1, 0),
 
     CMP_EQ(OperationCode.OP_CMP_EQ, new OperandType[]{}, 2, 1),
     CMP_NE(OperationCode.OP_CMP_NE, new OperandType[]{}, 2, 1),
@@ -76,7 +78,16 @@ public enum Operation {
     }
 
     public boolean isJump() {
-        return this == JUMP || this == JUMP_IF_TRUE || this == JUMP_IF_FALSE;
+        switch (this) {
+            case JUMP:
+            case JUMP_IF_TRUE:
+            case JUMP_IF_FALSE:
+            case JUMP_IF_TRUE_OR_POP:
+            case JUMP_IF_FALSE_OR_POP:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public byte getOpcode() {

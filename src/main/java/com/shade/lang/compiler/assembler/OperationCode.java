@@ -60,6 +60,9 @@ public class OperationCode {
     public static final byte OP_MAKE_CLASS      = 0x29;
 
     public static final byte OP_THROW           = 0x2A;
+
+    public static final byte OP_JUMP_IF_TRUE_OR_POP     = 0x2B;
+    public static final byte OP_JUMP_IF_FALSE_OR_POP    = 0x2C;
     // @formatter:on
 
 }
