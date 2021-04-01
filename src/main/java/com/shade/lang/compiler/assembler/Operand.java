@@ -42,7 +42,7 @@ public class Operand {
         return new Operand(OperandType.IMM_64, value);
     }
 
-    public static Operand constant(Object value) {
+    public static Operand constant(@NotNull Object value) {
         return new Operand(OperandType.CONSTANT, value);
     }
 

@@ -39,6 +39,7 @@ public class Machine {
     public static final boolean ENABLE_PROFILING = "true".equals(System.getProperty("ash.profiler.enable"));
     public static final boolean ENABLE_LOGGING = "true".equals(System.getProperty("ash.logging.enable"));
     public static final boolean ENABLE_CACHING = "true".equals(System.getProperty("ash.caching.enable"));
+    public static final boolean ENABLE_VERIFICATION = "true".equals(System.getProperty("ash.verification.enable"));
 
     private static final Logger LOG = Logger.getLogger(Machine.class.getName());
 
