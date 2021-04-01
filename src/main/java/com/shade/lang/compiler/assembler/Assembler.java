@@ -124,9 +124,11 @@ public class Assembler {
             throw new IllegalArgumentException("Operation expected to be a jump");
         }
 
+        int stackSizeBeforeJump = currentStackSize;
+
         JumpInstruction instruction = (JumpInstruction) emit(operation, Operand.imm16(0xffff));
 
-        Label label = new Label(instruction, currentStackSize);
+        Label label = new Label(instruction, stackSizeBeforeJump);
         labels.add(label);
 
         return label;
