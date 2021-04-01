@@ -3,6 +3,7 @@ package com.shade.lang.tool.serialization;
 import com.shade.lang.compiler.assembler.Disassembler;
 import com.shade.lang.compiler.assembler.Instruction;
 import com.shade.lang.compiler.assembler.Verifier;
+import com.shade.lang.runtime.Machine;
 import com.shade.lang.runtime.objects.Chunk;
 import com.shade.lang.runtime.objects.function.Guard;
 import com.shade.lang.runtime.objects.module.Module;
@@ -196,28 +197,30 @@ public class ModuleSerializer {
             }
         }
 
-        final Disassembler disassembler = new Disassembler(
-            ByteBuffer.wrap(code),
-            index -> index >= 0 && index < constants.length ? constants[index] : null
-        );
+        if (Machine.ENABLE_VERIFICATION) {
+            final Disassembler disassembler = new Disassembler(
+                ByteBuffer.wrap(code),
+                index -> index >= 0 && index < constants.length ? constants[index] : null
+            );
 
-        try {
-            final List<Instruction> instructions = new ArrayList<>();
+            try {
+                final List<Instruction> instructions = new ArrayList<>();
 
-            while (true) {
-                final Optional<Instruction> info = disassembler.next();
-                if (!info.isPresent()) {
-                    break;
+                while (true) {
+                    final Optional<Instruction> info = disassembler.next();
+                    if (!info.isPresent()) {
+                        break;
+                    }
+                    instructions.add(info.get());
                 }
-                instructions.add(info.get());
-            }
 
-            final Verifier verifier = new Verifier(instructions.toArray(new Instruction[0]));
-            verifier.verify();
-        } catch (Disassembler.DisassemblerException e) {
-            throw new IOException("Cannot disassemble code", e);
-        } catch (Verifier.VerificationException e) {
-            throw new IOException("Cannot verify code", e);
+                final Verifier verifier = new Verifier(instructions.toArray(new Instruction[0]));
+                verifier.verify();
+            } catch (Disassembler.DisassemblerException e) {
+                throw new IOException("Cannot disassemble code", e);
+            } catch (Verifier.VerificationException e) {
+                throw new IOException("Cannot verify code", e);
+            }
         }
 
         return new Chunk(
