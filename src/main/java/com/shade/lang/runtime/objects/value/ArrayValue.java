@@ -59,6 +59,11 @@ public class ArrayValue extends Value implements Index, MutableIndex {
         return values;
     }
 
+    @Override
+    public Boolean getBoolean(Machine machine) {
+        return values.length > 0;
+    }
+
     public ScriptObject[] getValues() {
         return values;
     }

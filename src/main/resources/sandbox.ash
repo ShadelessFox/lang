@@ -65,6 +65,11 @@ def test_relational() {
     assert true and not (not true);
     assert not false and not false;
     assert not false and ((not true) or true);
+
+    assert ('' or 'a') == 'a';
+    assert (1 or 'a') == 1;
+    assert ([] or [1]) == [1];
+    assert (1 and 1.0) == 1.0;
 }
 
 def test_precedence() {

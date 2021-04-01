@@ -65,6 +65,11 @@ public class FloatValue extends Value {
     }
 
     @Override
+    public Boolean getBoolean(Machine machine) {
+        return value > 0.0f;
+    }
+
+    @Override
     public Float getValue() {
         return value;
     }
