@@ -23,7 +23,6 @@ import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class DeclareFunctionStatement extends Statement {
     private static final Logger LOG = Logger.getLogger(DeclareFunctionStatement.class.getName());
@@ -57,16 +56,7 @@ public class DeclareFunctionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
-        {
-            final String duplicatedArguments = arguments.stream()
-                .filter(x -> Collections.frequency(arguments, x) > 1)
-                .distinct()
-                .collect(Collectors.joining(", "));
-
-            if (!duplicatedArguments.isEmpty()) {
-                throw new ScriptException("Function arguments must be unique: " + duplicatedArguments, getRegion());
-            }
-        }
+        verifyArguments();
 
         final Assembler parentAssembler = assembler;
 
@@ -198,5 +188,52 @@ public class DeclareFunctionStatement extends Statement {
 
     public boolean isVariadic() {
         return variadic;
+    }
+
+    private void verifyArguments() throws ScriptException {
+        final List<String> uniqueArguments = new ArrayList<>();
+        final List<ArgumentPosition> duplicatedArguments = new ArrayList<>();
+
+        for (int index = 0; index < arguments.size(); index++) {
+            final String argument = arguments.get(index);
+            final int uniqueIndex = uniqueArguments.indexOf(argument);
+            if (uniqueIndex >= 0) {
+                duplicatedArguments.add(new ArgumentPosition(
+                    argument,
+                    uniqueIndex,
+                    index
+                ));
+            } else {
+                uniqueArguments.add(argument);
+            }
+        }
+
+        if (!duplicatedArguments.isEmpty()) {
+            final StringBuilder sb = new StringBuilder("Function arguments must be unique: ");
+            for (int index = 0, max = duplicatedArguments.size() - 1; index <= max; index++) {
+                sb.append(duplicatedArguments.get(index));
+                if (index < max) {
+                    sb.append(", ");
+                }
+            }
+            throw new ScriptException(sb.toString(), getRegion());
+        }
+    }
+
+    private static class ArgumentPosition {
+        private final String name;
+        private final int firstPosition;
+        private final int lastPosition;
+
+        public ArgumentPosition(String name, int firstPosition, int lastPosition) {
+            this.name = name;
+            this.firstPosition = firstPosition;
+            this.lastPosition = lastPosition;
+        }
+
+        @Override
+        public String toString() {
+            return "'" + name + "' (at " + firstPosition + " -> " + lastPosition + ")";
+        }
     }
 }
