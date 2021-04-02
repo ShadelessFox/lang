@@ -20,12 +20,10 @@ import com.shade.lang.util.annotations.NotNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class DeclareFunctionStatement extends Statement {
     private static final Logger LOG = Logger.getLogger(DeclareFunctionStatement.class.getName());
@@ -59,6 +57,17 @@ public class DeclareFunctionStatement extends Statement {
 
     @Override
     public void compile(Context context, Assembler assembler) throws ScriptException {
+        {
+            final String duplicatedArguments = arguments.stream()
+                .filter(x -> Collections.frequency(arguments, x) > 1)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+            if (!duplicatedArguments.isEmpty()) {
+                throw new ScriptException("Function arguments must be unique: " + duplicatedArguments, getRegion());
+            }
+        }
+
         final Assembler parentAssembler = assembler;
 
         for (int index = 0; index < boundArguments.size(); index++) {
